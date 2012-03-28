@@ -1,0 +1,19 @@
+refreshAll.sh
+    -> refreshSynteny.py
+	Queries MGI for human/mouse ortholog pairs (with coordinates). From this, derives
+	a set of synteny blocks covering the genome. Outputs as SyntenicRegions and 
+	ChromosomeLocation objects in ItemXML format.
+
+    -> refreshObo.sh -> ReMOSH.py
+	Refreshes ontology files. (GO, MP, MOSH). Downloads obo files for GO and MP.
+	Downloads CTD's version of MOSH and runs ReMOSH.py over it, which converts it into
+	what we need.
+
+    -> refreshItems.sh -> dumpMgiItemXml.py
+    	The main part. Dumps References, Features, Alleles, etc., etc., from MGI in
+	ItemXml format. Should run after refreshObo.sh.
+
+    -> refreshItemsSample.sh -> dumpMgiItemXml.py, Sampler.py
+	Same as refreshItems.py, but generates only a small sample (by virtue of loading 
+	Sampler.py).
+

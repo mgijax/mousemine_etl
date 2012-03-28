@@ -1,0 +1,12 @@
+# python compiled files
+*.pyc
+
+# editor temp files
+*~
+\#*\#
+
+# generated files and directories
+output/
+LOG
+.DS_Store
+
