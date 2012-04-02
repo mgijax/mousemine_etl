@@ -118,6 +118,8 @@ class GenotypeAllelePairDumper(AbstractItemDumper):
 		if r['_marker_key']:
 		    r['featureRef'] = '<reference name="feature" ref_id="%s" />' \
 			% self.context.makeItemRef('Marker', r['_marker_key'])
+                else:
+                    r['featureRef'] = ''
 	    except DumperContext.DanglingReferenceError:
 	        pass
 	    else:
