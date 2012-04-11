@@ -202,6 +202,7 @@ class ReMosher(object):
 	    self.MI.add(id)
 	    # Term is a Mesh term
 	    slines = filter(lambda x:not (x[0]=="alt_id" and x[1].startswith("OMIM")), slines)
+            slines = filter(lambda x:x[0] != "synonym", slines)
 	    for m in self.mid2altids.get(id,[]):
 	        if m[3] == "M":
 		    slines.append( ("alt_id", m) )
