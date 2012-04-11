@@ -94,8 +94,10 @@ class PublicationDumper(AbstractItemDumper):
 		r['authors'] = ''
 	    if r['authors2']:
 		r['authors'] += r['authors2']
-	    anames = map(string.strip, r['authors'].split(';'))
-	    r['firstAuthor'] = anames[0]
+	    r['firstAuthor'] = ''
+	    anames = filter(None, map(string.strip, r['authors'].split(';')))
+	    if len(anames) > 0:
+		r['firstAuthor'] = anames[0]
 	    arefs = []
 	    for a in anames:
 	        if not self.authors.has_key(a):
