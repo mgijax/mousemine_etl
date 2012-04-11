@@ -1,4 +1,3 @@
-
 refreshAll.sh
     -> refreshSynteny.py
 	Queries MGI for human/mouse ortholog pairs (with coordinates). From this, derives
@@ -17,4 +16,5 @@ refreshAll.sh
     -> refreshItemsSample.sh -> dumpMgiItemXml.py, Sampler.py
 	Same as refreshItems.py, but generates only a small sample (by virtue of loading 
 	Sampler.py).
+
 
