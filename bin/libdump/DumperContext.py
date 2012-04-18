@@ -92,6 +92,10 @@ class DumperContext:
 	# or all IDs are constructed from existing MGI keys.
 	self.NEXT_ID = { }
 
+	# maintain a mapping that allows id merging. Whenever we're about to return an id
+	# check if it's in the map, and if so, return the mapped valus instead.
+	self.ID_MAP = {}
+
 	#
 	# Keep track of item ids that have been written out.
 	#
@@ -139,6 +143,10 @@ class DumperContext:
 	if type(itemType) is types.StringType:
 	    itemType = self.TYPE_KEYS[itemType]
 	key = '%d_%d' % (itemType,localkey)
+	k2 = self.ID_MAP.get(key, key)
+	if k2 != key:
+	    self.log("Mapped ID while creating key: %s --> %s" % (key, k2))
+	    key = k2
 	if self.checkRefs and exists is True and key not in self.idsWritten:
 	    raise DumperContext.DanglingReferenceError(key)
 	elif exists is False and key in self.idsWritten:
