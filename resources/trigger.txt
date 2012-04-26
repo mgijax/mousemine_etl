@@ -1,5 +1,0 @@
-This is to test git trigger
-in jenkins.
-It worked ... now for two at once?
-
-Yet another change.
