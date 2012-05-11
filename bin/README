@@ -18,3 +18,5 @@ refreshAll.sh
 	Sampler.py).
 
 
+idChecker.py
+    Checks for id integrity among a set of ItemXML files. 
