@@ -54,7 +54,7 @@
 import sys
 import os
 import urllib
-import mgiadhoc as db
+from libdump import mgiadhoc as db
 
 TAB = "\t"
 NL = "\n"
