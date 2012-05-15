@@ -1,7 +1,13 @@
 #
 # idChecker.py
 #
-# A simple script to verify id integrity in a set of ItemXML files.
+# Usage:
+#	% python idChecker.py path [path...]
+# 	% python idChecker.py < ...
+#
+# A simple script to independently verify id integrity in the set of 
+# files making up an ItemXML Intermine source.
+#
 # This means:
 #	1. Item ids are unique
 #	2. There are no dangling references.
@@ -21,16 +27,22 @@ import sys
 import os
 import re
 
+# regex that looks for patterns like 'ref_id="xxxx"' and 'id="xxxx"'.
+# Captures the id as group 2, the 'ref_' part (or '') as group 1.
 id_re = re.compile(r'(ref_)?id *= *"([^"]+)"')
+
+# indexes mapping ids to the context (file name and line number).
+idx = {}	# id -> where it was defined
+refidx = {}	# id -> where it was used in a reference (ref_id).
+		#       (First occurrence only.)
+
+# Set to True if an id error is detected.
 errors = False
-idx = {}
-refidx = {}
 
 def log(m):
     sys.stderr.write(m)
-    sys.stderr.flush()
 
-def readFile( ifd ):
+def process( ifd ):
     global errors, idx, refidx
     lineNum = 0
     log("Reading from file: %s\n"%ifd.name)
@@ -58,16 +70,15 @@ def checkRefs( ):
     # Any remaining xrefs are dangling.
     global errors, idx, refidx
     log("Checking xrefs\n")
+    errors = len(refidx) > 0
+    # Sort the items by filename and line number for printing.
     items = refidx.items()
     items.sort(None, lambda i:(i[1][0],i[1][1]))
     for (refid, val) in items:
-	errors = True
 	print "Dangling reference: id=%s file=%s line=%d" %(refid, val[0], val[1])
 
 def main():
-    idx = {}
-    refidx = {}
-
+    # assemble list of files to read
     files = []
     for a in sys.argv[1:]:
         if os.path.isdir(a):
@@ -76,18 +87,25 @@ def main():
 	else:
 	    files.append(a)
     
+    log('\n\nChecking ID integrity...')
+
+    # if no files, read from stdin. Otherwise, open/process/close each file.
     if len(files) == 0:
-	readFile(sys.stdin)
+	process(sys.stdin)
     else:
         for f in files:
 	    fd = open(f,'r')
-	    readFile(fd)
+	    process(fd)
 	    fd.close()
 
+    # final check
     checkRefs( )
+
+    # exit with appropriate status
     if errors:
         sys.exit(-1)
     else:
         sys.exit(0)
 
+#
 main()
