@@ -194,6 +194,8 @@ def writeItem(r, tmplt):
     sys.stdout.write( tmplt%r )
 
 def queryMgi():
+    # for each mouse/human orthology pair, select the pair and associated data 
+    # (e.g., symbol, chromosome, etc.) for each
     q = '''
     SELECT distinct
         m1.symbol AS msymbol, 
@@ -228,7 +230,7 @@ def queryMgi():
     AND m2._organism_key = 2
     AND m2._marker_key = mf._object_key
     AND mf._map_key = mc._map_key
-    AND mc._collection_key = 47
+    AND mc._collection_key = 52		/* whatever map key is for the human map in MGI */
     AND mc._object_key = ch._chromosome_key
     ORDER BY mchr, mstart
     '''

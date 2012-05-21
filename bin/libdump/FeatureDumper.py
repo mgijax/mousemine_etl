@@ -214,7 +214,7 @@ MCV2ClassName = {
 
     # Mappable types
     'BAC end'			: ('BACEnd',				'SO:0000999'),
-    'BAC/YAC end'		: ('BACEnd',				'SO:0000999'),
+    'BAC/YAC end'		: ('Read',				'SO:0000150'),
     'chromosomal deletion'	: ('ChromosomalDeletion',		'SO:1000029'),
     'chromosomal inversion'	: ('ChromosomalInversion',		'SO:1000030'),
     'chromosomal duplication'	: ('ChromosomalDuplication',		'SO:1000037'),
