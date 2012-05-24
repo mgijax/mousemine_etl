@@ -69,7 +69,7 @@
 import sys
 import re
 from libdump.OboParser import OboParser, formatStanza
-import mgiadhoc as db
+from libdump import mgiadhoc as db
 import logging
 
 # keys from MGD
