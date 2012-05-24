@@ -1,29 +1,29 @@
 #!/bin/sh
 
-NCBI_DIR=../output/ncbi-synblock
-if [ ! -d $NCBI_DIR ]
+SYN_DIR=../output/mgi-synblock
+if [ ! -d $SYN_DIR ]
 then
-    mkdir -p $NCBI_DIR
+    mkdir -p $SYN_DIR
 fi
 
 ##
-python ./refreshSynteny.py > ../output/ncbi-synblock/SyntenicRegion.xml
-python ./idChecker.py ../output/ncbi-synblock/SyntenicRegion.xml
+python ./refreshSynteny.py > ${SYN_DIR}/SyntenicRegion.xml
+python ./idChecker.py ${SYN_DIR}/SyntenicRegion.xml
 if [ $? -ne 0 ] 
 then
-    exit -1 
+    exit 1 
 fi
 
 ##
 ./refreshObo.sh
 if [ $? -ne 0 ] 
 then
-    exit -1 
+    exit 1 
 fi
 
 ##
 ./refreshItems.sh
 if [ $? -ne 0 ] 
 then
-    exit -1 
+    exit 1 
 fi

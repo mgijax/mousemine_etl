@@ -68,7 +68,7 @@ HCHRS = "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y".split()
 #
 
 ofd = sys.stdout
-bfd = open('blocks.txt', 'w')
+#bfd = open('blocks.txt', 'w')
 
 mchr2count = {}
 def startBlock(pair):
@@ -133,6 +133,7 @@ def generateBlocks(allPairs, tagPairs=True):
 
 def _massageBlocks(blocks, x):
     for i in xrange(len(blocks)-1):
+	# cb=current block, nb=next block
         cbname, cbori, cbcount, cbfields = blocks[i]
 	nbname, nbori, nbcount, nbfields = blocks[i+1]
 	if i == 0:
@@ -146,6 +147,9 @@ def _massageBlocks(blocks, x):
 	    nbfields[x+'start'] -= (delta/2 - epsilon)
     return blocks
 
+# Extends first block on a chromosome to begin at 1.
+# Extends neighboring blocks toward each other so they abut.
+# TODO: Extends last block on a chromosome to the end.
 def massageBlocks(blocks):
     blocks = _massageBlocks(blocks, 'm')
     blocks.sort(key=lambda b:(b[-1]['hchr'], b[-1]['hstart']))
@@ -171,7 +175,7 @@ def writeBlock(block):
       fields['iMi'],
       ihi,
     ]
-    bfd.write( TAB.join(map(str,b)) + NL )
+    #bfd.write( TAB.join(map(str,b)) + NL )
     writeBlockItems(*(b[0:7]))
 
 def writeBlockItems(mchr,mstart,mend,hchr,hstart,hend,name):
@@ -335,7 +339,7 @@ def makeSyntenicRegion(org,chr,start,end,bname):
         'id' : fid,
 	'organism' : oid,
 	'symbol' : 'SynBlock:mmhs:%s'%bname,
-	'name' : 'NCBI Mouse/Human Synteny Block %s' % bname,
+	'name' : 'Mouse/Human Synteny Block %s' % bname,
 	'chromosome' : cid,
 	'chromosomeLocation' : lid,
 	}
@@ -349,11 +353,13 @@ def makeSyntenicRegion(org,chr,start,end,bname):
     return (r,l)
 
 def main():
+
+    # query MGI to get the ortholog pairs
     global iHi, iMi
     allPairs = queryMgi()
     
     # pairs are already ordered by mouse chr/start.
-    # Scan list. Remove any mouse gene overlaps.
+    # Scan list. Remove any mouse-gene-to-mouse-gene overlaps.
     lastPair = None
     tmp = []
     for pair in allPairs:
