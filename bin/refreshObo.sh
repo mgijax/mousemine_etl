@@ -16,13 +16,26 @@ XDIR=$BASEDIR/resources
 
 # MOSH
 curl http://ctdbase.org/reports/CTD_diseases.obo.gz | zcat > $XDIR/CTDMOSH.obo
+if [ $? -ne 0 ] 
+then
+    exit $? 
+fi
+
 python ReMOSH.py $XDIR/CTDMOSH.obo $XDIR/spreadsheet.tsv > $ODIR/MOSH.obo
 
 # GO
 curl -o $ODIR/GeneOntology.obo http://www.geneontology.org/ontology/obo_format_1_0/gene_ontology.1_0.obo
+if [ $? -ne 0 ] 
+then
+    exit $?
+fi
 
 # MP
 curl -o $ODIR/MammalianPhenotype.obo ftp://ftp.informatics.jax.org/pub/reports/MPheno_OBO.ontology
+if [ $? -ne 0 ] 
+then
+    exit $? 
+fi
 
 # Adult Mouse Anatomy
 #curl -o $ODIR/AdultMouseAnatomy.obo ftp://ftp.informatics.jax.org/pub/reports/adult_mouse_anatomy.obo
