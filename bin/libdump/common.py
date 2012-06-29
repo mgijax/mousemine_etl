@@ -24,7 +24,6 @@ UNDER	= "_"
 TAXAIDS = [
     10090, 	# mouse
     9606, 	# human
-    10116,	# rat
     ]
 
 

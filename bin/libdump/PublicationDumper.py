@@ -126,6 +126,8 @@ class PublicationDumper(AbstractItemDumper):
 	    for a in anames:
 		if not self.authors.has_key(a):
 		    self.authors[a] = self.context.makeGlobalKey('Author')
+		    arec = {'id':self.authors[a], 'name':self.quote(a)}
+		    self.writeItem( arec, self.ATMPLT )
 		arefs.append('<reference ref_id="%s"/>'%self.authors[a])
 	    r['authors'] = ''.join(arefs)
 	    attrs.append('<collection name="authors">%s</collection>' % r['authors'])
@@ -137,7 +139,7 @@ class PublicationDumper(AbstractItemDumper):
 	r['attrs'] = '\n'.join(attrs)
 	return r
 
-    def postDump(self):
+    def xpostDump(self):
 	lst = self.authors.items()
 	lst.sort(key=lambda x:x[1])
 	for aname,aid in lst:

@@ -2,7 +2,8 @@
 # refreshSynteny.py
 #
 # This script produces a mouse/human synteny mapping from orthology
-# and location information in MGI. 
+# and location information in MGI. The results are output in InterMine 
+# ItemsXML format.
 #
 # A "synteny block" is a pair of genomic ranges - one in species A 
 # and one in species B - deemed to be "equivalent". 
