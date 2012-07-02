@@ -187,7 +187,7 @@ class NonMouseFeatureDumper(AbstractFeatureDumper):
 
     def getDataSetRef(self):
         dsid = DataSetDumper(self.context).dataSet(
-	        name="Non-Mouse Genes from EntrezGene",
+	        name="Human Genes from EntrezGene",
 		dataSource=self.context.dataSourceByName["Entrez Gene"] )
 	return '<reference ref_id="%s"/>'%dsid
 

@@ -60,7 +60,7 @@ class DumperContext:
 	    'LIMIT_CLAUSE' : limit and (' LIMIT %d '%limit) or '',
 
 	    #
-	    'ORGANISMKEYS' : '1,2,40',	# default=mouse,human,rat.
+	    'ORGANISMKEYS' : '1,2',
 	    }
 
 	# Keys from ACC_MGIType.
