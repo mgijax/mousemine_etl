@@ -13,6 +13,7 @@ from OrthologyDumper	import OrthologyDumper
 from PublicationDumper	import PublicationDumper
 from StrainDumper	import StrainDumper
 from SynonymDumper	import SynonymDumper
+from SyntenyDumper	import SyntenyDumper
 
 def installMethods(module):
     import types

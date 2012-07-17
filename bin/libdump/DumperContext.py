@@ -82,6 +82,7 @@ class DumperContext:
 	    'CrossReference'		: 10012,
 	    'Author'			: 10013,
 	    'SOTerm'			: 10014,
+	    'SyntenicRegion'		: 10015,
 	    })
 
 	# map integer type ids to type names
@@ -127,16 +128,17 @@ class DumperContext:
     # Given a type name and an integer key unique within that 
     # type, creates a globally unique string key of the form
     # "n_m", where n is the type's integer key and
-    # m is the input key. The returned val
+    # m is the input key. 
     #
     def makeGlobalKey(self, itemType, localkey=None, exists=None):
-	if localkey is None:
+	autokey = (localkey is None)
+	if autokey:
 	    localkey = self.NEXT_ID.setdefault(itemType, 1001)
 	    self.NEXT_ID[itemType] += 1
 	elif localkey < 0:
 	    # Ugh. We can't use negative keys. MGI often uses -1 for
 	    # Not Specified and -2 for Not Applicable. 
-	    # Crude hackery: add 10000000 to the key (i.e., allocate
+	    # Crude hackery: add 10,000,000 to the key (i.e., allocate
 	    # negative keys in a region we HOPE won't clash with
 	    # real keys.
 	    localkey += 10000000
