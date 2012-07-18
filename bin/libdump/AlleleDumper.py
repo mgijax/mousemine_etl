@@ -41,6 +41,7 @@ class AlleleDumper(AbstractItemDumper):
 	else:
 	    mref = self.context.makeItemRef('Marker', mk)
 	    r['featureRef'] = '<reference name="feature" ref_id="%s" />' % mref
+	r['iswildtype'] = r['iswildtype'] == 1 and "true" or "false"
 	return r
 
     def postDump(self):
