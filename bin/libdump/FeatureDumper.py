@@ -210,10 +210,6 @@ MGIType2MCVType = {
 # handle the subclass issue correctly, mapping genes to subclasses will cause more problems than good.
 #
 MCV2ClassName = {
-    # These are abstract only - nothing should have these types directly.
-    #'all feature types'	: None,
-    #'cytogenetic marker'	: None,
-    #'other feature type'	: None,
 
     # Mappable types
     'BAC end'			: ('BACEnd',				'SO:0000999'),
@@ -224,6 +220,7 @@ MCV2ClassName = {
     'chromosomal translocation'	: ('ChromosomalTranslocation',		'SO:1000044'),
     'chromosomal transposition'	: ('ChromosomalTransposition',		'SO:1000453'),
     'complex/cluster/region'	: ('ComplexClusterRegion',		None),
+    'cytogenetic marker'	: ('UnclassifiedCytogeneticMarker',	None),
     'DNA segment'		: ('DNASegment',			None),
     'gene'			: ('Gene',				'SO:0000704'),
     'gene segment'		: ('GeneSegment',			'SO:3000000'),
@@ -233,6 +230,7 @@ MCV2ClassName = {
     'minisatellite'		: ('Minisatellite',			'SO:0000643'),
     'miRNA gene'		: ('Gene',				'SO:0001265'),
     'non-coding RNA gene'	: ('Gene',				'SO:0001263'),
+    'other feature type'	: ('OtherGenomeFeature',		None),
     'other genome feature'	: ('OtherGenomeFeature',		None),
     'PAC end'			: ('PACEnd',				'SO:0001480'),
     'polymorphic pseudogene'	: ('PolymorphicPseudogene',		None),
