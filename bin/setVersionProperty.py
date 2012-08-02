@@ -27,6 +27,8 @@ class VersionSetter:
 
     def doSubst(self, dir, fname, varname, value):
         fn = os.path.abspath(os.path.join(dir, fname))
+	if not os.access(fn, os.R_OK|os.W_OK):
+	    return
 	fd = open(fn, 'r')
 	line2 = self.pname+"="+value+"\n"
 	#
@@ -47,7 +49,7 @@ class VersionSetter:
 	dir = os.path.abspath(os.path.expanduser(self.dir))
 	fname_re = re.compile(self.fname_re)
 	for fname in os.listdir(dir):
-	    if fname_re.search(fname):
+	    if fname_re.search(fname) and not fname.endswith("~"):
 		self.doSubst(dir, fname, self.pname, self.version)
 
 
