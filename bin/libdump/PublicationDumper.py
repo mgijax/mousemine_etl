@@ -17,7 +17,8 @@ class PublicationDumper(AbstractItemDumper):
 	r.pgs AS pages,
 	r.abstract AS "abstractText",
 	a.accid AS "pubMedId",
-	a2.accid AS "mgiId"
+	a2.accid AS "mgiId",
+	a3.accid AS "mgiJnum"
     FROM BIB_Refs r
       LEFT OUTER JOIN ACC_Accession a
       ON r._refs_key = a._Object_key
@@ -32,11 +33,19 @@ class PublicationDumper(AbstractItemDumper):
       AND a2.preferred = 1
       AND a2.private = 0
       AND a2.prefixPart='MGI:'
+      INNER JOIN ACC_Accession a3
+      ON r._refs_key = a3._Object_key
+      AND a3._logicaldb_key = %(MGI_LDBKEY)d
+      AND a3._mgitype_key = %(REF_TYPEKEY)d
+      AND a3.preferred = 1
+      AND a3.private = 0
+      AND a3.prefixPart='J:'
     %(LIMIT_CLAUSE)s
     '''
     ITMPLT = '''
     <item class="Publication" id="%(id)s">
       <attribute name="mgiId" value="%(mgiId)s" />
+      <attribute name="mgiJnum" value="%(mgiJnum)s" />
       %(attrs)s
       </item>
     '''
@@ -83,6 +92,37 @@ class PublicationDumper(AbstractItemDumper):
 		self.context.log("Duplicate PubMed id detected (legit, but ignored):" + r['accid'])
 		self.badPmids.append( r['accid'] )
 
+    # Calculates a citation string from the attributes.
+    # Default format:
+    #		FirstAuthor [etal] (year) Title. Journal vol(issue):pp-p.
+    #
+    def calcCitation(self, r):
+	pieces = []
+	if r['firstAuthor']:
+	    pieces.append(r['firstAuthor'])
+	if len(r['authors']) > 1:
+	    pieces[0] += ", et al."
+	pieces.append(" ")
+	if r['year']:
+	    pieces.append( '(%d)'%r['year'] )
+	pieces.append(" ")
+	if r['title']:
+	    pieces.append( r['title'] )
+	    if not r['title'].endswith('.'):
+		pieces.append(".")
+	    pieces.append(" ")
+	if r['journal']:
+	    pieces.append( r['journal'] )
+	    pieces.append(" ")
+	if r['volume'] :
+	    pieces.append( r['volume'] )
+	if r['issue']:
+	    pieces.append( '(%s)'%r['issue'] )
+	if r['pages']:
+	    pieces.append( ":" + r['pages'])
+	tmplt = '%(firstAuthor)s%(etal)s (%(year)d) %(title)s. %(journal)s %(volume)s(%(issue)s):%(pages)s.'
+	return ''.join(pieces)
+
     def processRecord(self,r):
 	attrs = []
 	r['id'] = self.context.makeItemId('Reference', r['_refs_key'])
@@ -102,47 +142,33 @@ class PublicationDumper(AbstractItemDumper):
 		self.context.log("Registering mapping: %s --> %s" % (r['id'],self.trueDups[p]))
 	        return None
 	#---------------------------------------
-	    
-	if r['pubMedId']:
-	    # pubs with pubmed id will be filled out later (by update-publications).
-	    # here, we just output the skeleton, containing the pubmed id.
-	    # also include abstracts (not filled in by update-publications)
-	    #
-	    flds = ['pubMedId','abstractText']
-	else:
-	    # Pubs without pubmed ids are filled out from MGI data.
-	    #
-	    if r['title2']:
-		r['title'] += r['title2']
-	    if r['authors'] is None:
-		r['authors'] = ''
-	    if r['authors2']:
-		r['authors'] += r['authors2']
-	    r['firstAuthor'] = ''
-	    anames = filter(None, map(string.strip, r['authors'].split(';')))
-	    if len(anames) > 0:
-		r['firstAuthor'] = anames[0]
-	    arefs = []
-	    for a in anames:
-		if not self.authors.has_key(a):
-		    self.authors[a] = self.context.makeGlobalKey('Author')
-		    arec = {'id':self.authors[a], 'name':self.quote(a)}
-		    self.writeItem( arec, self.ATMPLT )
-		arefs.append('<reference ref_id="%s"/>'%self.authors[a])
-	    r['authors'] = ''.join(arefs)
-	    attrs.append('<collection name="authors">%s</collection>' % r['authors'])
-	    flds = ['title','journal','volume','issue','pages','year','firstAuthor', 'abstractText']
+	#
+	if r['title2']:
+	    r['title'] += r['title2']
+	if r['authors'] is None:
+	    r['authors'] = ''
+	if r['authors2']:
+	    r['authors'] += r['authors2']
+	r['firstAuthor'] = ''
+	anames = filter(None, map(string.strip, r['authors'].split(';')))
+	r['authors'] = anames
+	if len(anames) > 0:
+	    r['firstAuthor'] = anames[0]
+	arefs = []
+	for a in anames:
+	    if not self.authors.has_key(a):
+		self.authors[a] = self.context.makeGlobalKey('Author')
+		arec = {'id':self.authors[a], 'name':self.quote(a)}
+		self.writeItem( arec, self.ATMPLT )
+	    arefs.append('<reference ref_id="%s"/>'%self.authors[a])
+	r['citation'] = self.calcCitation(r)
+	attrs.append('<collection name="authors">%s</collection>' % ''.join(arefs))
+	flds = (r['pubMedId'] and ['pubMedId'] or []) + \
+	  ['citation','title','journal','volume','issue','pages','year','firstAuthor', 'abstractText']
 	#
 	for n in flds:
 	    if r[n]:
 		attrs.append('<attribute name="%s" value="%s"/>'%(n, self.quote(r[n])))
 	r['attrs'] = '\n'.join(attrs)
 	return r
-
-    def xpostDump(self):
-	lst = self.authors.items()
-	lst.sort(key=lambda x:x[1])
-	for aname,aid in lst:
-	    r = {'id':aid, 'name':self.quote(aname) }
-	    self.writeItem( r, self.ATMPLT )
 
