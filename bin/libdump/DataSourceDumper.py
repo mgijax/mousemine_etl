@@ -43,7 +43,7 @@ class DataSourceDumper(AbstractItemDumper):
 	if r['url'] is None:
 	    r['url'] = ''
 	else:
-	    r['url'] = '<attribute name="url" value="%(url)s" />' % r
+	    r['url'] = '<attribute name="url" value="%s" />' % self.quote(r['url'])
 	self.context.dataSourceByName[r['name']] = r['id']
 	self.quoteFields(r, ['name','description'])
 	return r
