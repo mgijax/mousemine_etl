@@ -209,6 +209,10 @@ MGIType2MCVType = {
 # July 17,2012 - jer. Change the destination class to Gene for every kind of gene. Until Intermine can
 # handle the subclass issue correctly, mapping genes to subclasses will cause more problems than good.
 #
+# This table maps an MCV type name (from the MGI type ontology) to a pair consisting of (1) the
+# name of the class of object to create and (2) the SO term id to assign to it. Note: if an MCV class
+# has no corresponding SO term, we use the generic term sequence_feature (SO:0000110).
+#
 MCV2ClassName = {
 
     # Mappable types
@@ -219,9 +223,9 @@ MCV2ClassName = {
     'chromosomal duplication'	: ('ChromosomalDuplication',		'SO:1000037'),
     'chromosomal translocation'	: ('ChromosomalTranslocation',		'SO:1000044'),
     'chromosomal transposition'	: ('ChromosomalTransposition',		'SO:1000453'),
-    'complex/cluster/region'	: ('ComplexClusterRegion',		None),
-    'cytogenetic marker'	: ('UnclassifiedCytogeneticMarker',	None),
-    'DNA segment'		: ('DNASegment',			None),
+    'complex/cluster/region'	: ('ComplexClusterRegion',		'SO:0000110'),
+    'cytogenetic marker'	: ('UnclassifiedCytogeneticMarker',	'SO:0000110'),
+    'DNA segment'		: ('DNASegment',			'SO:0000110'),
     'gene'			: ('Gene',				'SO:0000704'),
     'gene segment'		: ('GeneSegment',			'SO:3000000'),
     'heritable phenotypic marker' : ('HeritablePhenotypicMarker',	'SO:0001500'),
@@ -230,37 +234,37 @@ MCV2ClassName = {
     'minisatellite'		: ('Minisatellite',			'SO:0000643'),
     'miRNA gene'		: ('Gene',				'SO:0001265'),
     'non-coding RNA gene'	: ('Gene',				'SO:0001263'),
-    'other feature type'	: ('OtherGenomeFeature',		None),
-    'other genome feature'	: ('OtherGenomeFeature',		None),
+    'other feature type'	: ('OtherGenomeFeature',		'SO:0000110'),
+    'other genome feature'	: ('OtherGenomeFeature',		'SO:0000110'),
     'PAC end'			: ('PACEnd',				'SO:0001480'),
-    'polymorphic pseudogene'	: ('PolymorphicPseudogene',		None),
-    'protein coding gene'	: ('Gene',			'SO:0001217'),
+    'polymorphic pseudogene'	: ('PolymorphicPseudogene',		'SO:0000110'),
+    'protein coding gene'	: ('Gene',				'SO:0001217'),
     'pseudogene'		: ('Pseudogene',			'SO:0000336'),
-    'pseudogenic gene segment'	: ('PseudogenicGeneSegment',		None),
+    'pseudogenic gene segment'	: ('PseudogenicGeneSegment',		'SO:0000110'),
     'pseudogenic region'	: ('PseudogenicRegion',			'SO:0000462'),
     'QTL'			: ('QTL',				'SO:0000771'),
     'reciprocal chromosomal translocation' : \
     				  ('ReciprocalChromosomalTranslocation','SO:1000048'),
     'retrotransposon'		: ('Retrotransposon',			'SO:0000180'),
-    'RNase MRP RNA gene'	: ('Gene',			'SO:0001640'),
-    'RNase P RNA gene'		: ('Gene',			'SO:0001639'),
+    'RNase MRP RNA gene'	: ('Gene',				'SO:0001640'),
+    'RNase P RNA gene'		: ('Gene',				'SO:0001639'),
     'Robertsonian fusion'	: ('RobertsonianFusion',		'SO:1000043'),
     'rRNA gene'			: ('Gene',				'SO:0001637'),
     'scRNA gene'		: ('Gene',				'SO:0001266'),
-    'snoRNA gene'		: ('Gene',			'SO:0001267'),
+    'snoRNA gene'		: ('Gene',				'SO:0001267'),
     'snRNA gene'		: ('Gene',				'SO:0001268'),
-    'SRP RNA gene'		: ('Gene',			'SO:0001269'),
+    'SRP RNA gene'		: ('Gene',				'SO:0001269'),
     'telomere'			: ('Telomere',				'SO:0000624'),
-    'telomerase RNA gene'	: ('Gene',			'SO:0001643'),
+    'telomerase RNA gene'	: ('Gene',				'SO:0001643'),
     'transgene'			: ('Transgene',				'SO:0000902'),
     'tRNA gene'			: ('Gene',				'SO:0001272'),
     'unclassified cytogenetic marker'	: \
-    				  ('UnclassifiedCytogeneticMarker',	None),
-    'unclassified gene'		: ('Gene',			None),
+    				  ('UnclassifiedCytogeneticMarker',	'SO:0000110'),
+    'unclassified gene'		: ('Gene',				'SO:0000110'),
     'unclassified non-coding RNA gene'	: \
-    				  ('Gene',		None),
+    				  ('Gene',				'SO:0000110'),
     'unclassified other genome feature' : \
-    				  ('UnclassifiedOtherGenomeFeature',	None),
+    				  ('UnclassifiedOtherGenomeFeature',	'SO:0000110'),
     'YAC end'			: ('YACEnd',				'SO:0001498'),
     }
 

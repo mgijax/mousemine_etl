@@ -1,4 +1,5 @@
 from AbstractItemDumper import *
+from DataSourceDumper import DataSetDumper
 
 class AlleleDumper(AbstractItemDumper):
     QTMPLT = '''
@@ -24,6 +25,8 @@ class AlleleDumper(AbstractItemDumper):
     <item class="Allele" id="%(id)s">
       <attribute name="primaryIdentifier" value="%(accid)s" />
       <attribute name="symbol" value="%(symbol)s" />
+      <reference name="organism" ref_id="%(organism)s" />
+      <collection name="dataSets">%(dataSets)s</collection>
       <attribute name="name" value="%(name)s" />
       <attribute name="isWildType" value="%(iswildtype)s" />
       <attribute name="alleleType" value="%(alleletype)s" />
@@ -42,6 +45,9 @@ class AlleleDumper(AbstractItemDumper):
 	    mref = self.context.makeItemRef('Marker', mk)
 	    r['featureRef'] = '<reference name="feature" ref_id="%s" />' % mref
 	r['iswildtype'] = r['iswildtype'] == 1 and "true" or "false"
+	r['organism'] = self.context.makeItemRef('Organism', 1) # mouse
+        dsid = DataSetDumper(self.context).dataSet(name="Mouse Allele Catalog from MGI")
+	r['dataSets'] = '<reference ref_id="%s"/>'%dsid
 	return r
 
     def postDump(self):
