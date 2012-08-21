@@ -13,7 +13,7 @@ class AbstractItemDumper:
 	if s is None:
 	    return None
 	s = str(s)
-        return s.replace('<', '&lt;').replace('&', '&amp;').replace('"', '&quot;')
+        return s.replace('&', '&amp;').replace('<', '&lt;').replace('"', '&quot;')
 
     def quoteFields(self, record, fields):
 	if type(fields) is types.StringType:
