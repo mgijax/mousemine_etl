@@ -66,6 +66,8 @@ MCHRS = "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 X Y".split()
 HTAXID = 9606
 HCHRS = "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y".split()
 #
+SYNTENIC_REGION_SOID = "SO:0005858"
+#
 
 class SyntenyDumper(AbstractItemDumper):
     QTMPLT = '''
@@ -115,6 +117,7 @@ class SyntenyDumper(AbstractItemDumper):
 	<item class="SyntenicRegion" id="%(id)s" >
 	  <attribute name="symbol" value="%(symbol)s" />
 	  <attribute name="name" value="%(name)s" />
+	  <reference name="sequenceOntologyTerm" ref_id="%(soref)s"/>
 	  <reference name="organism" ref_id="%(organism)s" />
 	  <reference name="chromosome" ref_id="%(chromosome)s" />
 	  <reference name="chromosomeLocation" ref_id="%(chromosomeLocation)s" />
@@ -142,6 +145,7 @@ class SyntenyDumper(AbstractItemDumper):
 	self.smap = { 'f':'+', 'r':'-', '+':'+', '-':'-' }
 	self.allPairs = []
 	self.mkey = 1 + self.context.sql('select max(_marker_key) as k from mrk_marker')[0]['k']
+	self.soref = self.context.makeGlobalKey('SOTerm',int(SYNTENIC_REGION_SOID.split(":")[1]))
 	return True
 
     def processRecord(self, r):
@@ -326,6 +330,7 @@ class SyntenyDumper(AbstractItemDumper):
 	    'name' : 'Mouse/Human Synteny Block %s' % bname,
 	    'chromosome' : cid,
 	    'chromosomeLocation' : lid,
+	    'soref' : self.soref,
 	    }
 	l = {
 	    'id' : lid,
