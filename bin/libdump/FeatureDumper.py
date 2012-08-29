@@ -28,6 +28,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
       %(soterm)s
       <attribute name="symbol" value="%(symbol)s" />
       <attribute name="name" value="%(name)s" />
+      %(description)s
       %(ncbiGeneNumber)s
       <reference name="organism" ref_id="%(organismid)s" />
       <reference name="chromosome" ref_id="%(chromosomeid)s" />
@@ -61,6 +62,23 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    if id in self.context.idsWritten:
 		self.mk2refs.setdefault(r['_marker_key'],[]).append('<reference ref_id="%s"/>'%id)
 
+	# preload all description notes for mouse markers
+	self.mk2description = {}
+	q = self.constructQuery('''
+	    select n._marker_key, n.note
+	    from MRK_Notes n, MRK_Marker m
+	    where n._marker_key = m._marker_key
+	    and m._organism_key = 1
+	    ''')
+	for r in self.context.sql(q):
+	    self.mk2description[r['_marker_key']] = r['note']
+
+    def getDescription(self, r):
+        n = self.mk2description.get(r['_marker_key'], '')
+	if n:
+	    n = '<attribute name="description" value="%s" />' % self.quote(n)
+	return n
+
     def getClass(self,r):
         pass	# override me
 
@@ -88,6 +106,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    return None
 	r['id'] = self.context.makeItemId('Marker', r['_marker_key'])
 	r['featureClass'] = fclass
+	r['description'] = self.getDescription(r)
 	r['ncbiGeneNumber'] = self.getNcbiGeneNumberAttribute(r)
 	r['locationRef'] = self.getLocationRef(r)
 	r['organismid'] = self.context.makeItemRef('Organism', r['_organism_key']) 
