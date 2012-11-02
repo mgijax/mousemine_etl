@@ -15,13 +15,13 @@ TDIR=$BASEDIR/tmp
 XDIR=$BASEDIR/resources
 
 # MOSH
-curl http://ctdbase.org/reports/CTD_diseases.obo.gz | zcat > $XDIR/CTDMOSH.obo
+
+curl https://gillnet.mdibl.org/~twiegers/mgi/mgiMEDIC.obo.gz | zcat > $ODIR/MOSH.obo
 if [ $? -ne 0 ] 
 then
     exit $? 
 fi
 
-python ReMOSH.py $XDIR/CTDMOSH.obo $XDIR/spreadsheet.tsv > $ODIR/MOSH.obo
 
 # GO
 curl -o $ODIR/GeneOntology.obo http://www.geneontology.org/ontology/obo_format_1_0/gene_ontology.1_0.obo
