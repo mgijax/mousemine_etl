@@ -44,22 +44,6 @@ class AlleleDumper(AbstractItemDumper):
       %(featureRef)s</item>
     '''
 
-    def dumpMutationVocab(self):
-        q = self.constructQuery('''
-	    SELECT t._term_key, t.term
-	    FROM VOC_Term t
-	    WHERE t._vocab_key = %(ALLELE_MUTATION_VKEY)d
-	    ORDER BY t.term
-	    ''')
-	tmplt = '''
-	    <item class="AlleleMolecularMutation" id="%(id)s" >
-	        <attribute name="name" value="%(term)s" />
-		</item>
-	    '''
-	for r in self.context.sql(q):
-	    r['id'] = self.context.makeGlobalKey('AlleleMolecularMutation', r['_term_key'])
-	    self.writeItem(r,tmplt)
-
     def loadAllele2MutationMap(self):
 	self.ak2mk = {}
 	q  = '''
@@ -67,10 +51,11 @@ class AlleleDumper(AbstractItemDumper):
 	    FROM ALL_Allele_Mutation
 	    '''
 	for r in self.context.sql(q):
-	    self.ak2mk.setdefault(r['_allele_key'],[]).append(r['_mutation_key'])
+	    iref = self.context.makeItemRef('AlleleMolecularMutation',r['_mutation_key'])
+	    self.ak2mk.setdefault(r['_allele_key'],[]).append(iref)
 
     def preDump(self):
-	self.dumpMutationVocab()
+	AlleleMutationDumper(self.context).dump()
 	self.loadAllele2MutationMap()
 
     def processRecord(self, r):
@@ -93,6 +78,23 @@ class AlleleDumper(AbstractItemDumper):
 
     def postDump(self):
         self.writeCount += AlleleSynonymDumper(self.context).dump(fname="Synonym.xml")
+
+class AlleleMutationDumper(AbstractItemDumper):
+    QTMPLT = '''
+    SELECT t._term_key, t.term
+    FROM VOC_Term t
+    WHERE t._vocab_key = %(ALLELE_MUTATION_VKEY)d
+    ORDER BY t.term
+    '''
+    ITMPLT = '''
+    <item class="AlleleMolecularMutation" id="%(id)s" >
+	<attribute name="name" value="%(term)s" />
+	</item>
+    '''
+    def processRecord(self, r):
+        r['id'] = self.context.makeGlobalKey('AlleleMolecularMutation', r['_term_key'])
+        return r
+
 
 class AlleleSynonymDumper(AbstractItemDumper):
     QTMPLT = '''
