@@ -4,19 +4,26 @@ from DataSourceDumper import DataSetDumper
 class AlleleDumper(AbstractItemDumper):
     QTMPLT = '''
     SELECT a._allele_key, a.symbol, a.name, a._marker_key, ac.accid,
-	a.iswildtype, a.isextinct, a.ismixed,
-	t.term AS alleletype, a._strain_key
+        a.iswildtype, a.isextinct, a.ismixed,
+        t1.term AS alleletype, 
+        t2.term AS inheritanceMode,
+        t3.term AS gltransmission,
+        a._strain_key
     FROM 
-	ALL_Allele a LEFT OUTER JOIN MRK_Marker m
-	    ON a._marker_key = m._marker_key,
-	ACC_Accession ac,
-	VOC_Term t
+        ALL_Allele a LEFT OUTER JOIN MRK_Marker m
+            ON a._marker_key = m._marker_key,
+        ACC_Accession ac,
+        VOC_Term t1,
+        VOC_Term t2,
+        VOC_Term t3
     WHERE a._allele_key = ac._object_key
     AND ac._mgitype_key = %(ALLELE_TYPEKEY)d
     AND ac._logicaldb_key = %(MGI_LDBKEY)d
     AND ac.preferred = 1
     AND ac.private = 0
-    AND a._allele_type_key = t._term_key
+    AND a._allele_type_key = t1._term_key
+    AND a._mode_key = t2._term_key
+    AND a._transmission_key = t3._term_key
 
     %(LIMIT_CLAUSE)s
     '''
@@ -30,12 +37,45 @@ class AlleleDumper(AbstractItemDumper):
       <attribute name="name" value="%(name)s" />
       <attribute name="isWildType" value="%(iswildtype)s" />
       <attribute name="alleleType" value="%(alleletype)s" />
+      <attribute name="inheritanceMode" value="%(inheritancemode)s" />
+      <attribute name="glTransmission" value="%(gltransmission)s" />
       <reference name="strainOfOrigin" ref_id="%(strainid)s" />
+      <collection name="mutations">%(mutations)s</collection>
       %(featureRef)s</item>
     '''
 
+    def dumpMutationVocab(self):
+        q = self.constructQuery('''
+	    SELECT t._term_key, t.term
+	    FROM VOC_Term t
+	    WHERE t._vocab_key = %(ALLELE_MUTATION_VKEY)d
+	    ORDER BY t.term
+	    ''')
+	tmplt = '''
+	    <item class="AlleleMolecularMutation" id="%(id)s" >
+	        <attribute name="name" value="%(term)s" />
+		</item>
+	    '''
+	for r in self.context.sql(q):
+	    r['id'] = self.context.makeGlobalKey('AlleleMolecularMutation', r['_term_key'])
+	    self.writeItem(r,tmplt)
+
+    def loadAllele2MutationMap(self):
+	self.ak2mk = {}
+	q  = '''
+	    SELECT _allele_key, _mutation_key
+	    FROM ALL_Allele_Mutation
+	    '''
+	for r in self.context.sql(q):
+	    self.ak2mk.setdefault(r['_allele_key'],[]).append(r['_mutation_key'])
+
+    def preDump(self):
+	self.dumpMutationVocab()
+	self.loadAllele2MutationMap()
+
     def processRecord(self, r):
-	r['id'] = self.context.makeItemId('Allele', r['_allele_key'])
+	ak = r['_allele_key']
+	r['id'] = self.context.makeItemId('Allele', ak)
 	r['strainid'] = self.context.makeItemRef('Strain', r['_strain_key'])
 	self.quoteFields(r, ['symbol','name'])
 	mk = r['_marker_key']
@@ -48,6 +88,7 @@ class AlleleDumper(AbstractItemDumper):
 	r['organism'] = self.context.makeItemRef('Organism', 1) # mouse
         dsid = DataSetDumper(self.context).dataSet(name="Mouse Allele Catalog from MGI")
 	r['dataSets'] = '<reference ref_id="%s"/>'%dsid
+	r['mutations'] = ''.join(['<reference ref_id="%s" />'%x for x in self.ak2mk.get(ak,[])])
 	return r
 
     def postDump(self):

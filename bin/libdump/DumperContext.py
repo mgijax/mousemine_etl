@@ -49,6 +49,9 @@ class DumperContext:
 	    'PUBMED_LDBKEY' : 29,
 	    'ENTREZ_LDBKEY' : 55,
 
+	    # VOC_Vocab keys
+	    'ALLELE_MUTATION_VKEY' : 36,
+
 	    # Coordinate maps
 	    'HUMAN_MAPKEY' : 47,
 
@@ -83,6 +86,7 @@ class DumperContext:
 	    'Author'			: 10013,
 	    'SOTerm'			: 10014,
 	    'SyntenicRegion'		: 10015,
+	    'AlleleMolecularMutation'	: 10016,
 	    })
 
 	# load MGI datadump timestamp from the database

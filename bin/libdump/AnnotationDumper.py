@@ -115,9 +115,13 @@ class AnnotationDumper(AbstractItemDumper):
         AbstractItemDumper.__init__(self,ctx)
 	self.atk2classes = { # FIXME. Hardcoded annottype data
 	# annottype_key : ( annotated obj type, voc term class, voc evidence class, evidence code class, species )
+	# Mouse marker-GO annotations
 	1000 : ('Marker', 'GOTerm','GOAnnotation','GOEvidence','GOEvidenceCode','Mouse'),
+	# Mouse genotype-MP annotations
 	1002 : ('Genotype', 'MPTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse'),
+	# Mouse genotype-OMIM annotations
 	1005 : ('Genotype', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse'),
+	# Human gene-OMIM annotations
 	1006 : ('Marker', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human'),
 	}
 	self.ANNOTTYPEKEYS = self.atk2classes.keys()
@@ -130,8 +134,8 @@ class AnnotationDumper(AbstractItemDumper):
 	# (Since ontologies are loaded seperately, here we need
 	# to just write out stubs for the OntologyTerm items.)
 	#
-	self.termsToWrite = set()
-	self.assignedkeys = {}	# identifier -> key
+	self.termsToWrite = set() # the terms we need to create stubs for
+	self.assignedkeys = {}	# identifier -> key (eg: 'GO:123456' -> '10013_1001')
 	self.omimRemap = {}	# OMIM id -> MeSH id
 	if hasattr(self.context, 'moshfile'):
 	    mfile = os.path.abspath(os.path.join(os.getcwd(),self.context.moshfile))
