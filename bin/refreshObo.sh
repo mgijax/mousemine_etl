@@ -16,7 +16,7 @@ XDIR=$BASEDIR/resources
 
 # MOSH
 
-curl https://gillnet.mdibl.org/~twiegers/mgi/mgiMEDIC.obo.gz | zcat > $ODIR/MOSH.obo
+curl https://gillnet.mdibl.org/~twiegers/mgi/mgiMEDIC.obo.gz | zcat > $ODIR/MEDIC.obo
 if [ $? -ne 0 ] 
 then
     exit $? 

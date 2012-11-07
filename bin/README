@@ -1,9 +1,8 @@
 refreshAll.sh
 
-    -> refreshObo.sh -> ReMOSH.py
+    -> refreshObo.sh 
 	Refreshes ontology files. (GO, MP, MOSH). Downloads obo files for GO and MP.
-	Downloads CTD's version of MOSH and runs ReMOSH.py over it, which converts it into
-	what we need.
+	Downloads CTD's version of MEDIC.obo.
 
     -> refreshItems.sh -> dumpMgiItemXml.py
     	The main part. Dumps References, Features, Alleles, etc., etc., from MGI in
