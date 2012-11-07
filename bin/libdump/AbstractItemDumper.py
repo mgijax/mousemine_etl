@@ -13,9 +13,7 @@ class AbstractItemDumper:
 	if s is None:
 	    return None
 	s = str(s)
-        #return s.replace('&', '&amp;').replace('<', '&lt;').replace('"', '&quot;')
-	# double quote "<" characters until Intermine display bug is fixed.
-        return s.replace('&', '&amp;').replace('<', '&amp;lt;').replace('"', '&quot;')
+        return s.replace('&', '&amp;').replace('<', '&lt;').replace('"', '&quot;')
 
     def quoteFields(self, record, fields):
 	if type(fields) is types.StringType:

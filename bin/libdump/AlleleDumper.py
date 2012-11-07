@@ -3,8 +3,16 @@ from DataSourceDumper import DataSetDumper
 
 class AlleleDumper(AbstractItemDumper):
     QTMPLT = '''
-    SELECT a._allele_key, a.symbol, a.name, a._marker_key, ac.accid,
-        a.iswildtype, a.isextinct, a.ismixed,
+    SELECT 
+        a._allele_key, 
+	a.symbol, 
+	a.name, 
+	m.name AS mname, 
+	a._marker_key, 
+	ac.accid,
+        a.iswildtype, 
+	a.isextinct, 
+	a.ismixed,
         t1.term AS alleletype, 
         t2.term AS inheritanceMode,
         t3.term AS gltransmission,
@@ -61,6 +69,8 @@ class AlleleDumper(AbstractItemDumper):
     def processRecord(self, r):
 	ak = r['_allele_key']
 	r['id'] = self.context.makeItemId('Allele', ak)
+	if r['mname']:
+	    r['name'] = r['mname'] + "; " + r['name']
 	r['strainid'] = self.context.makeItemRef('Strain', r['_strain_key'])
 	self.quoteFields(r, ['symbol','name'])
 	mk = r['_marker_key']
