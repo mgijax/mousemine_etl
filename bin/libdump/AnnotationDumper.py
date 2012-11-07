@@ -137,8 +137,8 @@ class AnnotationDumper(AbstractItemDumper):
 	self.termsToWrite = set() # the terms we need to create stubs for
 	self.assignedkeys = {}	# identifier -> key (eg: 'GO:123456' -> '10013_1001')
 	self.omimRemap = {}	# OMIM id -> MeSH id
-	if hasattr(self.context, 'moshfile'):
-	    mfile = os.path.abspath(os.path.join(os.getcwd(),self.context.moshfile))
+	if hasattr(self.context, 'medicfile'):
+	    mfile = os.path.abspath(os.path.join(os.getcwd(),self.context.medicfile))
 	    self.loadOmimMappings(mfile)
 	self.writeDataSets()
 
@@ -149,7 +149,7 @@ class AnnotationDumper(AbstractItemDumper):
 	    dsname = '%s to %s %s Annotations from MGI' % (atinfo[1],atinfo[5],atinfo[0])
 	    self.atk2dsid[atk] = dsd.dataSet(name=dsname)
     #
-    # Reads the MOSH ontology file to build a mapping from
+    # Reads the MEDIC ontology file to build a mapping from
     # OMIM id -> MeSH id (for OMIM terms that are merged)
     #
     def loadOmimMappings(self, file):
@@ -179,7 +179,7 @@ class AnnotationDumper(AbstractItemDumper):
 	    identifier = r['identifier']
 	    tk = r['_term_key']
 	    if oclass == 'DiseaseTerm':
-		# remap an annotation to an OMIM id to the appropriate MOSH id
+		# remap an annotation to an OMIM id to the appropriate MEDIC id
 		omimid = "OMIM:"+identifier
 	        identifier = self.omimRemap.get(omimid,None)
 		if identifier is None:
