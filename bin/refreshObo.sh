@@ -14,8 +14,8 @@ TDIR=$BASEDIR/tmp
 # Extras/resources directory
 XDIR=$BASEDIR/resources
 
-# MOSH
 
+# MEDIC
 curl https://gillnet.mdibl.org/~twiegers/mgi/mgiMEDIC.obo.gz | zcat > $ODIR/MEDIC.obo
 if [ $? -ne 0 ] 
 then
@@ -30,12 +30,14 @@ then
     exit $?
 fi
 
+
 # MP
 curl -o $ODIR/MammalianPhenotype.obo ftp://ftp.informatics.jax.org/pub/reports/MPheno_OBO.ontology
 if [ $? -ne 0 ] 
 then
     exit $? 
 fi
+
 
 # Adult Mouse Anatomy
 #curl -o $ODIR/AdultMouseAnatomy.obo ftp://ftp.informatics.jax.org/pub/reports/adult_mouse_anatomy.obo
