@@ -208,7 +208,7 @@ class AnnotationDumper(AbstractItemDumper):
 	    r['class'] = aeclass
 	    r['code'] = self.context.makeItemRef('OntologyAnnotationEvidenceCode', r['_evidenceterm_key'])
 	    r['annotation'] = self.context.makeItemRef('OntologyAnnotation', r['_annot_key'])
-	    r['inferredfrom'] = r['inferredfrom'] and ('<attribute name="inferredFrom" value="%(inferredfrom)s"/>'%r) or ''
+	    r['inferredfrom'] = r['inferredfrom'] and ('<attribute name="withText" value="%(inferredfrom)s"/>'%r) or ''
 	    r['publications'] = '<reference ref_id="%s"/>' % \
 	        self.context.makeItemRef('Reference', r['_refs_key'])
 	    return r
