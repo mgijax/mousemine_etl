@@ -1,5 +1,7 @@
 from AbstractItemDumper import *
 from DataSourceDumper import DataSetDumper
+from NoteUtils import iterNotes
+import re
 
 class AlleleDumper(AbstractItemDumper):
     QTMPLT = '''
@@ -49,7 +51,10 @@ class AlleleDumper(AbstractItemDumper):
       <attribute name="glTransmission" value="%(gltransmission)s" />
       <reference name="strainOfOrigin" ref_id="%(strainid)s" />
       <collection name="mutations">%(mutations)s</collection>
-      %(featureRef)s</item>
+      <attribute name="isRecombinase" value="%(isRecombinase)s" />
+      %(description)s %(drivenBy)s %(inducedWith)s 
+      %(featureRef)s
+      </item>
     '''
 
     def loadAllele2MutationMap(self):
@@ -62,9 +67,35 @@ class AlleleDumper(AbstractItemDumper):
 	    iref = self.context.makeItemRef('AlleleMolecularMutation',r['_mutation_key'])
 	    self.ak2mk.setdefault(r['_allele_key'],[]).append(iref)
 
+    def _loadNotes(self, _notetype_key, parser=None, ak2notes = None):
+	ak2notes = {} if ak2notes is None else ak2notes
+        for n in iterNotes(_notetype_key=_notetype_key):
+	    n['note'] = parser(n['note']) if parser else n['note'];
+	    k = n['_object_key']
+	    if k in ak2notes:
+	        ak2notes[k] += ' ' + self.quote(n['note'])
+	    else:
+	        ak2notes[k] = self.quote(n['note'])
+	return ak2notes
+
+    def loadNotes(self):
+	a_re = re.compile( r'</?sup>', re.IGNORECASE )
+	i_re = re.compile(r'([Ii]nduc(ed|ibl[ey]) +(by|with) +|-induc(ed|ible)|\. *$)')
+	def f(m):
+	    return  "<" if len(m.group(0))==5 else ">"
+	def parseAlleleNote(n):
+	    return a_re.sub(f, n)
+	def parseInducibleNote(n):
+	    return i_re.sub('',n)
+        self.ak2generalnotes = self._loadNotes( 1020, parseAlleleNote, {} )
+	self.ak2generalnotes = self._loadNotes( 1021, parseAlleleNote, self.ak2generalnotes )
+	self.ak2drivernotes = self._loadNotes( 1034 )
+	self.ak2induciblenotes = self._loadNotes( 1032, parseInducibleNote, {} )
+
     def preDump(self):
 	AlleleMutationDumper(self.context).dump()
 	self.loadAllele2MutationMap()
+	self.loadNotes()
 
     def processRecord(self, r):
 	ak = r['_allele_key']
@@ -79,15 +110,28 @@ class AlleleDumper(AbstractItemDumper):
 	else:
 	    mref = self.context.makeItemRef('Marker', mk)
 	    r['featureRef'] = '<reference name="feature" ref_id="%s" />' % mref
-	r['iswildtype'] = r['iswildtype'] == 1 and "true" or "false"
+	r['iswildtype'] = "true" if (r['iswildtype'] == 1) else "false"
 	r['organism'] = self.context.makeItemRef('Organism', 1) # mouse
         dsid = DataSetDumper(self.context).dataSet(name="Mouse Allele Catalog from MGI")
 	r['dataSets'] = '<reference ref_id="%s"/>'%dsid
 	r['mutations'] = ''.join(['<reference ref_id="%s" />'%x for x in self.ak2mk.get(ak,[])])
+
+	r['isRecombinase'] = "true" if self.ak2drivernotes.has_key(ak) else "false"
+
+	def setNote(r, ak, dct, aname):
+	    n = dct.get(ak,None)
+	    r[aname] = '<attribute name="%s" value="%s" />' % (aname,self.quote(n)) if n else ''
+
+	setNote(r, ak, self.ak2generalnotes, 'description')
+	setNote(r, ak, self.ak2drivernotes, 'drivenBy')
+	setNote(r, ak, self.ak2induciblenotes, 'inducedWith')
+
 	return r
 
     def postDump(self):
         self.writeCount += AlleleSynonymDumper(self.context).dump(fname="Synonym.xml")
+	self.ak2generalnotes = None
+	self.ak2mk = None
 
 class AlleleMutationDumper(AbstractItemDumper):
     QTMPLT = '''

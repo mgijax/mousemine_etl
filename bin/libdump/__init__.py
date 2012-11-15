@@ -14,6 +14,7 @@ from PublicationDumper	import PublicationDumper
 from StrainDumper	import StrainDumper
 from SynonymDumper	import SynonymDumper
 from SyntenyDumper	import SyntenyDumper
+import NoteUtils
 
 def installMethods(module):
     import types
