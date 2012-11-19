@@ -8,10 +8,6 @@ refreshAll.sh
     	The main part. Dumps References, Features, Alleles, etc., etc., from MGI in
 	ItemXml format. Should run after refreshObo.sh.
 
-    -> refreshItemsSample.sh -> dumpMgiItemXml.py, Sampler.py
-	Same as refreshItems.py, but generates only a small sample (by virtue of loading 
-	Sampler.py).
-
 
 idChecker.py
     Checks for id integrity among a set of ItemXML files. 
