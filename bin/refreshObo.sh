@@ -22,6 +22,8 @@ then
     exit $? 
 fi
 
+python $BASEDIR/bin/libdump/OmimAdder.py $ODIR/MEDIC.obo $ODIR/MEDIC_plusMgiOmim.obo
+
 
 # GO
 curl -o $ODIR/GeneOntology.obo http://www.geneontology.org/ontology/obo_format_1_0/gene_ontology.1_0.obo
