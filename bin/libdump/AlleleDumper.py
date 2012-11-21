@@ -52,7 +52,7 @@ class AlleleDumper(AbstractItemDumper):
       <reference name="strainOfOrigin" ref_id="%(strainid)s" />
       <collection name="mutations">%(mutations)s</collection>
       <attribute name="isRecombinase" value="%(isRecombinase)s" />
-      %(description)s %(drivenBy)s %(inducedWith)s 
+      %(description)s %(molecularNote)s %(drivenBy)s %(inducedWith)s 
       %(featureRef)s
       </item>
     '''
@@ -87,11 +87,6 @@ class AlleleDumper(AbstractItemDumper):
 	self.ak2drivernotes = self._loadNotes( 1034, self.quote )
 	self.ak2induciblenotes = self._loadNotes( 1032, parseInducibleNote )
 
-	# for now, we're concatenating molecular notes to the end of the general notes
-	for (ak, mn) in self.ak2molecularnotes.iteritems():
-	    gn = self.ak2generalnotes.get(ak, '')
-	    self.ak2generalnotes[ak] = gn + ' ' + mn
-
     def preDump(self):
 	AlleleMutationDumper(self.context).dump()
 	self.loadAllele2MutationMap()
@@ -122,6 +117,7 @@ class AlleleDumper(AbstractItemDumper):
 	    r[aname] = '<attribute name="%s" value="%s" />' % (aname,n) if n else ''
 
 	setNote(r, ak, self.ak2generalnotes, 'description')
+	setNote(r, ak, self.ak2molecularnotes, 'molecularNote')
 	setNote(r, ak, self.ak2drivernotes, 'drivenBy')
 	setNote(r, ak, self.ak2induciblenotes, 'inducedWith')
 
