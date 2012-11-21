@@ -1,7 +1,9 @@
 from common import *
 from DumperContext import DumperContext
+import re
 
 class AbstractItemDumper:
+    SUPER_RE = re.compile(r'<([^>]+)>')
     def __init__(self, context):
 	self.context = context
 	self.dumpArgs = None
@@ -9,17 +11,22 @@ class AbstractItemDumper:
 	self.dotEvery = 1000
 	self.dotsPerLine = 50
 
+    def superscript(self, s):
+        return self.SUPER_RE.sub(r'<sup>\1</sup>',s)
+
+    def quoteLT(self, s):
+	"""
+	Quotes the "<" characters in a string.
+	"""
+        return None if s is None else str(s).replace('<', '&lt;')
+        
     def quote(self, s):
+        """
+	Quotes a string, s, so that it is safe to use as a value for an xml attribute.
+	"""
 	if s is None:
 	    return None
-	s = str(s)
-        return s.replace('&', '&amp;').replace('<', '&lt;').replace('"', '&quot;')
-
-    def quoteFields(self, record, fields):
-	if type(fields) is types.StringType:
-	    fields = [fields]
-        for f in fields:
-	    record[f] = self.quote(record[f])
+	return str(s).replace('&','&amp;').replace('<', '&lt;').replace('"','&quot;')
 
     def makeRefsFromKeys(self, keys, typename):
 	refs = []

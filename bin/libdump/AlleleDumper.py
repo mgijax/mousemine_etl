@@ -67,30 +67,30 @@ class AlleleDumper(AbstractItemDumper):
 	    iref = self.context.makeItemRef('AlleleMolecularMutation',r['_mutation_key'])
 	    self.ak2mk.setdefault(r['_allele_key'],[]).append(iref)
 
-    def _loadNotes(self, _notetype_key, parser=None, ak2notes = None):
-	ak2notes = {} if ak2notes is None else ak2notes
+    def _loadNotes(self, _notetype_key, parser=None):
+	ak2notes = {}
         for n in iterNotes(_notetype_key=_notetype_key):
-	    n['note'] = parser(n['note']) if parser else n['note'];
+	    n['note'] = parser(n['note']) if parser else n['note']
 	    k = n['_object_key']
 	    if k in ak2notes:
-	        ak2notes[k] += ' ' + self.quote(n['note'])
+	        ak2notes[k] += ' ' + n['note']
 	    else:
-	        ak2notes[k] = self.quote(n['note'])
+	        ak2notes[k] = n['note']
 	return ak2notes
 
     def loadNotes(self):
-	a_re = re.compile( r'</?sup>', re.IGNORECASE )
 	i_re = re.compile(r'([Ii]nduc(ed|ibl[ey]) +(by|with) +|-induc(ed|ible)|\. *$)')
-	def f(m):
-	    return  "<" if len(m.group(0))==5 else ">"
-	def parseAlleleNote(n):
-	    return a_re.sub(f, n)
 	def parseInducibleNote(n):
-	    return i_re.sub('',n)
-        self.ak2generalnotes = self._loadNotes( 1020, parseAlleleNote, {} )
-	self.ak2generalnotes = self._loadNotes( 1021, parseAlleleNote, self.ak2generalnotes )
-	self.ak2drivernotes = self._loadNotes( 1034 )
-	self.ak2induciblenotes = self._loadNotes( 1032, parseInducibleNote, {} )
+	    return self.quote(i_re.sub('',n))
+        self.ak2generalnotes = self._loadNotes( 1020, self.quote )
+	self.ak2molecularnotes = self._loadNotes( 1021, self.quote )
+	self.ak2drivernotes = self._loadNotes( 1034, self.quote )
+	self.ak2induciblenotes = self._loadNotes( 1032, parseInducibleNote )
+
+	# for now, we're concatenating molecular notes to the end of the general notes
+	for (ak, mn) in self.ak2molecularnotes.iteritems():
+	    gn = self.ak2generalnotes.get(ak, '')
+	    self.ak2generalnotes[ak] = gn + ' ' + mn
 
     def preDump(self):
 	AlleleMutationDumper(self.context).dump()
@@ -103,7 +103,6 @@ class AlleleDumper(AbstractItemDumper):
 	if r['mname']:
 	    r['name'] = r['mname'] + "; " + r['name']
 	r['strainid'] = self.context.makeItemRef('Strain', r['_strain_key'])
-	self.quoteFields(r, ['symbol','name'])
 	mk = r['_marker_key']
 	if mk is None:
 	    r['featureRef'] = ''
@@ -120,11 +119,14 @@ class AlleleDumper(AbstractItemDumper):
 
 	def setNote(r, ak, dct, aname):
 	    n = dct.get(ak,None)
-	    r[aname] = '<attribute name="%s" value="%s" />' % (aname,self.quote(n)) if n else ''
+	    r[aname] = '<attribute name="%s" value="%s" />' % (aname,n) if n else ''
 
 	setNote(r, ak, self.ak2generalnotes, 'description')
 	setNote(r, ak, self.ak2drivernotes, 'drivenBy')
 	setNote(r, ak, self.ak2induciblenotes, 'inducedWith')
+
+	r['symbol'] = self.quote(r['symbol'])
+	r['name']   = self.quote(r['name'])
 
 	return r
 

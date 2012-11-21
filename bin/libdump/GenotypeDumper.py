@@ -2,15 +2,21 @@ from AbstractItemDumper import *
 
 class GenotypeDumper(AbstractItemDumper):
     QTMPLT= '''
-    SELECT g._genotype_key, g._strain_key, s.strain, g.isconditional, g.note, t.term
-    FROM GXD_Genotype g, VOC_Term t, PRB_Strain s
+    SELECT g._genotype_key, g._strain_key, s.strain, g.isconditional, g.note, t.term, a.accid
+    FROM GXD_Genotype g, VOC_Term t, PRB_Strain s, ACC_Accession a
     WHERE g._existsas_key = t._term_key
     AND g._strain_key = s._strain_key
+    AND g._genotype_key = a._object_key
+    AND a._logicaldb_key = %(MGI_LDBKEY)s
+    AND a._mgitype_key = %(GENOTYPE_TYPEKEY)s
+    AND a.preferred = 1
     %(LIMIT_CLAUSE)s
     '''
     ITMPLT = '''
     <item class="Genotype" id="%(id)s" >
-      <attribute name="symbol" value="%(symbol)s" />
+      <attribute name="primaryIdentifier" value="%(accid)s" />
+      %(symbol)s
+      <attribute name="name" value="%(name)s" />
       <reference name="organism" ref_id="%(organism)s" />
       <reference name="background" ref_id="%(backgroundRef)s" />
       <attribute name="isConditional" value="%(isconditional)s" />
@@ -29,7 +35,8 @@ class GenotypeDumper(AbstractItemDumper):
 
 	alleles = " ".join(map( lambda x: '%s/%s'%(x[0],x[1]), self.gapd.gk2pairs.get(gk,[])))
 
-	r['symbol'] = self.quote(r['strain'] + " " + alleles)
+	r['symbol'] = '<attribute name="symbol" value="%s" />'%self.quote(alleles) if alleles else ''
+	r['name'] = self.quote(alleles + " [background:] " + r['strain'])
 	r['backgroundRef'] = self.context.makeItemRef('Strain', r['_strain_key'])
 	r['isconditional'] = r['isconditional'] and "true" or "false"
 

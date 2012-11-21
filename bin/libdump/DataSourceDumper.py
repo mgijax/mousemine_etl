@@ -45,7 +45,8 @@ class DataSourceDumper(AbstractItemDumper):
 	else:
 	    r['url'] = '<attribute name="url" value="%s" />' % self.quote(r['url'])
 	self.context.dataSourceByName[r['name']] = r['id']
-	self.quoteFields(r, ['name','description'])
+	r['name'] = self.quote(r['name'])
+	r['description'] = self.quote(r['description'])
 	return r
 
 class DataSetDumper(AbstractItemDumper):

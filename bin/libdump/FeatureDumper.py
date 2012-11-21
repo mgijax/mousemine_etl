@@ -119,7 +119,8 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    r['soterm'] = ''
 	r['publications'] = ''.join(self.mk2refs.get(r['_marker_key'],[]))
 	r['dataSets'] = self.getDataSetRef()
-	self.quoteFields(r, ['symbol','name'])
+	r['symbol'] = self.quote(r['symbol'])
+	r['name'] = self.quote(r['name'])
 	return r
 
 class MouseFeatureDumper(AbstractFeatureDumper):

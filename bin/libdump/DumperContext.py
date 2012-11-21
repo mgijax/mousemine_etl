@@ -37,6 +37,7 @@ class DumperContext:
 	    'TERM_TYPEKEY' : 13,
 	    'ORGANISM_TYPEKEY' : 20,
 	    'CHROMOSOME_TYPEKEY' : 27,
+	    'GENOTYPE_TYPEKEY' : 12,
 
 	    # Organism keys
 	    'MOUSE_ORGANISMKEY' : 1,
