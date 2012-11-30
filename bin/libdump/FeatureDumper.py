@@ -25,6 +25,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
     ITMPLT = '''
     <item class="%(featureClass)s" id="%(id)s" >
       <attribute name="primaryIdentifier" value="%(primaryidentifier)s" />
+      <attribute name="mgiType" value="%(mcvType)s" />
       %(soterm)s
       <attribute name="symbol" value="%(symbol)s" />
       <attribute name="name" value="%(name)s" />
@@ -79,8 +80,11 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    n = '<attribute name="description" value="%s" />' % self.quote(n)
 	return n
 
-    def getClass(self,r):
-        pass	# override me
+    def getClass(self, r):
+	return MCV2ClassName[self.getMcvType(r)]
+
+    def getMcvType(self, r):
+        pass	#override me
 
     def getLocationRef(self, r):
         return ""	# override me
@@ -106,6 +110,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    return None
 	r['id'] = self.context.makeItemId('Marker', r['_marker_key'])
 	r['featureClass'] = fclass
+	r['mcvType'] = self.getMcvType(r)
 	r['description'] = self.getDescription(r)
 	r['ncbiGeneNumber'] = self.getNcbiGeneNumberAttribute(r)
 	r['locationRef'] = self.getLocationRef(r)
@@ -148,8 +153,8 @@ class MouseFeatureDumper(AbstractFeatureDumper):
     %(LIMIT_CLAUSE)s
     '''
 
-    def getClass(self, r):
-	return MCV2ClassName[r['mcvtype']]
+    def getMcvType(self, r):
+        return r['mcvtype']
 
     def getLocationRef(self, r):
 	if r['startcoordinate'] is not None:
@@ -202,8 +207,8 @@ class NonMouseFeatureDumper(AbstractFeatureDumper):
         else:
             return ''
 
-    def getClass(self, r):
-	return MCV2ClassName[MGIType2MCVType[r['mgitype']]]
+    def getMcvType(self, r):
+        return MGIType2MCVType[r['mgitype']]
 
     def getDataSetRef(self):
         dsid = DataSetDumper(self.context).dataSet(

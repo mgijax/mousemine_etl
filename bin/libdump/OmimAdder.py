@@ -34,7 +34,7 @@ class OmimAdder:
         OboParser(stanzaProc).parseFile(file)
 
 
-    def loadOminIdsFromMgi(self):
+    def loadOmimIdsFromMgi(self):
         query = '''
                 SELECT t.term, a.accid
                 FROM VOC_Term t, ACC_Accession a
@@ -69,7 +69,7 @@ class OmimAdder:
 
     def main(self, obo_file, output_file):
         self.loadOmimIdsFromMedic(obo_file)
-        self.loadOminIdsFromMgi()
+        self.loadOmimIdsFromMgi()
 
         missing_omim_ids = self.omim_from_mgi - self.omim_from_medic
         self.appendStanzas(missing_omim_ids)
