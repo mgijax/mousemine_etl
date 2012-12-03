@@ -22,7 +22,7 @@ then
     exit $? 
 fi
 
-python $BASEDIR/bin/libdump/OmimAdder.py $ODIR/MEDIC.obo $ODIR/MEDIC_plusMgiOmim.obo
+python $BASEDIR/bin/libdump/MedicConflater.py $ODIR/MEDIC.obo $ODIR/MEDIC_conflated.obo
 
 
 # GO
