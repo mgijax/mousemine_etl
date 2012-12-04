@@ -18,8 +18,8 @@ USER="mgd_public"
 PASSWORD="mgdpub"
 
 #
-def connect(host=HOST,database=DATABASE, user=USER, password=PASSWORD):
-    con = psycopg2.connect( host=host, database=database, user=user, password=password )
+def connect(host=None,database=None, user=None, password=None):
+    con = psycopg2.connect( host=host or HOST, database=database or DATABASE, user=user or USER, password=password or PASSWORD )
     return con
 
 #
