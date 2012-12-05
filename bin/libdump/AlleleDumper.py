@@ -49,6 +49,7 @@ class AlleleDumper(AbstractItemDumper):
       <attribute name="alleleType" value="%(alleletype)s" />
       <attribute name="inheritanceMode" value="%(inheritancemode)s" />
       <attribute name="glTransmission" value="%(gltransmission)s" />
+      <collection name="publications">%(publications)s</collection>
       <reference name="strainOfOrigin" ref_id="%(strainid)s" />
       <collection name="mutations">%(mutations)s</collection>
       <attribute name="isRecombinase" value="%(isRecombinase)s" />
@@ -87,10 +88,23 @@ class AlleleDumper(AbstractItemDumper):
 	self.ak2drivernotes = self._loadNotes( 1034, self.quote )
 	self.ak2induciblenotes = self._loadNotes( 1032, parseInducibleNote )
 
+    def loadAllelePublications(self):
+        self.pub_refs = {}
+        q = '''
+            SELECT distinct _refs_key, _object_key
+            FROM MGI_Reference_Assoc
+            WHERE _mgitype_key = 11
+            '''
+        for r in self.context.sql(q):
+            self.pub_refs.setdefault(r['_object_key'], []).append(self.context.makeItemRef('Reference', r['_refs_key']))
+
+
     def preDump(self):
 	AlleleMutationDumper(self.context).dump()
 	self.loadAllele2MutationMap()
 	self.loadNotes()
+        self.loadAllelePublications()
+
 
     def processRecord(self, r):
 	ak = r['_allele_key']
@@ -109,6 +123,7 @@ class AlleleDumper(AbstractItemDumper):
         dsid = DataSetDumper(self.context).dataSet(name="Mouse Allele Catalog from MGI")
 	r['dataSets'] = '<reference ref_id="%s"/>'%dsid
 	r['mutations'] = ''.join(['<reference ref_id="%s" />'%x for x in self.ak2mk.get(ak,[])])
+        r['publications'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.pub_refs.get(ak,[])])
 
 	r['isRecombinase'] = "true" if self.ak2drivernotes.has_key(ak) else "false"
 
