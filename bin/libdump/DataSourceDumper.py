@@ -44,6 +44,7 @@ class DataSourceDumper(AbstractItemDumper):
 	    r['url'] = ''
 	else:
 	    r['url'] = '<attribute name="url" value="%s" />' % self.quote(r['url'])
+        r['url'] = r['url'].replace('@@@@','&lt;&lt;attributeValue&gt;&gt;')
 	self.context.dataSourceByName[r['name']] = r['id']
 	r['name'] = self.quote(r['name'])
 	r['description'] = self.quote(r['description'])
