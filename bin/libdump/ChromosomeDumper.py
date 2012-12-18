@@ -2,13 +2,13 @@ from AbstractItemDumper import *
 
 class ChromosomeDumper(AbstractItemDumper):
     QTMPLT = '''
-    SELECT c._organism_key, c.genomicchromosome as chromosome, o.commonname, mc._chromosome_key, max(c.endcoordinate) AS length
+    SELECT c._organism_key, c.chromosome, o.commonname, mc._chromosome_key, max(c.endcoordinate) AS length
     FROM mrk_location_cache c, mgi_organism o, mrk_chromosome mc
     WHERE c._organism_key = o._organism_key
     AND c._organism_key = mc._organism_key
-    AND c.genomicchromosome = mc.chromosome
-    GROUP BY c._organism_key, c.genomicchromosome, o.commonname, mc._chromosome_key
-    ORDER BY c._organism_key, c.genomicchromosome
+    AND c.chromosome = mc.chromosome
+    GROUP BY c._organism_key, c.chromosome, o.commonname, mc._chromosome_key
+    ORDER BY c._organism_key, c.chromosome
     '''
     ITMPLT = '''
     <item class="Chromosome" id="%(id)s" >

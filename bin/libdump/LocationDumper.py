@@ -3,9 +3,9 @@ from AbstractItemDumper import *
 
 class LocationDumper(AbstractItemDumper):
     QTMPLT = '''
-    SELECT c._marker_key, mc._chromosome_key, c.genomicchromosome as chromosome, c.startcoordinate, c.endcoordinate, c.strand
+    SELECT c._marker_key, mc._chromosome_key, c.chromosome, c.startcoordinate, c.endcoordinate, c.strand
     FROM MRK_Location_Cache c, MRK_Chromosome mc
-    WHERE c.genomicchromosome = mc.chromosome
+    WHERE c.chromosome = mc.chromosome
     AND c._organism_key = mc._organism_key
     AND c.startCoordinate is not null
     %(LIMIT_CLAUSE)s
@@ -74,7 +74,7 @@ class MouseLocationDumper(AbstractLocationDumper):
 	   c.startcoordinate, c.endcoordinate, c.strand
     FROM MRK_Location_Cache c, MRK_Chromosome mc, MRK_Marker m, ACC_Accession a
     WHERE  c.startcoordinate is not null
-    AND c.genomicchromosome = mc.chromosome
+    AND c.chromosome = mc.chromosome
     AND mc._organism_key = 1
     AND c._marker_key = m._marker_key
     AND m._marker_status_key = %(OFFICIAL_STATUS)d

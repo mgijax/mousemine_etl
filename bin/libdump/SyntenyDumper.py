@@ -100,7 +100,7 @@ class SyntenyDumper(AbstractItemDumper):
     AND m1._organism_key = 1
     AND m1._marker_key = mlc._marker_key
     AND mlc.startCoordinate is not null
-    AND mlc.genomicchromosome = mch.chromosome
+    AND mlc.chromosome = mch.chromosome
     AND mch._organism_key = 1
     AND hh2._homology_key = hm2._homology_key
     AND hm2._marker_key = m2._marker_key 
