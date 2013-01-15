@@ -58,6 +58,7 @@ import urllib
 from libdump import mgiadhoc as db
 
 from AbstractItemDumper import *
+from DataSourceDumper import DataSetDumper
 
 #
 MTAXID = 10090
@@ -74,41 +75,43 @@ class SyntenyDumper(AbstractItemDumper):
     SELECT distinct
 	m1.symbol AS msymbol, 
 	mch._chromosome_key AS mchr,
-	cast(mlc.startCoordinate AS int) AS mstart,
-	cast(mlc.endCoordinate AS int) AS mend,
-	mlc.strand AS mstrand,
+	cast(mlc1.startCoordinate AS int) AS mstart,
+	cast(mlc1.endCoordinate AS int) AS mend,
+	mlc1.strand AS mstrand,
 	m2.symbol AS hsymbol,
 	hch._chromosome_key AS hchr,
-	cast(mf.startCoordinate AS int) AS hstart,
-	cast(mf.endCoordinate AS int) AS hend,
-	mf.strand AS hstrand
+	cast(mlc2.startCoordinate AS int) AS hstart,
+	cast(mlc2.endCoordinate AS int) AS hend,
+	mlc2.strand AS hstrand
     FROM 
 	hmd_homology hh1, 
 	hmd_homology_marker hm1,
 	mrk_marker m1, 
-	mrk_location_cache mlc,
+	mrk_location_cache mlc1,
 	mrk_chromosome mch,
+
 	hmd_homology hh2, 
 	hmd_homology_marker hm2,
 	mrk_marker m2,
-	map_coord_feature mf,
-	map_coordinate mc,
+	mrk_location_cache mlc2,
 	mrk_chromosome hch
     WHERE hh1._class_key = hh2._class_key
     AND  hh1._homology_key = hm1._homology_key
     AND hm1._marker_key = m1._marker_key
     AND m1._organism_key = 1
-    AND m1._marker_key = mlc._marker_key
-    AND mlc.startCoordinate is not null
-    AND mlc.chromosome = mch.chromosome
+    AND m1._marker_key = mlc1._marker_key
+    AND mlc1.startCoordinate is not null
+    AND mlc1.genomicchromosome = mch.chromosome
     AND mch._organism_key = 1
+
     AND hh2._homology_key = hm2._homology_key
     AND hm2._marker_key = m2._marker_key 
     AND m2._organism_key = 2
-    AND m2._marker_key = mf._object_key
-    AND mf._map_key = mc._map_key
-    AND mc._collection_key = 52		/* whatever map key is for the human map in MGI */
-    AND mc._object_key = hch._chromosome_key
+    AND m2._marker_key = mlc2._marker_key
+    AND mlc2.startCoordinate is not null
+    AND mlc2.genomicchromosome = hch.chromosome
+    AND hch._organism_key = 2
+
     ORDER BY mchr, mstart
     %(LIMIT_CLAUSE)s
     '''
@@ -122,6 +125,7 @@ class SyntenyDumper(AbstractItemDumper):
 	  <reference name="chromosome" ref_id="%(chromosome)s" />
 	  <reference name="chromosomeLocation" ref_id="%(chromosomeLocation)s" />
 	  <reference name="partner" ref_id="%(partner)s" />
+	  <collection name="dataSets">%(dataSets)s</collection>
 	  </item>
     '''
 
@@ -317,6 +321,10 @@ class SyntenyDumper(AbstractItemDumper):
 	self.writeItem(hr, self.SYN_TMPLT)
 	self.writeItem(hl, self.LOC_TMPLT)
 
+    def getDataSetRef(self):
+        dsid = DataSetDumper(self.context).dataSet(name="Inferred Synteny Blocks from MGI")
+        return '<reference ref_id="%s"/>'%dsid
+
     def makeSyntenicRegion(self, org,chr,start,end,bname):
 	oid = self.context.makeItemRef('Organism', org)
 	cid = self.context.makeItemRef('Chromosome', chr)
@@ -331,6 +339,7 @@ class SyntenyDumper(AbstractItemDumper):
 	    'chromosome' : cid,
 	    'chromosomeLocation' : lid,
 	    'soref' : self.soref,
+	    'dataSets' : self.getDataSetRef(),
 	    }
 	l = {
 	    'id' : lid,
