@@ -151,7 +151,7 @@ class MouseFeatureDumper(AbstractFeatureDumper):
 	ACC_Accession a
     WHERE m._organism_key = 1
     AND m._marker_key = lc._marker_key
-    AND m._marker_status_key = %(OFFICIAL_STATUS)d
+    AND m._marker_status_key in (%(OFFICIAL_STATUS)d,%(INTERIM_STATUS)d)
     AND m._marker_key = c._marker_key
     AND c.qualifier = 'D'
     AND m.chromosome = mc.chromosome

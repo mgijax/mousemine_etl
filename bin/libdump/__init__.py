@@ -2,6 +2,7 @@ from DumperContext	import DumperContext
 
 from AlleleDumper	import AlleleDumper
 from AnnotationDumper	import AnnotationDumper
+from CellLineDumper	import CellLineDumper
 from ChromosomeDumper	import ChromosomeDumper
 from CrossReferenceDumper import CrossReferenceDumper
 from DataSourceDumper	import DataSourceDumper

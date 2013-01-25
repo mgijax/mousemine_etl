@@ -58,6 +58,8 @@ class DumperContext:
 
 	    # Nomen status values (from MRK_Status)
 	    'OFFICIAL_STATUS' : 1,
+	    'WITHDRAWN_STATUS': 2,
+	    'INTERIM_STATUS'  : 3,
 
 	    #
 	    'TAXAIDS' : COMMA.join(map(lambda o:"'%d'"%o, TAXAIDS)),
@@ -88,6 +90,8 @@ class DumperContext:
 	    'SOTerm'			: 10014,
 	    'SyntenicRegion'		: 10015,
 	    'AlleleMolecularMutation'	: 10016,
+	    'CellLine'			: 10017,
+	    'CellLineDerivation'	: 10018,
 	    })
 
 	# load MGI datadump timestamp from the database
