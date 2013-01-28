@@ -70,9 +70,11 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    from MRK_Notes n, MRK_Marker m
 	    where n._marker_key = m._marker_key
 	    and m._organism_key = 1
+	    order by n._marker_key, n.sequenceNum
 	    ''')
 	for r in self.context.sql(q):
-	    self.mk2description[r['_marker_key']] = r['note']
+	    mk = r['_marker_key']
+	    self.mk2description[mk] = self.mk2description.get(mk,'') + r['note']
 
     def getDescription(self, r):
         n = self.mk2description.get(r['_marker_key'], '')
