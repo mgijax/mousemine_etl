@@ -28,7 +28,6 @@ allDumpers = [
     (LocationDumper,		()),
     (SyntenyDumper,		()),
     (AlleleDumper,		()),
-    (OrthologyDumper,		()),
     (GenotypeDumper,		()),
     (AnnotationDumper,		()),
     (SynonymDumper,		()),
