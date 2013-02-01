@@ -70,9 +70,11 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    from MRK_Notes n, MRK_Marker m
 	    where n._marker_key = m._marker_key
 	    and m._organism_key = 1
+	    order by n._marker_key, n.sequenceNum
 	    ''')
 	for r in self.context.sql(q):
-	    self.mk2description[r['_marker_key']] = r['note']
+	    mk = r['_marker_key']
+	    self.mk2description[mk] = self.mk2description.get(mk,'') + r['note']
 
     def getDescription(self, r):
         n = self.mk2description.get(r['_marker_key'], '')
@@ -87,7 +89,14 @@ class AbstractFeatureDumper(AbstractItemDumper):
         pass	#override me
 
     def getLocationRef(self, r):
-        return ""	# override me
+	if r['startcoordinate'] is not None:
+	    # have to do this without checking - this ref is created *before* 
+	    # the location is.
+	    ref = self.context.makeGlobalKey('Location', r['_marker_key'])
+	    return '<reference name="chromosomeLocation" ref_id="%s" />' % ref
+	else:
+	    return ''
+
 
     def getDataSetRef(self):
 	return "" # override me
@@ -129,18 +138,22 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	return r
 
 class MouseFeatureDumper(AbstractFeatureDumper):
+    # Changed query 1/14/2013. No need for outer join to location cache table: every mouse marker
+    # has exactly one entry in mrk_location_cache.
+    # The join to mrk_chromosome uses the chromosome field in the marker table, which is the genetic
+    # chromosome. This is OK to leave as is.
     QTMPLT = '''
     SELECT m._organism_key, m._marker_key, m.symbol, m.name, mc._chromosome_key,
 	c.term AS mcvtype, a.accid AS primaryidentifier, lc.startcoordinate
     FROM 
-	MRK_Marker m LEFT OUTER JOIN 
-	MRK_Location_Cache lc 
-	    ON m._marker_key = lc._marker_key, 
+	MRK_Marker m,
+	MRK_Location_Cache lc,
 	MRK_MCV_Cache c, 
 	MRK_Chromosome mc, 
 	ACC_Accession a
     WHERE m._organism_key = 1
-    AND m._marker_status_key = %(OFFICIAL_STATUS)d
+    AND m._marker_key = lc._marker_key
+    AND m._marker_status_key in (%(OFFICIAL_STATUS)d,%(INTERIM_STATUS)d)
     AND m._marker_key = c._marker_key
     AND c.qualifier = 'D'
     AND m.chromosome = mc.chromosome
@@ -156,15 +169,6 @@ class MouseFeatureDumper(AbstractFeatureDumper):
     def getMcvType(self, r):
         return r['mcvtype']
 
-    def getLocationRef(self, r):
-	if r['startcoordinate'] is not None:
-	    # have to do this without checking - this ref is created *before* 
-	    # the location is.
-	    ref = self.context.makeGlobalKey('Location', r['_marker_key'])
-	    return '<reference name="chromosomeLocation" ref_id="%s" />' % ref
-	else:
-	    return ''
-
     def getDataSetRef(self):
         dsid = DataSetDumper(self.context).dataSet(name="Mouse Gene Catalog from MGI")
 	return '<reference ref_id="%s"/>'%dsid
@@ -172,10 +176,16 @@ class MouseFeatureDumper(AbstractFeatureDumper):
 class NonMouseFeatureDumper(AbstractFeatureDumper):
     QTMPLT = '''
     SELECT m._organism_key, m._marker_key, m.symbol, m.name, mc._chromosome_key,
-	t.name AS mgitype, a.accid AS primaryidentifier
-    FROM MRK_Marker m, MRK_Types t, MRK_Chromosome mc, ACC_Accession a
+	t.name AS mgitype, a.accid AS primaryidentifier, lc.startCoordinate
+    FROM 
+	MRK_Marker m, 
+	MRK_Location_Cache lc,
+	MRK_Types t, 
+	MRK_Chromosome mc, 
+	ACC_Accession a
     WHERE m._organism_key in (%(ORGANISMKEYS)s)
     AND m._organism_key != 1
+    AND m._marker_key = lc._marker_key
     AND m.chromosome = mc.chromosome
     AND m._organism_key = mc._organism_key
     AND m._marker_type_key = t._marker_type_key
@@ -186,27 +196,6 @@ class NonMouseFeatureDumper(AbstractFeatureDumper):
     AND a.private = 0
     %(LIMIT_CLAUSE)s
     '''
-    def preDump(self):
-        AbstractFeatureDumper.preDump(self)
-	self.hasLocation = set()
-	q = '''
-	    SELECT mf._object_key
-	    FROM MAP_Coordinate mc, MAP_Coord_Feature mf
-	    WHERE mc._map_key = mf._map_key
-	    AND mc._collection_key = %(HUMAN_MAPKEY)d
-	'''%self.context.QUERYPARAMS
-	for r in self.context.sql(q):
-	    self.hasLocation.add(r['_object_key'])
-
-    def getLocationRef(self, r):
-        if r['_marker_key'] in self.hasLocation:
-            # have to do this without checking - this ref is created *before* 
-            # the location is.
-            ref = self.context.makeGlobalKey('Location', r['_marker_key'])
-            return '<reference name="chromosomeLocation" ref_id="%s" />' % ref
-        else:
-            return ''
-
     def getMcvType(self, r):
         return MGIType2MCVType[r['mgitype']]
 

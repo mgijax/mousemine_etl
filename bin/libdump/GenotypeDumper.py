@@ -16,6 +16,7 @@ class GenotypeDumper(AbstractItemDumper):
     <item class="Genotype" id="%(id)s" >
       <attribute name="primaryIdentifier" value="%(accid)s" />
       %(symbol)s
+      <attribute name="zygosity" value="%(zygosity)s" />
       <attribute name="name" value="%(name)s" />
       <reference name="organism" ref_id="%(organism)s" />
       <reference name="background" ref_id="%(backgroundRef)s" />
@@ -26,6 +27,43 @@ class GenotypeDumper(AbstractItemDumper):
     '''
 
     def preDump(self):
+	self.g2z = {}
+	def doQ(qry, label):
+	    for r in self.context.sql(qry):
+		self.g2z[r['_genotype_key']] = label
+
+	# homozygous
+        doQ( '''select _genotype_key
+                from gxd_allelepair
+                where _Compound_key = 847167 and _PairState_key = 847138''',
+		'hm')
+                
+	# heterozygous
+        doQ( '''select _genotype_key
+                from gxd_allelepair
+                where _Compound_key = 847167 and _PairState_key = 847137''',
+		'ht')
+
+	# complex
+        doQ( '''select _genotype_key, count(1)
+                from gxd_allelepair
+                group by _genotype_key
+                having count(1) > 1''',
+		'cx')
+
+	# transgenic
+        doQ( '''select distinct g._genotype_key
+                from gxd_allelegenotype g, all_allele a
+                where g._Allele_key = a._Allele_key
+		and a._Allele_Type_key in (847127, 847128, 847129, 2327160)''',
+		'tg')
+
+	# conditional
+        doQ( '''select _genotype_key
+		from gxd_genotype
+                where isConditional = 1''',
+		'cn')
+
         self.gapd = GenotypeAllelePairDumper(self.context)
 	self.gapd.dump() # NOTE: caches records; no writes yet (see below)
 
@@ -33,10 +71,10 @@ class GenotypeDumper(AbstractItemDumper):
 	gk = r['_genotype_key']
 	r['id'] = self.context.makeItemId('Genotype',gk)
 
-	alleles = " ".join(map( lambda x: '%s/%s'%(x[0],x[1]), self.gapd.gk2pairs.get(gk,[])))
+	alleleStr = " ".join(map( lambda x: '%s/%s'%(x[0],x[1]), self.gapd.gk2pairs.get(gk,[])))
 
-	r['symbol'] = '<attribute name="symbol" value="%s" />'%self.quote(alleles) if alleles else ''
-	r['name'] = self.quote(alleles + " [background:] " + r['strain'])
+	r['symbol'] = '<attribute name="symbol" value="%s" />'%self.quote(alleleStr) if alleleStr else ''
+	r['name'] = self.quote(alleleStr + " [background:] " + r['strain'])
 	r['backgroundRef'] = self.context.makeItemRef('Strain', r['_strain_key'])
 	r['isconditional'] = r['isconditional'] and "true" or "false"
 
@@ -47,6 +85,7 @@ class GenotypeDumper(AbstractItemDumper):
 	else:
 	    r['note'] = ''
 	r['organism'] = self.context.makeItemRef('Organism', 1) # mouse
+	r['zygosity'] = self.g2z.get(gk, 'ot')
 	return r
 
     def postDump(self):

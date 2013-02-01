@@ -1,5 +1,6 @@
 
 from AbstractItemDumper import *
+from DataSourceDumper import DataSetDumper
 
 class SynonymDumper(AbstractItemDumper):
     QTMPLT = ['''

@@ -6,7 +6,7 @@ class ChromosomeDumper(AbstractItemDumper):
     FROM mrk_location_cache c, mgi_organism o, mrk_chromosome mc
     WHERE c._organism_key = o._organism_key
     AND c._organism_key = mc._organism_key
-    AND c.chromosome = mc.chromosome
+    AND (c.chromosome = mc.chromosome or c.genomicchromosome = mc.chromosome)
     GROUP BY c._organism_key, c.chromosome, o.commonname, mc._chromosome_key
     ORDER BY c._organism_key, c.chromosome
     '''
