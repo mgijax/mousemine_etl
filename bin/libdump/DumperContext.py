@@ -49,6 +49,7 @@ class DumperContext:
 	    'TAXONOMY_LDBKEY' : 32,
 	    'PUBMED_LDBKEY' : 29,
 	    'ENTREZ_LDBKEY' : 55,
+	    'DOI_LDBKEY' : 65,
 
 	    # VOC_Vocab keys
 	    'ALLELE_MUTATION_VKEY' : 36,
