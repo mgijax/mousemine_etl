@@ -16,7 +16,7 @@ class VersionGetter:
 	self.query = 'select %s from mgi_dbinfo' % self.fname
 	self.dtmplt= '%Y-%m-%d'
 	self.date = db.sql(self.query)[0][self.fname]
-	self.versionString = self.date.strftime(self.dtmplt)
+	self.versionString = 'MGI update: %s' % self.date.strftime(self.dtmplt)
 
 class VersionSetter:
     def __init__(self):
