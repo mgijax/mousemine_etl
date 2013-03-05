@@ -18,7 +18,8 @@ class PublicationDumper(AbstractItemDumper):
 	r.abstract AS "abstractText",
 	a.accid AS "pubMedId",
 	a2.accid AS "mgiId",
-	a3.accid AS "mgiJnum"
+	a3.accid AS "mgiJnum",
+        a4.accid as "doi"
     FROM BIB_Refs r
       LEFT OUTER JOIN ACC_Accession a
       ON r._refs_key = a._Object_key
@@ -40,6 +41,12 @@ class PublicationDumper(AbstractItemDumper):
       AND a3.preferred = 1
       AND a3.private = 0
       AND a3.prefixPart='J:'
+      LEFT OUTER JOIN ACC_Accession a4
+      ON r._refs_key = a4._Object_key
+      AND a4._logicaldb_key = %(DOI_LDBKEY)d
+      AND a4._mgitype_key = %(REF_TYPEKEY)d
+      AND a4.preferred = 1
+      AND a4.private = 0
     %(LIMIT_CLAUSE)s
     '''
     ITMPLT = '''
@@ -58,6 +65,7 @@ class PublicationDumper(AbstractItemDumper):
 	self.trueDups = {}
 	self.badPmids = []
         self.authors = {}
+	self.doiDups = {}
 	#
 	# Error case: we have discovered duplicate publications in MGD, i.e., different 
 	# records with different MGI# (and different J#S), but the SAME pubmed id, same title,
@@ -92,6 +100,19 @@ class PublicationDumper(AbstractItemDumper):
 		self.context.log("Duplicate PubMed id detected (legit, but ignored):" + r['accid'])
 		self.badPmids.append( r['accid'] )
 
+	q = '''
+	    select a._object_key, count(a.accID) as n  from ACC_Accession a
+	    where a._LogicalDB_key = 65
+	    and a._mgitype_key =1
+            and a.preferred = 1
+            and a.private = 0
+            group by a._object_key 
+            having count(a.accID) > 1
+            '''
+	for r in self.context.sql(q):
+	    if r['n'] == 2:
+		self.doiDups[ r['_object_key'] ] = 1
+
     # Calculates a citation string from the attributes.
     # Default format:
     #		FirstAuthor [etal] (year) Title. Journal vol(issue):pp-p.
@@ -125,8 +146,19 @@ class PublicationDumper(AbstractItemDumper):
 
     def processRecord(self,r):
 	attrs = []
-	r['id'] = self.context.makeItemId('Reference', r['_refs_key'])
+	#--------------------------------------
+        # For duplicate DOIs
+	rk = r['_refs_key']
+        ids = self.doiDups.keys()
+        if rk in ids:
+	    if self.doiDups[rk] == False:
+		self.context.log("Skipping %s due to duplicate DOI" % (rk))
+		return None
+	    else:
+		self.context.log("Including %s but duplicate DOIs exist" % (rk));
+		self.doiDups[rk] = False;
 
+	r['id'] = self.context.makeItemId('Reference', r['_refs_key'])
 	#---------------------------------------
 	# Special processing for dups
 	p = r['pubMedId']
@@ -164,7 +196,7 @@ class PublicationDumper(AbstractItemDumper):
 	r['citation'] = self.calcCitation(r)
 	attrs.append('<collection name="authors">%s</collection>' % ''.join(arefs))
 	flds = (r['pubMedId'] and ['pubMedId'] or []) + \
-	  ['citation','title','journal','volume','issue','pages','year','firstAuthor', 'abstractText']
+	  ['citation','title','journal','volume','issue','pages','year','firstAuthor', 'abstractText', 'doi']
 	#
 	for n in flds:
 	    if r[n]:
