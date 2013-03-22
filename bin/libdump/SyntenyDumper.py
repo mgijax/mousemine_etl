@@ -111,6 +111,8 @@ class SyntenyDumper(AbstractItemDumper):
     AND mlc2.startCoordinate is not null
     AND mlc2.genomicchromosome = hch.chromosome
     AND hch._organism_key = 2
+    AND mlc1.strand is not null
+    AND mlc2.strand is not null
 
     ORDER BY mchr, mstart
     %(LIMIT_CLAUSE)s
@@ -146,7 +148,7 @@ class SyntenyDumper(AbstractItemDumper):
 	self.CNAME2CID = {}
 	self.CID2N = {}
 	self.ORGANISMS = {}
-	self.smap = { 'f':'+', 'r':'-', '+':'+', '-':'-' }
+	self.smap = { 'f':'+', 'r':'-', '+':'+', '-':'-'}
 	self.allPairs = []
 	self.mkey = 1 + self.context.sql('select max(_marker_key) as k from mrk_marker')[0]['k']
 	self.soref = self.context.makeGlobalKey('SOTerm',int(SYNTENIC_REGION_SOID.split(":")[1]))
