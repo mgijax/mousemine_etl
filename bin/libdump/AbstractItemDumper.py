@@ -55,9 +55,6 @@ class AbstractItemDumper:
         return qtmplt % params
 
     def writeItem(self, r, tmplt=None, i=None):
-        for key, value in r.iteritems():
-	    if value == "Not Applicable":
-	        r[key] = " "
 	if tmplt is None:
 	    tmplt=self.ITMPLT
 	if type(tmplt) is types.StringType:
