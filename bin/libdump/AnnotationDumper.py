@@ -97,6 +97,7 @@ class AnnotationDumper(AbstractItemDumper):
 	'''
 	<item class="%(class)s" id="%(id)s">
 	  <attribute name="code" value="%(code)s"/>
+          <attribute name="name" value="%(name)s"/>
 	  </item>
 	''',
 	#
@@ -201,6 +202,7 @@ class AnnotationDumper(AbstractItemDumper):
 	        return
 	    else:
 		r['class'] = aecclass
+		r['name'] = r['term']
 		return r
 	else:
 	    # OntologyAnnotationEvidence
