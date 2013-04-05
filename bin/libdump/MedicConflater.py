@@ -1,15 +1,16 @@
-#                                                                                                                      
-# MedicConflater.py                                                                                                         
-#                                                                                                                      
-# Usage:                                                                                                               
-#   python MedicConflater.py <input_file> <output_file>                                                                     
-#                                                                                                                      
-# Both files are in .obo format                                                                                        
-#                                                                                                                      
+#
+# MedicConflater.py
+#
+# Usage:
+#   python MedicConflater.py <input_file> <output_file>
+#
+# Both files are in .obo format
+#
 # The script reads a medic file, adds useful information to the stanzas, and writes stanzas out.
-#                                                                                                                      
+#
 
 from OboParser import OboParser, formatStanza
+from collections import defaultdict
 import mgiadhoc as db
 import os
 import sys
@@ -19,6 +20,7 @@ class MedicConflater:
     def __init__(self):
         self.omim_from_medic = set()
         self.omim_from_mgi = set()
+        self.omim_to_synonym = defaultdict(set)
         self.id2name = {}
         self.stanzas = []
 
@@ -72,23 +74,39 @@ class MedicConflater:
 
 
     def loadOmimFromMgi(self):
-        query = '''                                                                                                    
-                SELECT t.term, a.accid                                                                                 
-                FROM VOC_Term t, ACC_Accession a                                                                       
-                WHERE t._vocab_key = 44                                                                                
-                   AND a._object_key = t._term_key                                                                     
-                   AND a._mgitype_key = 13                                                                             
-                   AND a._logicaldb_key = 15                                                                           
+        query = '''
+                SELECT t.term, a.accid
+                FROM VOC_Term t, ACC_Accession a
+                WHERE t._vocab_key = 44
+                   AND a._object_key = t._term_key
+                   AND a._mgitype_key = 13
+                   AND a._logicaldb_key = 15
                 '''
+
         for r in db.sql(query):
             oid = "OMIM:" + r['accid']
             self.id2name[oid] = r['term']
             self.omim_from_mgi.add(oid)
 
 
+    def loadSynonymsFromMgi(self):
+        query = '''
+                SELECT t.term, a._object_key, s.synonym, a.accid
+                FROM VOC_Term t, ACC_Accession a, MGI_Synonym s
+                WHERE t._vocab_key = 44
+                   AND a._object_key = t._term_key
+                   AND s._object_key = a._object_key
+                   AND a._mgitype_key = 13
+                   AND a._logicaldb_key = 15
+                '''
+
+        for r in db.sql(query):
+            self.omim_to_synonym[r['accid']].add(r['synonym'])
+
+
     def appendMgiOmim(self):
-        # Adds omim terms at the root                                                                                  
-        #   - if needed in the tree, include a 'is a' key-value pair                                                   
+        # Adds omim terms at the root
+        #   - if needed in the tree, include a 'is a' key-value pair
         missing_omim_ids = self.omim_from_mgi - self.omim_from_medic
 
         for oid in missing_omim_ids:
@@ -121,6 +139,14 @@ class MedicConflater:
                     slines.append(('alt_id', id))
 
 
+    def appendMgiSynonyms(self):
+        for stype, slines in self.stanzas:
+            for tag, val in slines:
+                if tag == "id":
+                    for synonym in self.omim_to_synonym[self.stripIdPrefix(val)]:
+                        slines.append(('synonym', '"' + synonym + '" []'))
+
+
     def writeStanzas(self, file):
         fd = open(file, 'w')
 
@@ -136,9 +162,11 @@ class MedicConflater:
         self.processMedic()
 
         self.loadOmimFromMgi()
+        self.loadSynonymsFromMgi()
         self.appendMgiOmim()
 
         self.conflateAltIds()
+        self.appendMgiSynonyms()
         self.writeStanzas(conflated_file)
 
 
