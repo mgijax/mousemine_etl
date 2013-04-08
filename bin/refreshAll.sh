@@ -1,6 +1,13 @@
 #!/bin/sh
 
 ##
+./refreshPanther.sh
+if [ $? -ne 0 ]
+then
+     exit 1
+fi
+
+##
 ./refreshHomologene.sh
 if [ $? -ne 0 ]
 then
