@@ -23,57 +23,23 @@ class MedicConflater:
         self.omim_to_synonym = defaultdict(set)
         self.id2name = {}
         self.stanzas = []
+	self.swappedIds = {}
 
 
     def loadMedic(self, file):
+	# reads/parses the medic .obo file. Result is a list of stanzas.
         def stanzaProc(stype, slines):
+	    # Looks for OMIM ids in a stanza. Adds them to a set,
+            for tag, val in slines:
+                if (tag == "id" or tag == "alt_id") and val.startswith("OMIM"):
+                    self.omim_from_medic.add(val)
             self.stanzas.append((stype, slines))
         OboParser(stanzaProc).parseFile(file)
 
-
-    def loadOmimFromMedic(self, slines):
-        for tag, val in slines:
-            if (tag == "id" or tag == "alt_id") and val.startswith("OMIM"):
-                self.omim_from_medic.add(val)
-
-    
-    def tupleInjectTag(self, t, tag):
-        temp = list(t)
-        temp[0] = tag
-        return tuple(temp)
-    
-
-    def swapMeshWithOmim(self, slines):
-        mesh = None
-        omim = None
-        swap = False
-        
-        for index, sline in enumerate(slines):
-            (tag, val) = sline
-            if tag == 'id' and val.startswith("MESH"):
-                mesh = index
-                swap = omim is not None
-            elif tag == 'alt_id' and val.startswith("OMIM"):
-                if omim is None:
-                    omim = index
-                    swap = mesh is not None
-                else:
-                    #more than one omim alt_id
-                    swap = False
-                    break
-
-        if swap:
-            slines[mesh] = self.tupleInjectTag(slines[mesh], 'alt_id')
-            slines[omim] = self.tupleInjectTag(slines[omim], 'id')
-
-
-    def processMedic(self):
-        for stype, slines in self.stanzas:
-            self.loadOmimFromMedic(slines)
-            self.swapMeshWithOmim(slines)
-
-
     def loadOmimFromMgi(self):
+	# Loads all OMIM terms from MGI.
+	# Creates index from omim id -> term.
+	# Also maintains a set of term ids.
         query = '''
                 SELECT t.term, a.accid
                 FROM VOC_Term t, ACC_Accession a
@@ -85,11 +51,15 @@ class MedicConflater:
 
         for r in db.sql(query):
             oid = "OMIM:" + r['accid']
-            self.id2name[oid] = r['term']
+	    nparts = r['term'].split(";")
+	    for i in range(1, len(nparts)):
+	        self.omim_to_synonym[r['accid']].add(nparts[i].strip())
+            self.id2name[oid] = nparts[0].strip()
             self.omim_from_mgi.add(oid)
 
 
-    def loadSynonymsFromMgi(self):
+	# Loads synonyms for disease (OMIM) terms from MGI.
+	# Creates index from omim id -> synonym(s).
         query = '''
                 SELECT t.term, a._object_key, s.synonym, a.accid
                 FROM VOC_Term t, ACC_Accession a, MGI_Synonym s
@@ -101,25 +71,56 @@ class MedicConflater:
                 '''
 
         for r in db.sql(query):
-            self.omim_to_synonym[r['accid']].add(r['synonym'])
+	    nparts = r['synonym'].split(';')
+	    for n in nparts:
+	        self.omim_to_synonym[r['accid']].add(n.strip())
 
+    def stripIdPrefix(self, id):
+	# strips leading prefix (up to ":") from the id and returns the rest.
+        id_split = id.split(':', 1)
+        return id_split[1]
+
+    def swapMeshWithOmim(self):
+	# If the given stanza has a MESH primary id and an OMIM alt_id,
+	# swap them, i.e., make the OMIM id primary and the MESH alt_id.
+	for stype, slines in self.stanzas:
+            mesh = None
+            omim = None
+            swap = False
+            
+            for index, sline in enumerate(slines):
+                (tag, val) = sline
+                if tag == 'id' and val.startswith("MESH"):
+                    mesh = index
+                    swap = omim is not None
+                elif tag == 'alt_id' and val.startswith("OMIM"):
+                    if omim is None:
+                        omim = index
+                        swap = mesh is not None
+                    else:
+                        #more than one omim alt_id
+                        swap = False
+                        break
+	    # end for
+
+            if swap:
+                slines[mesh] = ('alt_id', slines[mesh][1])
+                slines[omim] = ('id', slines[omim][1])
+	        self.swappedIds[slines[mesh][1]] = slines[omim][1]
+	# end for
 
     def appendMgiOmim(self):
-        # Adds omim terms at the root
-        #   - if needed in the tree, include a 'is a' key-value pair
+        # Adds a stanza for each OMIM id found in MGI but not in MEDIC.
+	# These all become independent roots. (Or, if you prefer, orphan nodes.)
         missing_omim_ids = self.omim_from_mgi - self.omim_from_medic
 
         for oid in missing_omim_ids:
             omim_stanza = ('Term', [('id', oid), ('name', self.id2name[oid])])
             self.stanzas.append(omim_stanza)
 
-
-    def stripIdPrefix(self, id):
-        id_split = id.split(':', 1)
-        return id_split[1]
-
-
-    def conflateAltIds(self):
+    def addAltIds(self):
+	# adds the un-prefixed versions of Mesh and Omim ids as alt_ids.
+	# e.g., for MESH:D654342 and OMIM:12345, adds "D65432" and "12345" as alt_ids
         for stype, slines in self.stanzas:
             ids = set()
             alt_ids = set()
@@ -140,14 +141,47 @@ class MedicConflater:
 
 
     def appendMgiSynonyms(self):
+	# adds all MGI synonyms
         for stype, slines in self.stanzas:
             for tag, val in slines:
-                if tag == "id":
+                if tag in ["id","alt_id"]:
                     for synonym in self.omim_to_synonym[self.stripIdPrefix(val)]:
                         slines.append(('synonym', '"' + synonym + '" []'))
 
+    def replaceDiseaseName(self):
+	# replaces the disease name with the one from MGI
+        for stype, slines in self.stanzas:
+	    id = None
+	    j = None
+            for i,line in enumerate(slines):
+		tag, val = line
+		if tag == "id":
+		    id = val
+                elif tag == "name":
+		    j = i
+	    if j:
+		origName = slines[j][1]
+		newName = self.id2name.get(id, origName )
+	        slines[j] = (slines[j][0], newName)
+		if origName != newName \
+		and not newName.lower().startswith(origName.lower()):
+		    self.omim_to_synonym[self.stripIdPrefix(id)].add(origName)
+		    
+
+    def swapIsaIds(self):
+	# converts "is_a:" lines when the target MESH id has been replaced with the OMIM
+        for stype, slines in self.stanzas:
+	    for (i,line) in enumerate(slines):
+                tag, val = line
+                if tag == "is_a":
+		    meshid, rest = val.split(None,1)
+		    omimid = self.swappedIds.get(meshid,None)
+		    if omimid:
+			slines[i] = (tag, "%s %s" % (omimid, rest))
+
 
     def writeStanzas(self, file):
+	# write out the stanza in obo format
         fd = open(file, 'w')
 
         for stype, slines in self.stanzas:
@@ -159,14 +193,16 @@ class MedicConflater:
 
     def main(self, medic_file, conflated_file):
         self.loadMedic(medic_file)
-        self.processMedic()
-
         self.loadOmimFromMgi()
-        self.loadSynonymsFromMgi()
+
         self.appendMgiOmim()
 
-        self.conflateAltIds()
+        self.swapMeshWithOmim()
+	self.replaceDiseaseName()
         self.appendMgiSynonyms()
+        self.addAltIds()
+	self.swapIsaIds()
+
         self.writeStanzas(conflated_file)
 
 
