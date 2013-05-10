@@ -30,7 +30,10 @@ class MedicConflater:
 	# reads/parses the medic .obo file. Result is a list of stanzas.
         def stanzaProc(stype, slines):
 	    # Looks for OMIM ids in a stanza. Adds them to a set,
-            for tag, val in slines:
+            for i, line in enumerate(slines):
+		tag, val = line
+		if stype is None and tag == "default-namespace":
+		    slines[i] = (tag, "MEDIC_disease_ontology")
                 if (tag == "id" or tag == "alt_id") and val.startswith("OMIM"):
                     self.omim_from_medic.add(val)
             self.stanzas.append((stype, slines))

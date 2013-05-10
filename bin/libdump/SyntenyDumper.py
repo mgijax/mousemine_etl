@@ -111,6 +111,7 @@ class SyntenyDumper(AbstractItemDumper):
     AND mlc2.startCoordinate is not null
     AND mlc2.genomicchromosome = hch.chromosome
     AND hch._organism_key = 2
+
     AND mlc1.strand is not null
     AND mlc2.strand is not null
 
@@ -127,6 +128,7 @@ class SyntenyDumper(AbstractItemDumper):
 	  <reference name="chromosome" ref_id="%(chromosome)s" />
 	  <reference name="chromosomeLocation" ref_id="%(chromosomeLocation)s" />
 	  <reference name="partner" ref_id="%(partner)s" />
+	  <attribute name="orientation" value="%(orientation)s" />
 	  <collection name="dataSets">%(dataSets)s</collection>
 	  </item>
     '''
@@ -201,7 +203,9 @@ class SyntenyDumper(AbstractItemDumper):
 
 	# scan the list and generate synteny blocks
 	blks = self.generateBlocks(self.allPairs)
-	blks = self.massageBlocks(blks)
+
+	# extends chromosome ends
+	#blks = self.massageBlocks(blks)
 
 	# output
 	for b in blks:
@@ -215,12 +219,16 @@ class SyntenyDumper(AbstractItemDumper):
 		    ortholog pair.
 	Returns:
 	    A new synteny block:
+		block name  = look like "chr_num", e.g., "17_56"
+		orientation = +1 or -1. The first ortholog pair in the block sets this.
+		block count = # ortholog pairs making up the block
+		mouse/human pair = copy of the result row (list of strings). This initializes our block.
 	"""
 	ori = (pair['mstrand'] == pair['hstrand']) and +1 or -1
 	mchr = pair['mchr']
 	n = self.mchr2count.setdefault(mchr,1)
 	self.mchr2count[mchr] += 1
-	bname = "%s_%d" %(mchr, n)
+	bname = 'SynBlock:mmhs:%s_%d' %(mchr, n)
 	blockCount = 1
 	return [ bname, ori, blockCount, pair.copy() ]
 
@@ -240,7 +248,7 @@ class SyntenyDumper(AbstractItemDumper):
     def canMerge(self,currPair,currBlock):
 	"""
 	Returns True iff the given ortholog pair can merge with (and extend)
-	the given synteny block.
+	the given synteny block. 
 	"""
 	if currBlock is None:
 	    return False
@@ -249,7 +257,7 @@ class SyntenyDumper(AbstractItemDumper):
 	return currPair['mchr'] == cbfields['mchr'] \
 	    and currPair['hchr'] == cbfields['hchr'] \
 	    and ori == cori \
-	    and currPair['iHi'] == cbfields['iHi']+ori \
+	    and currPair['iHi'] == cbfields['iHi']+ori
 
     def generateBlocks(self, allPairs, tagPairs=True):
 	"""
@@ -311,11 +319,11 @@ class SyntenyDumper(AbstractItemDumper):
 	  fields['iMi'],
 	  ihi,
 	]
-	self.writeBlockItems(*(b[0:7]))
+	self.writeBlockItems(*(b[0:8]))
 
-    def writeBlockItems(self, mchr,mstart,mend,hchr,hstart,hend,name):
-	(mr,ml) = self.makeSyntenicRegion(1,mchr,mstart,mend,name)
-	(hr,hl) = self.makeSyntenicRegion(2,hchr,hstart,hend,name)
+    def writeBlockItems(self, mchr,mstart,mend,hchr,hstart,hend,name,ori):
+	(mr,ml) = self.makeSyntenicRegion(1,mchr,mstart,mend,name,ori)
+	(hr,hl) = self.makeSyntenicRegion(2,hchr,hstart,hend,name,ori)
 	mr['partner'] = hr['id']
 	hr['partner'] = mr['id']
 	self.writeItem(mr, self.SYN_TMPLT)
@@ -327,7 +335,9 @@ class SyntenyDumper(AbstractItemDumper):
         dsid = DataSetDumper(self.context).dataSet(name="Inferred Synteny Blocks from MGI")
         return '<reference ref_id="%s"/>'%dsid
 
-    def makeSyntenicRegion(self, org,chr,start,end,bname):
+    def makeSyntenicRegion(self, org,chr,start,end,bname,ori):
+	# creates and returns a tuple (r,l) where r = a dict suitable for use with SYN_TMPLT and 
+	# l = a dict suitable for use with LOC_TMPLT.
 	oid = self.context.makeItemRef('Organism', org)
 	cid = self.context.makeItemRef('Chromosome', chr)
 	fid = self.context.makeItemId('SyntenicRegion', self.mkey)
@@ -336,12 +346,13 @@ class SyntenyDumper(AbstractItemDumper):
 	r = {
 	    'id' : fid,
 	    'organism' : oid,
-	    'symbol' : 'SynBlock:mmhs:%s'%bname,
+	    'symbol' : bname,
 	    'name' : 'Mouse/Human Synteny Block %s' % bname,
 	    'chromosome' : cid,
 	    'chromosomeLocation' : lid,
 	    'soref' : self.soref,
 	    'dataSets' : self.getDataSetRef(),
+	    'orientation' : ori,
 	    }
 	l = {
 	    'id' : lid,
