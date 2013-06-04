@@ -26,6 +26,10 @@ class ChromosomeDumper(AbstractItemDumper):
 	i = n.find(",")
 	if i != -1:
 	    n = n[:i]
+	# For chromosomes "1" through "9", add a leading "0" (i.e., "01", "02", ...)
+	# This will cause chromosomes to sort properly
+	if r['chromosome'].isdigit():
+	    r['chromosome'] = "%02d" % int(r['chromosome'])
 	r['id'] = self.context.makeItemId('Chromosome', r['_chromosome_key'])
 	r['symbol'] = 'chr'+r['chromosome']
 	r['name'] = 'Chromosome %s (%s)' % (r['chromosome'], n)
