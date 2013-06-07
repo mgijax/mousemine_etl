@@ -41,6 +41,14 @@ then
 fi
 
 
+# UBERON
+curl -o $ODIR/uberon.obo http://obo.svn.sourceforge.net/svnroot/obo/uberon/trunk/uberon.obo
+if [ $? -ne 0 ] 
+then
+    exit $? 
+fi
+
+
 # Adult Mouse Anatomy
 #curl -o $ODIR/AdultMouseAnatomy.obo ftp://ftp.informatics.jax.org/pub/reports/adult_mouse_anatomy.obo
 
