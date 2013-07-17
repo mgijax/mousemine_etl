@@ -28,12 +28,12 @@ class ChromosomeDumper(AbstractItemDumper):
 	    n = n[:i]
 	# For chromosomes "1" through "9", add a leading "0" (i.e., "01", "02", ...)
 	# This will cause chromosomes to sort properly
+	r['id'] = self.context.makeItemId('Chromosome', r['_chromosome_key'])
+	r['primaryIdentifier'] = r['chromosome']
 	if r['chromosome'].isdigit():
 	    r['chromosome'] = "%02d" % int(r['chromosome'])
-	r['id'] = self.context.makeItemId('Chromosome', r['_chromosome_key'])
 	r['symbol'] = 'chr'+r['chromosome']
 	r['name'] = 'Chromosome %s (%s)' % (r['chromosome'], n)
-	r['primaryIdentifier'] = r['chromosome']
 	r['organism'] = self.context.makeItemRef('Organism', r['_organism_key'])
 	r['soterm'] = self.context.makeGlobalKey('SOTerm', 340)
 	if r['length'] is None:
