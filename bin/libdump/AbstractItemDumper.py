@@ -75,7 +75,13 @@ class AbstractItemDumper:
 		rr = self.processRecord(r)
 	    else:
 		rr = self.processRecord(r, qIndex)
-	except DumperContext.DanglingReferenceError:
+	except DumperContext.DanglingReferenceError, e:
+	    # Dangling reference errors (DREs) are tolerated here.
+	    # They occur for one of two reasons: either there really is a DR in 
+	    # the database, or the referenced object was filtered out by an upstream 
+	    # dumper (e.g., withdrawn markers). In either case, we'll simply 
+	    # suppress the current object.
+	    # 
 	    return
 	else:
 	    if rr is not None:

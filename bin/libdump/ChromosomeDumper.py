@@ -7,6 +7,7 @@ class ChromosomeDumper(AbstractItemDumper):
     WHERE c._organism_key = o._organism_key
     AND c._organism_key = mc._organism_key
     AND (c.chromosome = mc.chromosome or c.genomicchromosome = mc.chromosome)
+    AND (c.chromosome = c.genomicchromosome or c.genomicchromosome is null)
     GROUP BY c._organism_key, c.chromosome, o.commonname, mc._chromosome_key
     ORDER BY c._organism_key, c.chromosome
     '''
