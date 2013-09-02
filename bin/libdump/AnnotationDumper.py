@@ -89,6 +89,7 @@ class AnnotationDumper(AbstractItemDumper):
 	  <reference name="subject" ref_id="%(subject)s"/>
 	  %(qualifier)s
 	  <collection name="dataSets">%(dataSets)s</collection>
+	  %(annotationExtension)s
 	  </item>
 	''',
 	#
@@ -110,20 +111,29 @@ class AnnotationDumper(AbstractItemDumper):
 	  <reference name="code" ref_id="%(code)s"/>
 	  <collection name="publications">%(publications)s</collection>
 	  </item>
-	''']
+	''',
+	]
 
     def __init__(self, ctx):
         AbstractItemDumper.__init__(self,ctx)
-	self.atk2classes = { # FIXME. Hardcoded annottype data
-	# annottype_key : ( annotated obj type, voc term class, voc evidence class, evidence code class, species )
-	# Mouse marker-GO annotations
-	1000 : ('Marker', 'GOTerm','GOAnnotation','GOEvidence','GOEvidenceCode','Mouse'),
-	# Mouse genotype-MP annotations
-	1002 : ('Genotype', 'MPTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse'),
-	# Mouse genotype-OMIM annotations
-	1005 : ('Genotype', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse'),
-	# Human gene-OMIM annotations
-	1006 : ('Marker', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human'),
+	self.atk2classes = { 
+	  # FIXME. Hardcoded annotation-type data. This really needs refactoring!
+	  # annottype_key : 
+	  #    ( annotated obj type, 
+	  #      voc term class, 
+	  #      voc evidence class, 
+	  #      evidence code class, 
+	  #      species, 
+	  #      hasProperties )
+	  #
+	  # Mouse marker-GO annotations
+	  1000 : ('Marker', 'GOTerm','GOAnnotation','GOEvidence','GOEvidenceCode','Mouse', True),
+	  # Mouse genotype-MP annotations
+	  1002 : ('Genotype', 'MPTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
+	  # Mouse genotype-OMIM annotations
+	  1005 : ('Genotype', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
+	  # Human gene-OMIM annotations
+	  1006 : ('Marker', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
 	}
 	self.ANNOTTYPEKEYS = self.atk2classes.keys()
 	self.ANNOTTYPEKEYS_S = COMMA.join(map(lambda x:str(x),self.ANNOTTYPEKEYS))
@@ -141,6 +151,9 @@ class AnnotationDumper(AbstractItemDumper):
 	if hasattr(self.context, 'medicfile'):
 	    mfile = os.path.abspath(os.path.join(os.getcwd(),self.context.medicfile))
 	    self.loadOmimMappings(mfile)
+
+	self.loadEvidenceProperties()
+
 	self.writeDataSets()
 
     def writeDataSets(self):
@@ -149,6 +162,50 @@ class AnnotationDumper(AbstractItemDumper):
 	for atk, atinfo in self.atk2classes.items():
 	    dsname = '%s to %s %s Annotations from MGI' % (atinfo[1],atinfo[5],atinfo[0])
 	    self.atk2dsid[atk] = dsd.dataSet(name=dsname)
+
+    #
+    # Loads the evidence property records for the specified annotation types.
+    # Creates an index from annotation key to the annotation extension (a string).
+    #
+    # In MGI, annotation extensions (VOC_Evidence_Property records) are attached to 
+    # evidence records, but in Intermine, they are  associated with
+    # Annotation objects. 
+    #
+    # RIGHT NOW ONLY WORKS FOR MP ANNOTATIONS (annotationtype key=1002)!!! 
+    # GO annotations (key=1000) also have property records
+    # in MGI, but the translation into GAF annotation extensions is complex,
+    # See TR11112. We are not loading these yet.
+    # 
+    # No other annotations in MGI have property records at this time.
+    #
+    def loadEvidenceProperties(self):
+	self.ak2props = {}
+        q = '''
+            select 
+	        a._annottype_key, 
+		a._annot_key, 
+		p._annotevidence_key, 
+		p.stanza, 
+		p.sequencenum, 
+		t.term, 
+		p.value
+            from 
+	        voc_evidence_property p, 
+		voc_term t, 
+		voc_evidence e, 
+		voc_annot a
+            where p._propertyterm_key = t._term_key
+            and p._annotevidence_key = e._annotevidence_key
+            and e._annot_key = a._annot_key
+            and a._annottype_key = 1002
+            order by p._annotevidence_key, p.stanza, p.sequencenum
+        '''
+        for r in self.context.sql(q):
+	    if r['value'] != 'NA':
+	        ak = r['_annot_key']
+	        v = r['value'].upper()
+	        self.ak2props[ak] = 'specific_to(%s)' % (v == 'M' and 'male' or 'female')
+
     #
     # Reads the MEDIC ontology file to build a mapping from
     # OMIM id -> MeSH id (for OMIM terms that are merged)
@@ -168,7 +225,7 @@ class AnnotationDumper(AbstractItemDumper):
 
     def processRecord(self, r, iQuery):
 	atk = r['_annottype_key']
-	tname, oclass, aclass, aeclass, aecclass, aspecies = self.atk2classes[atk]
+	tname, oclass, aclass, aeclass, aecclass, aspecies, ahasprops = self.atk2classes[atk]
 	if iQuery == 0:
 	    # OntologyAnnotation
 	    r['id'] = self.context.makeItemId('OntologyAnnotation', r['_annot_key'])
@@ -176,6 +233,10 @@ class AnnotationDumper(AbstractItemDumper):
 	    r['qualifier'] = r['qualifier'] and ('<attribute name="qualifier" value="%(qualifier)s"/>' % r) or ''
 	    r['class'] = aclass
 	    r['dataSets'] = '<reference ref_id="%s"/>'%self.atk2dsid[atk]
+
+	    p = self.ak2props.get(r['_annot_key'])
+	    p = p and '<attribute name="annotationExtension" value="%s" />'%p or ''
+	    r['annotationExtension'] = p
 
 	    identifier = r['identifier']
 	    tk = r['_term_key']
@@ -206,13 +267,14 @@ class AnnotationDumper(AbstractItemDumper):
 		return r
 	else:
 	    # OntologyAnnotationEvidence
-	    r['id'] = self.context.makeItemId('OntologyAnnotationEvidence')
+	    r['id'] = self.context.makeItemId('OntologyAnnotationEvidence', r['_annotevidence_key'])
 	    r['class'] = aeclass
 	    r['code'] = self.context.makeItemRef('OntologyAnnotationEvidenceCode', r['_evidenceterm_key'])
 	    r['annotation'] = self.context.makeItemRef('OntologyAnnotation', r['_annot_key'])
 	    r['inferredfrom'] = r['inferredfrom'] and ('<attribute name="withText" value="%(inferredfrom)s"/>'%r) or ''
 	    r['publications'] = '<reference ref_id="%s"/>' % \
 	        self.context.makeItemRef('Reference', r['_refs_key'])
+
 	    return r
 
     def postDump(self):
