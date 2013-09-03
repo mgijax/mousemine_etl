@@ -30,6 +30,7 @@ allDumpers = [
     (AlleleDumper,		()),
     (CellLineDumper,		()),
     (GenotypeDumper,		()),
+    (ExpressionDumper,		()),
     (AnnotationDumper,		()),
     (SynonymDumper,		()),
     (CrossReferenceDumper,	()),
