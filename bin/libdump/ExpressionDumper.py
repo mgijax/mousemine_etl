@@ -87,11 +87,11 @@ class ExpressionDumper(AbstractItemDumper):
     # Writes the whole record based on r and the key/value pairs in assay[][]
     def writeRecord(self, r):
         tmplt = '''
-                <item class="Expression" id="%(id)s" >
-                  <reference name="gene" ref_id="%(gene)s" />
+                <item class="GXDExpression" id="%(id)s" >
                   <reference name="publication" ref_id="%(publication)s" />
                   <attribute name="assayId" value="%(assayid)s" />
                   <attribute name="assayType" value="%(assaytype)s" />
+                  <reference name="gene" ref_id="%(gene)s" />
                   <attribute name="sex" value="%(sex)s" />
                   <attribute name="age" value="%(age)s" />
                   <attribute name="ageMin" value="%(agemin)f" />
@@ -99,10 +99,10 @@ class ExpressionDumper(AbstractItemDumper):
                   <attribute name="strength" value="%(strength)s" />
                   <reference name="genotype" ref_id="%(genotype)s" />
                   <attribute name="theilerStage" value="%(stage)d" />
-                  <reference name="structure" ref_id=%(structure)s" />
-                  %(probe_wi)s
-                  %(pattern_wi)s
-                  %(image_wi)s
+                  <reference name="structure" ref_id="%(structure)s" />
+                  %(probe_wr)s
+                  %(pattern_wr)s
+                  %(image_wr)s
                  </item>
                  '''
 
@@ -111,27 +111,27 @@ class ExpressionDumper(AbstractItemDumper):
             for k, v in self.assay[r['_assay_key']].items():
                 r[k] = v
 
-            #Add a temp variable: ['*_wi'] to eliminate nested attributes
+            #Add a temp variable: ['*_wr'] to eliminate nested attributes
             if 'probe' in r and len(r['probe']) > 1:
-                r['probe_wi'] = '<attribute name="probe" value="%s" />' % r['probe']
+                r['probe_wr'] = '<attribute name="probe" value="%s" />' % r['probe']
             else:
-                r['probe_wi'] = ''
+                r['probe_wr'] = ''
 
             if 'pattern' in r and len(r['pattern']) > 1:
-                r['pattern_wi'] = '<attribute name="pattern" value="%s" />' % r['pattern']
+                r['pattern_wr'] = '<attribute name="pattern" value="%s" />' % r['pattern']
             else:
-                r['pattern_wi'] = ''
+                r['pattern_wr'] = ''
 
             if 'image' in r and len(r['image']) > 1:
-                r['image_wi'] = '<attribute name="imageFigure" value="%s" />' % r['image']
+                r['image_wr'] = '<attribute name="imageFigure" value="%s" />' % r['image']
             else:
-                r['image_wi'] = ''
+                r['image_wr'] = ''
 
             self.writeItem(r, tmplt)
             
-            r['probe_wi'] = ''
-            r['pattern_wi'] = ''
-            r['image_wi'] = ''
+            r['probe_wr'] = ''
+            r['pattern_wr'] = ''
+            r['image_wr'] = ''
         return
 
     
@@ -225,6 +225,7 @@ class ExpressionDumper(AbstractItemDumper):
         return
 
 
+    # write out the EMAPX terms first, so the GXD Expression terms can reference them
     def writeEMAPXTerms(self):
         tmplt = '''
                 <item class="EMAPXTerm" id="%(id)s" >
