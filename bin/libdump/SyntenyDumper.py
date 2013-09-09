@@ -72,48 +72,44 @@ SYNTENIC_REGION_SOID = "SO:0005858"
 
 class SyntenyDumper(AbstractItemDumper):
     QTMPLT = '''
-    SELECT distinct
-	m1.symbol AS msymbol, 
-	mch._chromosome_key AS mchr,
-	cast(mlc1.startCoordinate AS int) AS mstart,
-	cast(mlc1.endCoordinate AS int) AS mend,
-	mlc1.strand AS mstrand,
-	m2.symbol AS hsymbol,
-	hch._chromosome_key AS hchr,
-	cast(mlc2.startCoordinate AS int) AS hstart,
-	cast(mlc2.endCoordinate AS int) AS hend,
-	mlc2.strand AS hstrand
-    FROM 
-	hmd_homology hh1, 
-	hmd_homology_marker hm1,
-	mrk_marker m1, 
-	mrk_location_cache mlc1,
-	mrk_chromosome mch,
-
-	hmd_homology hh2, 
-	hmd_homology_marker hm2,
-	mrk_marker m2,
-	mrk_location_cache mlc2,
-	mrk_chromosome hch
-    WHERE hh1._class_key = hh2._class_key
-    AND  hh1._homology_key = hm1._homology_key
-    AND hm1._marker_key = m1._marker_key
+SELECT distinct
+        m1.symbol AS msymbol,
+        mch._chromosome_key AS mchr,
+        cast(mlc1.startCoordinate AS int) AS mstart,
+        cast(mlc1.endCoordinate AS int) AS mend,
+        mlc1.strand AS mstrand,
+        m2.symbol AS hsymbol,
+        hch._chromosome_key AS hchr,
+        cast(mlc2.startCoordinate AS int) AS hstart,
+        cast(mlc2.endCoordinate AS int) AS hend,
+        mlc2.strand AS hstrand
+    FROM
+        MRK_ClusterMember mcm,
+        MRK_ClusterMember mcm2,
+        mrk_marker m1,
+        mrk_location_cache mlc1,
+        mrk_chromosome mch,
+        mrk_marker m2,
+        mrk_location_cache mlc2,
+        mrk_chromosome hch
+    WHERE
+    mcm._cluster_key = mcm2._cluster_key
+    AND mcm._marker_key	= m1._marker_key
     AND m1._organism_key = 1
     AND m1._marker_key = mlc1._marker_key
     AND mlc1.startCoordinate is not null
     AND mlc1.genomicchromosome = mch.chromosome
     AND mch._organism_key = 1
-
-    AND hh2._homology_key = hm2._homology_key
-    AND hm2._marker_key = m2._marker_key 
+    AND mcm2._marker_key = m2._marker_key
     AND m2._organism_key = 2
     AND m2._marker_key = mlc2._marker_key
     AND mlc2.startCoordinate is not null
     AND mlc2.genomicchromosome = hch.chromosome
     AND hch._organism_key = 2
-
     AND mlc1.strand is not null
     AND mlc2.strand is not null
+    AND (select count(mx._marker_key) from MRK_ClusterMember mx, mrk_Marker my where mx._marker_key = my._marker_key and my._organism_key = 2 and  mx._cluster_key = mcm._cluster_key) = 1
+    AND (select count(mx._marker_key) from MRK_ClusterMember mx, mrk_Marker my where mx._marker_key = my._marker_key and my._organism_key = 1 and  mx._cluster_key = mcm._cluster_key) = 1
 
     ORDER BY mchr, mstart
     %(LIMIT_CLAUSE)s
