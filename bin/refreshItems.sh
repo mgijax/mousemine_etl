@@ -1,5 +1,5 @@
 #!/bin/sh
-python ./dumpMgiItemXml.py -d ../output/mgi-base -Dmedicfile=../output/obo/MEDIC_conflated.obo --logfile ./LOG
+python ./dumpMgiItemXml.py -d ../output/mgi-base -Demapxfile=../output/obo/EMAPX.obo -Dmedicfile=../output/obo/MEDIC_conflated.obo --logfile ./LOG
 
 sed -i".old" '/value="Not Applicable"/d' ../output/mgi-base/*.xml
 rm ../output/mgi-base/*.old

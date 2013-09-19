@@ -1,5 +1,6 @@
 from AbstractItemDumper import *
 from collections import defaultdict 
+from OboParser import OboParser
 
 class ExpressionDumper(AbstractItemDumper):
 
@@ -225,16 +226,35 @@ class ExpressionDumper(AbstractItemDumper):
         return
 
 
-    # write out the EMAPX terms first, so the GXD Expression terms can reference them
+    # Maps MGI:# to EMAP:# or MA:# from obo file
+    def loadEMAPXMappings(self, file):
+        def stanzaProc( stype, slines ):
+            emapxId = None
+            for tag, val in slines:
+                if tag == "id" and (val.startswith("EMAP") or val.startswith("MA")):
+                    emapxId = val
+                    self.emapxList.append(val)
+                elif tag == "alt_id" and val.startswith("MGI") and (emapxId is not None):
+                    self.emapxRemap[val] = emapxId
+        OboParser(stanzaProc).parseFile(file)
+
+
+    # write out the EMAPX terms first, then GXD Expression terms can reference them
     def writeEMAPXTerms(self):
+        self.emapxList = list()
+        self.emapxRemap = {}
+        if hasattr(self.context, 'emapxfile'):
+            mfile = os.path.abspath(os.path.join(os.getcwd(),self.context.emapxfile))
+            self.loadEMAPXMappings(mfile)
+        
         tmplt = '''
                 <item class="EMAPXTerm" id="%(id)s" >
-                  <attribute name="identifier" value="%(accid)s" />
-                 </item>
-                 '''
+                  <attribute name="identifier" value="%(identifier)s" />
+                </item>
+                '''
 
         q = self.constructQuery('''
-            SELECT s._structure_key, acc.accid
+            SELECT s._structure_key, s.edinburghkey, acc.accid
             FROM gxd_structure s, acc_accession acc
             WHERE s._structure_key = acc._object_key
             AND acc._mgitype_key = 38
@@ -244,6 +264,17 @@ class ExpressionDumper(AbstractItemDumper):
             ''')
 
         for r in self.context.sql(q):
+            emapKey = "EMAP:" + str(r['edinburghkey'])
+            if emapKey in self.emapxList:
+                # EMAP term is current and used in obo file
+                r['identifier'] = emapKey
+            elif r['accid'] in self.emapxRemap: 
+                # MGI id maps to an EMAP term or an MA term
+                r['identifier'] = self.emapxRemap[r['accid']]
+            else:
+                # No EMAP or MA reference, use the MGI id
+                r['identifier'] = r['accid']
+
             r['id'] = self.context.makeItemId('EMAPXTerm', r['_structure_key'])
             self.writeItem(r, tmplt)
         return
