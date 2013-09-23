@@ -35,6 +35,12 @@ class AbstractItemDumper:
 	    refs.append('<reference ref_id="%s" />'%ref)
 	return refs
 	    
+    def makeReference(self, r, key, name, typename):
+	r[name] = ''
+        if r[key]:
+	    r[name] = '<reference name="%s" ref_id="%s" />' % (name, self.context.makeItemRef(typename,r[key]))
+	return r[name]
+
     def getWriteCount(self):
         return self.writeCount
 
