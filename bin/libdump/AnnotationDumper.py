@@ -89,7 +89,6 @@ class AnnotationDumper(AbstractItemDumper):
 	  <reference name="subject" ref_id="%(subject)s"/>
 	  %(qualifier)s
 	  <collection name="dataSets">%(dataSets)s</collection>
-	  %(annotationExtension)s
 	  </item>
 	''',
 	#
@@ -110,6 +109,7 @@ class AnnotationDumper(AbstractItemDumper):
 	  %(inferredfrom)s
 	  <reference name="code" ref_id="%(code)s"/>
 	  <collection name="publications">%(publications)s</collection>
+	  %(annotationExtension)s
 	  </item>
 	''',
 	]
@@ -179,7 +179,7 @@ class AnnotationDumper(AbstractItemDumper):
     # No other annotations in MGI have property records at this time.
     #
     def loadEvidenceProperties(self):
-	self.ak2props = {}
+	self.ek2props = {}
         q = '''
             select 
 	        a._annottype_key, 
@@ -202,9 +202,9 @@ class AnnotationDumper(AbstractItemDumper):
         '''
         for r in self.context.sql(q):
 	    if r['value'] != 'NA':
-	        ak = r['_annot_key']
+	        ek = r['_annotevidence_key']
 	        v = r['value'].upper()
-	        self.ak2props[ak] = 'specific_to(%s)' % (v == 'M' and 'male' or 'female')
+	        self.ek2props[ek] = 'specific_to(%s)' % (v == 'M' and 'male' or 'female')
 
     #
     # Reads the MEDIC ontology file to build a mapping from
@@ -233,10 +233,6 @@ class AnnotationDumper(AbstractItemDumper):
 	    r['qualifier'] = r['qualifier'] and ('<attribute name="qualifier" value="%(qualifier)s"/>' % r) or ''
 	    r['class'] = aclass
 	    r['dataSets'] = '<reference ref_id="%s"/>'%self.atk2dsid[atk]
-
-	    p = self.ak2props.get(r['_annot_key'])
-	    p = p and '<attribute name="annotationExtension" value="%s" />'%p or ''
-	    r['annotationExtension'] = p
 
 	    identifier = r['identifier']
 	    tk = r['_term_key']
@@ -274,6 +270,10 @@ class AnnotationDumper(AbstractItemDumper):
 	    r['inferredfrom'] = r['inferredfrom'] and ('<attribute name="withText" value="%(inferredfrom)s"/>'%r) or ''
 	    r['publications'] = '<reference ref_id="%s"/>' % \
 	        self.context.makeItemRef('Reference', r['_refs_key'])
+
+	    p = self.ek2props.get(r['_annotevidence_key'])
+	    p = p and '<attribute name="annotationExtension" value="%s" />'%p or ''
+	    r['annotationExtension'] = p
 
 	    return r
 

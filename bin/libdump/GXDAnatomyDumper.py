@@ -1,6 +1,6 @@
 #--------------------------------------------
 # Given an EMAP and MA file this will merge them into a single ontology.
-# All MA terms have TS28 added to their names.
+# All MA terms are TS28.
 # MA:0000001 is made obsolete and all is immediate children are
 # made children of EMAP:0.
 # All MGI ID's from GXD are incorporated into the ontology
@@ -8,10 +8,8 @@
 # otherwise a new term is created.
 # GXD conceptus terms are explicity mapped the the correct EMAP term.
 # A hard coded list of GDX terms are mapped to EMAP terms with slightly different names
-
-
-
-
+# EMAP ids are padded with leading zeros to be 5 digits
+# Tyler stage is remvoed from names and put in namespace
 
 from OboParser import OboParser, formatStanza
 from collections import defaultdict
@@ -185,7 +183,31 @@ relationship: part_of {3} ! {4}
                                  tag2, val2 = line
                                  if(tag2=="relationship"): 
                                      slines[j] = (tag2, 'part_of '+self.conceptus[val])
-                            
+# move TS to namespace
+                     if (tag=="name"):
+                         name = val[val.find(" "):]
+			 ts = ":"+ val[:val.find(" ")]
+                         if("TS" in ts):
+#                             print('parsed {0} as NAME:{1} and TS:{2}'.format(val,name,ts))
+                             slines[i] = (tag,name)
+                         else:
+                             ts = ""
+
+                 slines.append(("namespace","EMAPX"+ts))       
+
+# pad EMAP ids to 5 digits
+
+                 for i, line in enumerate(slines):
+                     tag, val = line
+                     start = val.find("EMAP:");
+                     if(start != -1):
+                         start = start + 5
+                         end = val.find(" ",start);
+                         if(end == -1):
+                             end = len(val)
+                         num = val[start:end]
+                         val = val.replace(num,num.zfill(5))
+                         slines[i] = (tag,val)
              fd.write(formatStanza(stype,slines))
              fd.write("\n")
          OboParser(termReMapper).parseFile(tempFile)
