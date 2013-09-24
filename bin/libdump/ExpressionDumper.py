@@ -30,13 +30,14 @@ class ExpressionDumper(AbstractItemDumper):
             ''')
 
         for r in self.context.sql(q):
-            self.assay[r['_assay_key']]['gene'] = self.context.makeItemRef('Marker', r['_marker_key'])
-            self.assay[r['_assay_key']]['publication'] = self.context.makeItemRef('Reference', r['_refs_key'])
-            self.assay[r['_assay_key']]['assayid'] = r['accid']
-            self.assay[r['_assay_key']]['assaytype'] = r['assaytype']
+            ak = r['_assay_key']
+            self.assay[ak]['gene'] = self.context.makeItemRef('Marker', r['_marker_key'])
+            self.assay[ak]['publication'] = self.context.makeItemRef('Reference', r['_refs_key'])
+            self.assay[ak]['assayid'] = r['accid']
+            self.assay[ak]['assaytype'] = r['assaytype']
 
             if r['image'] is not None:
-                self.assay[r['_assay_key']]['image'] = r['image'] 
+                self.assay[ak]['image'] = r['image'] 
         return
 
 
