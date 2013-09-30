@@ -154,10 +154,12 @@ class ExpressionDumper(AbstractItemDumper):
             FROM gxd_insituresultimage isr
             JOIN img_imagepane ip ON isr._imagepane_key = ip._imagepane_key
             JOIN acc_accession acc ON ip._image_key = acc._object_key
+            JOIN img_image img ON ip._image_key = img._image_key
             WHERE acc._logicaldb_key = 1
             AND acc._mgitype_key = %(IMAGE_TYPEKEY)d
             AND acc.preferred = 1
             AND acc.private = 0
+            AND img.xdim IS NOT NULL
             ''')
 
         for r in self.context.sql(q):
@@ -165,33 +167,64 @@ class ExpressionDumper(AbstractItemDumper):
         return insitu2image
 
 
+    # Distill all gel bands strengths from a lane down to one value, based on Connie's rules:
+    #  2,4,5,6,7,8 ==> Present, Present trumps Not Specified, Not Specified trumps Absent, Not Specified replaces Ambiguous
+    def aggregateGelBands(self, gelbandStrengthsInLane):
+        laneStrengthAgg = {}
+        for (lane, gelbandStrengths) in gelbandStrengthsInLane.items():
+            strengthAgg = None
+            if (max(gelbandStrengths) > 3) or (2 in gelbandStrengths):
+                strengthAgg = 'Present'
+            elif (-1 in gelbandStrengths) or (3 in gelbandStrengths):
+                strengthAgg = 'Not Specified'
+            elif (1 in gelbandStrengths):
+                strengthAgg = 'Absent'
+
+            if strengthAgg is not None:
+                laneStrengthAgg[lane] = strengthAgg
+            else:
+                print("ERROR: aggregateGelBands - Lane: ", lane, " has no gel bands.") 
+
+        return laneStrengthAgg
 
 
-    # Write a record: foreach gellane (foreach gelband (foreach gellane.structure))
-    def processGelLane(self):
-        gellane2structureQuery = '''
-            SELECT gls._gellane_key AS result_key, gls._structure_key, ts.stage
-            FROM gxd_gellanestructure gls, gxd_structure s, gxd_theilerstage ts
-            WHERE gls._structure_key = s._structure_key
-            AND s._stage_key = ts._stage_key
+    # Collect all gel band strengths for each gel lane, ignoring 'Not Applicable' (-2)
+    def loadGelBandStrengthAggregate(self):
+        gelbandsInLane = defaultdict(set)
+        q = '''
+            SELECT _gellane_key, _strength_key
+            FROM gxd_gelband
+            WHERE _strength_key > -2
             '''
-        gl2s = self.loadResultStructure(gellane2structureQuery)
+
+        for r in self.context.sql(q):
+            gelbandsInLane[r['_gellane_key']].add(r['_strength_key'])
+        
+        return self.aggregateGelBands(gelbandsInLane)
+
+
+    # Write a record: foreach gellane (foreach gellane.structure))
+    #   _gelcontrol_key: data lane = 1, control lane > 1 
+    def processGelLane(self):
+        gl2strength = self.loadGelBandStrengthAggregate()
 
         q = '''
-            SELECT gl._assay_key, gl.sex, gl.age, gl.agemin, gl.agemax, gl._genotype_key, gb._gellane_key, s.strength
-            FROM gxd_gellane gl, gxd_gelband gb, gxd_strength s
-            WHERE gl._gellane_key = gb._gellane_key
-            AND gb._strength_key = s._strength_key
+            SELECT gl._gellane_key, gl._assay_key, gl.sex, gl.age, gl.agemin, gl.agemax, gl._genotype_key, gls._structure_key, ts.stage
+            FROM gxd_gellane gl, gxd_gellanestructure gls, gxd_structure s, gxd_theilerstage ts
+            WHERE gl._gellane_key = gls._gellane_key
+            AND gls._structure_key = s._structure_key
+            AND s._stage_key = ts._stage_key
+            AND gl._gelcontrol_key = 1
             '''
         
         for r in self.context.sql(q):
-            for (structure_key, theilerstage) in gl2s[r['_gellane_key']]:
+            if r['_gellane_key'] in gl2strength:
+                r['strength'] = gl2strength[r['_gellane_key']]
                 r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
-                r['structure'] = self.context.makeItemRef('EMAPXTerm', structure_key)
-                r['stage'] = theilerstage
+                r['structure'] = self.context.makeItemRef('EMAPXTerm', r['_structure_key'])
                 self.writeRecord(r)
         return
-        
+
 
     # Write a record: foreach specimen (foreach insituResult (foreach insitu.structure (foreach insitu.image)))
     def processInSitu(self):
