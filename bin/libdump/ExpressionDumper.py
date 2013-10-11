@@ -4,24 +4,16 @@ from OboParser import OboParser
 
 class ExpressionDumper(AbstractItemDumper):
 
-    # Pre-loads as much information about the assay. If the (gel) assay has an image, we store it now.
+    # Pre-loads assay information.
     # The assay structure is a dict of dict.
     def loadAssay(self):
         q = self.constructQuery('''
-            SELECT a._assay_key, a._marker_key, a._refs_key, acc.accid, acc2.accid AS image, at.assaytype
+            SELECT a._assay_key, a._marker_key, a._refs_key, acc.accid, at.assaytype
             FROM gxd_assay a
               JOIN acc_accession acc 
                 ON a._assay_key = acc._object_key 
               JOIN gxd_assaytype at 
                 ON a._assaytype_key = at._assaytype_key
-              LEFT OUTER JOIN img_imagepane ip
-                ON a._imagepane_key = ip._imagepane_key
-              LEFT OUTER JOIN acc_accession acc2
-                ON (ip._image_key = acc2._object_key
-                AND acc2._logicaldb_key = 1
-                AND acc2._mgitype_key = %(IMAGE_TYPEKEY)d
-                AND acc2.preferred = 1
-                AND acc2.private = 0 )
             WHERE acc._logicaldb_key = 1
             AND acc._mgitype_key = %(ASSAY_TYPEKEY)d
             AND acc.preferred = 1
@@ -31,13 +23,11 @@ class ExpressionDumper(AbstractItemDumper):
 
         for r in self.context.sql(q):
             ak = r['_assay_key']
-            self.assay[ak]['gene'] = self.context.makeItemRef('Marker', r['_marker_key'])
+            self.assay[ak]['feature'] = self.context.makeItemRef('Marker', r['_marker_key'])
             self.assay[ak]['publication'] = self.context.makeItemRef('Reference', r['_refs_key'])
             self.assay[ak]['assayid'] = r['accid']
             self.assay[ak]['assaytype'] = r['assaytype']
 
-            if r['image'] is not None:
-                self.assay[ak]['image'] = r['image'] 
         return
 
 
@@ -86,25 +76,26 @@ class ExpressionDumper(AbstractItemDumper):
             self.loadProbe(r['_assay_key'], r['accid'])
         return
 
+
     # Writes the whole record based on r and the key/value pairs in assay[][]
     def writeRecord(self, r):
+        attributeList = ("probe", "pattern", "image")
+
         tmplt = '''
                 <item class="GXDExpression" id="%(id)s" >
                   <reference name="publication" ref_id="%(publication)s" />
                   <attribute name="assayId" value="%(assayid)s" />
                   <attribute name="assayType" value="%(assaytype)s" />
-                  <reference name="gene" ref_id="%(gene)s" />
+                  <reference name="feature" ref_id="%(feature)s" />
                   <attribute name="sex" value="%(sex)s" />
                   <attribute name="age" value="%(age)s" />
-                  <attribute name="ageMin" value="%(agemin)f" />
-                  <attribute name="ageMax" value="%(agemax)f" />
                   <attribute name="strength" value="%(strength)s" />
                   <reference name="genotype" ref_id="%(genotype)s" />
                   <attribute name="theilerStage" value="%(stage)d" />
                   <reference name="structure" ref_id="%(structure)s" />
-                  %(probe_wr)s
-                  %(pattern_wr)s
-                  %(image_wr)s
+                  %(probe_wv)s
+                  %(pattern_wv)s
+                  %(image_wv)s
                  </item>
                  '''
 
@@ -113,27 +104,15 @@ class ExpressionDumper(AbstractItemDumper):
             for k, v in self.assay[r['_assay_key']].items():
                 r[k] = v
 
-            #Add a temp variable: ['*_wr'] to eliminate nested attributes
-            if 'probe' in r and len(r['probe']) > 1:
-                r['probe_wr'] = '<attribute name="probe" value="%s" />' % r['probe']
-            else:
-                r['probe_wr'] = ''
-
-            if 'pattern' in r and len(r['pattern']) > 1:
-                r['pattern_wr'] = '<attribute name="pattern" value="%s" />' % r['pattern']
-            else:
-                r['pattern_wr'] = ''
-
-            if 'image' in r and len(r['image']) > 1:
-                r['image_wr'] = '<attribute name="imageFigure" value="%s" />' % r['image']
-            else:
-                r['image_wr'] = ''
+            for att in attributeList:
+                att_wv = att + "_wv"   # write value
+                if att in r and len(r[att]) > 0:
+                    r[att_wv] = '<attribute name="{0}" value="{1}" />'.format(att, self.quote(r[att]))
+                else:
+                    r[att_wv] = ''
 
             self.writeItem(r, tmplt)
             
-            r['probe_wr'] = ''
-            r['pattern_wr'] = ''
-            r['image_wr'] = ''
         return
 
     
@@ -146,46 +125,59 @@ class ExpressionDumper(AbstractItemDumper):
         return result2structure
 
 
-    # Pre-load the insitu result to image (mgi:id) relationship
-    def loadResultImage(self):
-        insitu2image = defaultdict(set)
+    # Pre-load the set of insitu images result keys
+    def loadImageResultKeys(self):
+        insituImageResultKeys = set()
         q = self.constructQuery('''
-            SELECT isr._result_key, acc.accid
+            SELECT DISTINCT isr._result_key
             FROM gxd_insituresultimage isr
             JOIN img_imagepane ip ON isr._imagepane_key = ip._imagepane_key
-            JOIN acc_accession acc ON ip._image_key = acc._object_key
             JOIN img_image img ON ip._image_key = img._image_key
-            WHERE acc._logicaldb_key = 1
-            AND acc._mgitype_key = %(IMAGE_TYPEKEY)d
-            AND acc.preferred = 1
-            AND acc.private = 0
-            AND img.xdim IS NOT NULL
+            WHERE img.xdim IS NOT NULL
             ''')
 
         for r in self.context.sql(q):
-            insitu2image[r['_result_key']].add( r['accid'] )
-        return insitu2image
+            insituImageResultKeys.add(r['_result_key'])
+        return insituImageResultKeys
+
+
+    # Pre-load the set of assay image figure labels
+    def loadAssayImageFigureLabels(self):
+        assay2imageFigureLabel = dict()
+        q = self.constructQuery('''
+            SELECT DISTINCT a._assay_key, img.figurelabel
+            FROM gxd_assay a
+            JOIN img_imagepane ip ON a._imagepane_key = ip._imagepane_key
+            JOIN img_image img ON ip._image_key = img._image_key
+            WHERE a._imagepane_key IS NOT NULL 
+            AND img.xdim IS NOT NULL
+            AND img.figurelabel IS NOT NULL
+            ''')
+
+        for r in self.context.sql(q):
+            assay2imageFigureLabel[r['_assay_key']] = r['figurelabel']
+        return assay2imageFigureLabel
 
 
     # Distill all gel bands strengths from a lane down to one value, based on Connie's rules:
     #  2,4,5,6,7,8 ==> Present, Present trumps Not Specified, Not Specified trumps Absent, Not Specified replaces Ambiguous
-    def aggregateGelBands(self, gelbandStrengthsInLane):
-        laneStrengthAgg = {}
-        for (lane, gelbandStrengths) in gelbandStrengthsInLane.items():
-            strengthAgg = None
-            if (max(gelbandStrengths) > 3) or (2 in gelbandStrengths):
-                strengthAgg = 'Present'
-            elif (-1 in gelbandStrengths) or (3 in gelbandStrengths):
-                strengthAgg = 'Not Specified'
-            elif (1 in gelbandStrengths):
-                strengthAgg = 'Absent'
+    def aggregateGelBands(self, gelbandsInLane):
+        lane2strength = {}
+        for (lane, strengths) in gelbandsInLane.items():
+            agg = None
+            if (max(strengths) > 3) or (2 in strengths):
+                agg = 'Present'
+            elif (-1 in strengths) or (3 in strengths):
+                agg = 'Not Specified'
+            elif (1 in strengths):
+                agg = 'Absent'
 
-            if strengthAgg is not None:
-                laneStrengthAgg[lane] = strengthAgg
+            if agg is not None:
+                lane2strength[lane] = agg
             else:
                 print("ERROR: aggregateGelBands - Lane: ", lane, " has no gel bands.") 
 
-        return laneStrengthAgg
+        return lane2strength
 
 
     # Collect all gel band strengths for each gel lane, ignoring 'Not Applicable' (-2)
@@ -207,9 +199,10 @@ class ExpressionDumper(AbstractItemDumper):
     #   _gelcontrol_key: data lane = 1, control lane > 1 
     def processGelLane(self):
         gl2strength = self.loadGelBandStrengthAggregate()
+        ak2figurelabel = self.loadAssayImageFigureLabels()
 
         q = '''
-            SELECT gl._gellane_key, gl._assay_key, gl.sex, gl.age, gl.agemin, gl.agemax, gl._genotype_key, gls._structure_key, ts.stage
+            SELECT gl._gellane_key, gl._assay_key, gl.sex, gl.age, gl._genotype_key, gls._structure_key, ts.stage
             FROM gxd_gellane gl, gxd_gellanestructure gls, gxd_structure s, gxd_theilerstage ts
             WHERE gl._gellane_key = gls._gellane_key
             AND gls._structure_key = s._structure_key
@@ -222,11 +215,16 @@ class ExpressionDumper(AbstractItemDumper):
                 r['strength'] = gl2strength[r['_gellane_key']]
                 r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
                 r['structure'] = self.context.makeItemRef('EMAPXTerm', r['_structure_key'])
+
+                ak = r['_assay_key']
+                if r['_assay_key'] in ak2figurelabel:
+                    r['image'] = ak2figurelabel[r['_assay_key']]
+                    
                 self.writeRecord(r)
         return
 
 
-    # Write a record: foreach specimen (foreach insituResult (foreach insitu.structure (foreach insitu.image)))
+    # Write a record: specimen X insituResult X insitu.structure
     def processInSitu(self):
         insitu2structureQuery = '''
             SELECT isrs._result_key AS result_key, isrs._structure_key, ts.stage
@@ -235,10 +233,10 @@ class ExpressionDumper(AbstractItemDumper):
             AND s._stage_key = ts._stage_key
             '''
         is2structure = self.loadResultStructure(insitu2structureQuery)
-        is2image = self.loadResultImage()
+        isImageResultKeys = self.loadImageResultKeys()
 
         q = '''
-            SELECT s._assay_key, s.sex, s.age, s.agemin, s.agemax, s._genotype_key, isr._result_key, str.strength, p.pattern
+            SELECT s._assay_key, s.sex, s.age, s._genotype_key, s.specimenlabel AS image, isr._result_key, str.strength, p.pattern
             FROM gxd_specimen s, gxd_insituresult isr, gxd_strength str, gxd_pattern p
             WHERE s._specimen_key = isr._specimen_key
             AND isr._strength_key = str._strength_key
@@ -251,12 +249,10 @@ class ExpressionDumper(AbstractItemDumper):
                 r['structure'] = self.context.makeItemRef('EMAPXTerm', structure_key)
                 r['stage'] = theilerstage
                 
-                if r['_result_key'] in is2image:
-                    for image in is2image[r['_result_key']]:
-                        r['image'] = image
-                        self.writeRecord(r)
-                else:
-                    self.writeRecord(r)
+                if r['_result_key'] not in isImageResultKeys:
+                    r['image'] = ''
+                
+                self.writeRecord(r)
         return
 
 
@@ -295,6 +291,7 @@ class ExpressionDumper(AbstractItemDumper):
             AND acc._logicaldb_key = 1
             AND acc.preferred = 1
             AND acc.private = 0
+            AND s._structure_key != 6936
             ''')
 
         for r in self.context.sql(q):
