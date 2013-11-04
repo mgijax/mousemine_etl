@@ -22,7 +22,9 @@ class GenotypeDumper(AbstractItemDumper):
       <reference name="background" ref_id="%(backgroundRef)s" />
       <attribute name="isConditional" value="%(isconditional)s" />
       <attribute name="existsAs" value="%(existsAs)s" />
-      %(note)s<collection name="alleles">%(allelerefs)s</collection>
+      %(note)s
+      <collection name="alleles">%(allelerefs)s</collection>
+      <collection name="cellLines">%(celllinerefs)s</collection>
       </item>
     '''
 
@@ -79,6 +81,7 @@ class GenotypeDumper(AbstractItemDumper):
 	r['isconditional'] = r['isconditional'] and "true" or "false"
 
 	r['allelerefs']=''.join(self.makeRefsFromKeys( self.gapd.gk2aks.get(gk,[]), 'Allele' ))
+	r['celllinerefs'] = ''.join(self.makeRefsFromKeys( self.gapd.gk2cks.get(gk,[]), 'CellLine' ))
 	r['existsAs'] = r['term']
 	if r['note']:
 	    r['note'] = '<attribute name="note" value="%s" />'%self.quote(r['note'])
@@ -96,9 +99,12 @@ class GenotypeDumper(AbstractItemDumper):
 class GenotypeAllelePairDumper(AbstractItemDumper):
     QTMPLT = '''
     SELECT 
+	p._allelepair_key,
         p._genotype_key, 
 	p._allele_key_1, 
 	p._allele_key_2, 
+	p._MutantCellLine_key_1,
+	p._MutantCellLine_key_2,
 	p._marker_key, 
 	t.term AS pairstate,
         a1.symbol AS allele1, 
@@ -116,24 +122,27 @@ class GenotypeAllelePairDumper(AbstractItemDumper):
     ITMPLT = '''
     <item class="GenotypeAllelePair" id="%(id)s">
       <attribute name="pairState" value="%(pairstate)s" />
-      <reference name="genotype" ref_id="%(genotypeid)s" />
-      <reference name="allele1" ref_id="%(allele1id)s" />
-      %(allele2ref)s
-      %(featureRef)s
+      %(genotype)s
+      %(feature)s
+      %(allele1)s %(mutantCellLine1)s 
+      %(allele2)s %(mutantCellLine2)s
       </item>
     '''
 
     def preDump(self):
 	self.gk2mks = {}
         self.gk2aks = {}
+        self.gk2cks = {}
 	self.gk2pairs = {}
 	self.records = []
 
     def processRecord(self, r):
+	gk = r['_genotype_key']
 	mk = r['_marker_key']
 	ak1 = r['_allele_key_1']
 	ak2 = r['_allele_key_2']
-	gk = r['_genotype_key']
+	ck1 = r['_mutantcellline_key_1']
+	ck2 = r['_mutantcellline_key_2']
 
 	# Special processing. In caching the alleles/markers that a
 	# genotype is associated with, do not include things like
@@ -144,6 +153,11 @@ class GenotypeAllelePairDumper(AbstractItemDumper):
 	    s.add(ak1)
 	    if ak2:
 		s.add(ak2)
+	    s = self.gk2cks.setdefault(gk,set())
+	    if ck1:
+	        s.add(ck1)
+	    if ck2:
+	        s.add(ck2)
 	#
 	pair = (r['allele1'], (r['allele2'] or '?'))
 	self.gk2pairs.setdefault(gk, []).append(pair)
@@ -153,21 +167,12 @@ class GenotypeAllelePairDumper(AbstractItemDumper):
 
     def writeRecords(self):
         for r in self.records:
-	    try:
-		r['id'] = self.context.makeItemId('GenotypeAllelePair')
-		r['allele1id'] = self.context.makeItemRef('Allele', r['_allele_key_1'])
-		r['allele2ref'] = ''
-		if r['_allele_key_2']:
-		    r['allele2ref'] = '<reference name="allele2" ref_id="%s" />'  \
-			% self.context.makeItemRef('Allele', r['_allele_key_2'])
-		r['genotypeid'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
-		if r['_marker_key']:
-		    r['featureRef'] = '<reference name="feature" ref_id="%s" />' \
-			% self.context.makeItemRef('Marker', r['_marker_key'])
-                else:
-                    r['featureRef'] = ''
-	    except DumperContext.DanglingReferenceError:
-	        pass
-	    else:
-		self.writeItem(r)
+	    r['id'] = self.context.makeItemId('GenotypeAllelePair', r['_allelepair_key'])
+	    self.makeReference(r, '_allele_key_1', 'allele1', 'Allele' )
+	    self.makeReference(r, '_mutantcellline_key_1', 'mutantCellLine1', 'CellLine' )
+	    self.makeReference(r, '_mutantcellline_key_2', 'mutantCellLine2', 'CellLine' )
+	    self.makeReference(r, '_allele_key_2', 'allele2', 'Allele' )
+	    self.makeReference(r, '_genotype_key', 'genotype','Genotype')
+	    self.makeReference(r, '_marker_key',   'feature', 'Marker')
+	    self.writeItem(r)
 	

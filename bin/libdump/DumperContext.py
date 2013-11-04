@@ -31,25 +31,29 @@ class DumperContext:
 	    self.consolefd = sys.stderr
 	self.QUERYPARAMS = {
 	    # MGItype keys
-	    'REF_TYPEKEY' : 1,
-	    'MARKER_TYPEKEY' : 2,
-	    'ALLELE_TYPEKEY' : 11,
-	    'TERM_TYPEKEY' : 13,
-	    'ORGANISM_TYPEKEY' : 20,
+	    'REF_TYPEKEY'        : 1,
+	    'MARKER_TYPEKEY'     : 2,
+            'PROBE_TYPEKEY'      : 3,
+            'ANTIBODY_TYPEKEY'   : 6,
+            'ASSAY_TYPEKEY'      : 8,
+            'IMAGE_TYPEKEY'      : 9,
+	    'ALLELE_TYPEKEY'     : 11,
+	    'GENOTYPE_TYPEKEY'   : 12,
+	    'TERM_TYPEKEY'       : 13,
+	    'ORGANISM_TYPEKEY'   : 20,
 	    'CHROMOSOME_TYPEKEY' : 27,
-	    'GENOTYPE_TYPEKEY' : 12,
 
 	    # Organism keys
 	    'MOUSE_ORGANISMKEY' : 1,
 	    'HUMAN_ORGANISMKEY' : 2,
-	    'RAT_ORGANISMKEY' : 40,
+	    'RAT_ORGANISMKEY'   : 40,
 
 	    # Logical database keys
-	    'MGI_LDBKEY' : 1,
+	    'MGI_LDBKEY'      : 1,
 	    'TAXONOMY_LDBKEY' : 32,
-	    'PUBMED_LDBKEY' : 29,
-	    'ENTREZ_LDBKEY' : 55,
-	    'DOI_LDBKEY' : 65,
+	    'PUBMED_LDBKEY'   : 29,
+	    'ENTREZ_LDBKEY'   : 55,
+	    'DOI_LDBKEY'      : 65,
 
 	    # VOC_Vocab keys
 	    'ALLELE_MUTATION_VKEY' : 36,
@@ -93,6 +97,8 @@ class DumperContext:
 	    'AlleleMolecularMutation'	: 10016,
 	    'CellLine'			: 10017,
 	    'CellLineDerivation'	: 10018,
+	    'Expression'                : 10019,
+            'EMAPXTerm'                 : 10020,
 	    })
 
 	# load MGI datadump timestamp from the database

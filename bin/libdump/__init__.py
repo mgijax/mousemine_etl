@@ -6,6 +6,7 @@ from CellLineDumper	import CellLineDumper
 from ChromosomeDumper	import ChromosomeDumper
 from CrossReferenceDumper import CrossReferenceDumper
 from DataSourceDumper	import DataSourceDumper
+from ExpressionDumper   import ExpressionDumper
 from FeatureDumper	import FeatureDumper, MouseFeatureDumper, NonMouseFeatureDumper
 from GenotypeDumper	import GenotypeDumper
 from LocationDumper	import LocationDumper
