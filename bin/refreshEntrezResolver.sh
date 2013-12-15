@@ -13,8 +13,5 @@ fi
 
 # MEDIC
 curl ftp://ftp.ncbi.nih.gov/gene/DATA/gene_info.gz | zcat > $ODIR/entrez
-if [ $? -ne 0 ] 
-then
-    exit $? 
-fi
+e=$?; if [ $e -ne 0 ]; then exit $e; fi
 
