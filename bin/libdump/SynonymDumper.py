@@ -10,7 +10,7 @@ class SynonymDumper(AbstractItemDumper):
     AND s._mgitype_key != 2
     %(LIMIT_CLAUSE)s
     ''','''
-    SELECT ml.label, ml._marker_key
+    SELECT distinct ml.label, ml._marker_key
     FROM MRK_Label ml
     WHERE ml._orthologorganism_key is null
     AND ml.labeltype in ('MS','MN','MY')

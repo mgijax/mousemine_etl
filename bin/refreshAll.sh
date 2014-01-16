@@ -2,35 +2,20 @@
 
 ##
 ./refreshPanther.sh
-if [ $? -ne 0 ]
-then
-     exit 1
-fi
+e=$?; if [ $e -ne 0 ]; then exit $e; fi
 
 ##
 ./refreshHomologene.sh
-if [ $? -ne 0 ]
-then
-     exit 1
-fi
+e=$?; if [ $e -ne 0 ]; then exit $e; fi
 
 ##
 ./refreshEntrezResolver.sh
-if [ $? -ne 0 ]
-then
-     exit 1
-fi
+e=$?; if [ $e -ne 0 ]; then exit $e; fi
 
 ##
 ./refreshObo.sh
-if [ $? -ne 0 ] 
-then
-    exit 1 
-fi
+e=$?; if [ $e -ne 0 ]; then exit $e; fi
 
 ##
 ./refreshItems.sh
-if [ $? -ne 0 ] 
-then
-    exit 1 
-fi
+e=$?; if [ $e -ne 0 ]; then exit $e; fi
