@@ -2,16 +2,18 @@
 #
 # fmfd.py (Friendly Mine Feature Dumper)
 #
-# Purpose: to fill in basic data about genes for other organisms in the InterMOD consortium.
+# Purpose: to fill in basic data about genes for other organisms in the 
+# InterMOD consortium.
 # This includes primary ID, symbol, name, and chromosome location (if available). 
 #
 # The basic outline: 
-# 1. Get the data from the other mines! (Why not?) All the info is from the core model,
-# it's simple stuff, so it should be easy to do. Should be able to run the same queries
-# at each mine. And of course, InterMine itself makes the mechanics of doing all this simple.
-# 2. Generate ItemXML. Make this part of our data preparation (ETL) step.
-# 3. Separate source for each species. This is not strictly necessary, but it make key management
-#	a WHOLE lot easier. 
+# 1. Get the data from the other mine using the web service api.
+# 2. Generate ItemXML. One file per species.
+# 3. Each file is a complete source. Includes organism, chromosomes, genes, etc.
+#
+# NOTE: because of slight variations in the way things are represented in 
+# the different mines, the queries (below) may be a bit different than what
+# you might expect.
 #
 
 import sys
@@ -110,7 +112,7 @@ class FriendlyMineFeatureDumper:
 	self.dataSetId = self.mkRef("DataSet", 1)
 	self.ofd.write( self.ITMPLTS["DataSet"] % {
 	    "id" : self.dataSetId,
-	    "name" : "Basic Gene Info",
+	    "name" : "Basic gene info from "+self.name,
 	    "version" : self.date,
 	    "description" : "Gene symbols, names, and genome coordinates. Downloaded via web service API.",
 	    "dataSource" : self.mkRef("DataSource", 1),
