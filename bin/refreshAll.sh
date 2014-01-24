@@ -1,6 +1,10 @@
 #!/bin/sh
 
 ##
+./refreshFmfd.sh
+e=$?; if [ $e -ne 0 ]; then exit $e; fi
+
+##
 ./refreshPanther.sh
 e=$?; if [ $e -ne 0 ]; then exit $e; fi
 
