@@ -30,37 +30,44 @@ MINES = {
 	"name" : "MouseMine",
         "url" : "http://www.mousemine.org/mousemine", 
 	"taxon" : 10090,
+	"organism" : "M. musculus",
     },
     "fly" : { 
 	"name" : "FlyMine",
         "url" : "http://www.flymine.org/release-38.0", 
 	"taxon" : 7227,
+	"organism" : "D. melanogaster",
     },
     "rat" : { 
 	"name" : "RatMine",
         "url" : "http://ratmine.mcw.edu/ratmine", 
 	"taxon" : 10116,
+	"organism" : "R. norvegicus",
     },
     "yeast" : { 
 	"name" : "YeastMine",
         "url" : "http://yeastmine.yeastgenome.org/yeastmine", 
 	"taxon" : 4932,
+	"organism" : "S. cerevisiae",
     },
     "zebrafish" : { 
 	"name" : "ZebraFishMine",
         "url" : "http://zmine.zfin.org", 
 	"taxon" : 7955,
+	"organism" : "D. rario",
     },
     "worm" : { 
 	"name" : "WormMine",
         "url" : "http://www.wormbase.org/tools/wormmine", 
 	"taxon" : 6239,
+	"organism" : "C. elegans",
     }}
 
 #
 class FriendlyMineFeatureDumper:
     def __init__(self, **cfg):
         self.name = cfg.get('name', None)
+        self.organism = cfg.get('organism', None)
 	self.url = cfg.get('url', None)
 	self.taxon = cfg.get('taxon', None)
 	self.file = cfg.get('file', None)
@@ -129,14 +136,29 @@ class FriendlyMineFeatureDumper:
     def dumpChromosomes(self):
         n = "Chromosome"
 	chrs = self.get(n)
+	# write SO term stub for type Chromosome
+	self.ofd.write(self.ITMPLTS["SOTerm"] % {
+	    "id" : self.mkRef("SOTerm", 2),
+	    "identifier" : "SO:0000340",
+	    })
 	for c in chrs["results"]:
 	    if c[3] is None:
 	        c[3] = self.maxLens.get(c[0],None)
+	    cid = c[1] and c[1] or c[2]
+	    if cid.startswith("chr"):
+	        cid = cid[3:]
+	    elif cid.startswith("CHROMOSOME_"):
+	        cid = cid[11:]
+	    if self.taxon == 10116 and cid.isdigit() and len(cid)==1: # rat
+		cid = "0"+cid
+	    # write chromosome
 	    self.ofd.write(self.ITMPLTS[n] % {
 		"id" : self.mkRef(n, c[0]),
-		"primaryIdentifier" : c[1] and c[1] or c[2],
+		"primaryIdentifier" : cid,
+		"organismName" : self.organism,
 		"organism" : self.mkRef("Organism", c[4]),
 		"length" : self.mkAttr("length", c[3]),
+		"sequenceOntologyTerm" : self.mkRef("SOTerm", 2),
 	        })
 
     def dumpGenes(self):
@@ -250,7 +272,10 @@ class FriendlyMineFeatureDumper:
 	"Chromosome" : '''
 <item class="Chromosome" id="%(id)s">
   <attribute name="primaryIdentifier" value="%(primaryIdentifier)s" />
+  <attribute name="symbol" value="chr%(primaryIdentifier)s" />
+  <attribute name="name" value="Chromosome %(primaryIdentifier)s (%(organismName)s)" />
   %(length)s
+  <reference name="sequenceOntologyTerm" ref_id="%(sequenceOntologyTerm)s" />
   <reference name="organism" ref_id="%(organism)s" />
   </item>
 ''',
@@ -321,6 +346,7 @@ def main():
     if not os.path.isdir(dir):
         parser.error("Invalid directory path.")
     cfg['file'] = os.path.join(dir, "%s.features.xml"%opts.organism)
+    cfg['organism'] = opts.organism
     d = FriendlyMineFeatureDumper(**cfg)
     d.dump()
 
