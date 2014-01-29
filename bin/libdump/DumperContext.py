@@ -98,7 +98,7 @@ class DumperContext:
 	    'CellLine'			: 10017,
 	    'CellLineDerivation'	: 10018,
 	    'Expression'                : 10019,
-            'EMAPXTerm'                 : 10020,
+            'EMAPATerm'                 : 10020,
 	    })
 
 	# load MGI datadump timestamp from the database
