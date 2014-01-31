@@ -1,7 +1,7 @@
 #
 # refresh.py
 #
-# Driver script for update/refreshing data files from configure sources,
+# Driver script for update/refreshing data files from configured sources,
 # Depends on config file: refresh.cfg
 #
 # Each source (e.g., emapa, go, mgi-base, ...) has its own output directory. 
@@ -57,7 +57,8 @@ class SourceRefresher:
 
 	logging.info("Latest="+str(latest))
 	for fn in os.listdir(self.pdir):
-	    if fn == self.dname or fn == latest or not re.match(r"\d\d\d\d\.\d\d\.\d\d\.\d\d\.\d\d\.\d\d", fn):
+	    if fn == self.dname or fn == latest \
+	    or not re.match(r"\d\d\d\d\.\d\d\.\d\d\.\d\d\.\d\d\.\d\d", fn):
 	        continue
 	    ffn = os.path.join(self.pdir,fn)
 	    cmd = "rm -fr %s"%ffn
@@ -68,7 +69,10 @@ class SourceRefresher:
 	logging.info("%s: starting ..."%self.name)
 	logging.info("%s: running command: %s"%(self.name,self.cmd))
 	os.makedirs(self.odir)
+
+	# OK, here we go...
 	status = os.system(self.cmd)
+
 	if status == 0:
 	    # re-link 'latest' to point to new directory
 	    c2 = "cd %s; rm -f latest; ln -s %s latest" % (self.pdir,self.dname)
@@ -102,16 +106,25 @@ def main():
     mydir=os.path.dirname(__file__)
     timestamp = time.strftime(STRF,time.localtime(time.time()))
     basedir = os.path.abspath(os.path.join(mydir, '..'))
-    defaultCfgFiles = [ os.path.join(mydir,'config.cfg') ]
+    configFile =  os.path.join(mydir,'config.cfg') 
+    rex = re.compile(r"^\[(.*)\]")
 
     cp = ConfigParser({"BASEDIR":basedir,"TIMESTAMP":timestamp})
-    cp.read(defaultCfgFiles+args)
+    cp.read(configFile)
 
-    if len(opts.sources) == 0:
-        opts.sources = cp.sections()
+    orderedSources = []
+    cfd = open(configFile,'r')
+    for l in cfd:
+        m = rex.match(l)
+	if m and m.group(1) != "DEFAULT":
+	    orderedSources.append( m.group(1))
+    cfd.close()
+
+    if len(opts.sources) > 0:
+	orderedSources = filter(lambda x:x in opts.sources, orderedSources)
 
     lfn = None
-    for sn in opts.sources:
+    for sn in orderedSources:
         if not cp.has_section(sn):
 	    logging.error("Unknown source name: %s"%sn)
 	    continue
