@@ -86,7 +86,7 @@ class FriendlyMineFeatureDumper:
 	return o
 
     def mkRef(self, type, id):
-        return "%d_%d" % (self.TYPEKEYS[type], id)
+        return "%d_%d" % (self.TYPEKEYS[type], abs(id))
 
     def cleanse(self, s):
         return s.replace("&","&amp;").replace('"', "&quot;").replace("<","&lt;")
