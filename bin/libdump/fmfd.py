@@ -22,6 +22,7 @@ import urllib
 import json
 import time
 import types
+import logging
 
 LIMIT = ""
 
@@ -215,6 +216,7 @@ class FriendlyMineFeatureDumper:
         return self.__dict__[n]
 
     def dump(self):
+	logging.info("name(%s) url(%s)"%(self.name, self.url))
 	self.ofd = open(self.file, "w")
 	self.ofd.write('<?xml version="1.0"?>\n')
 	self.ofd.write('<items>\n')
@@ -326,6 +328,10 @@ def setUpCommandParser():
 	      help="Debug mode.")
     parser.add_option("-d", "--directory", dest="dir", action="store", type="string", default=".",
 	      help="Where to write the output." )
+    parser.add_option("-f", "--file", dest="fname", action="store", type="string", default="features.xml",
+	      help="Name of XML file (default=features.xml)." )
+    parser.add_option("-l", "--logfile", dest="logfile", action="store", type="string", 
+	      help="Where to write the log file." )
     parser.add_option("-o", "--organism", dest="organism", action="store", type="string", default=None,
 	      help="The species to dump data for. One of: "+str(MINES.keys()))
     return parser
@@ -333,6 +339,13 @@ def setUpCommandParser():
 def main():
     parser = setUpCommandParser()
     (opts,args) =  parser.parse_args(sys.argv)
+    if opts.logfile:
+	logging.basicConfig(
+	    level=logging.DEBUG,
+	    format='%(asctime)s %(levelname)s %(message)s',
+	    filename=opts.logfile,
+	    filemode='a')
+
     global LIMIT
     LIMIT = opts.debug and "&size=50" or ""
 
@@ -345,7 +358,7 @@ def main():
     dir = os.path.abspath(opts.dir)
     if not os.path.isdir(dir):
         parser.error("Invalid directory path.")
-    cfg['file'] = os.path.join(dir, "%s.features.xml"%opts.organism)
+    cfg['file'] = os.path.abspath(os.path.join(dir, opts.fname))
     cfg['organism'] = opts.organism
     d = FriendlyMineFeatureDumper(**cfg)
     d.dump()

@@ -108,4 +108,6 @@ def formatStanza(stype, slines):
     return r
 
 if __name__ == "__main__":
-    OboParser(formatStanza).parseFile(sys.stdin)
+    def p(s,l):
+        print formatStanza(s,l)
+    OboParser(p).parseFile(sys.stdin)
