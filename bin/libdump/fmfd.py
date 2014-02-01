@@ -76,6 +76,8 @@ class FriendlyMineFeatureDumper:
 	self.ofd = None
 	self.dataSourceId = None
 	self.dataSetId = None
+	self.counters = {}	# index of type->counter, for generating item ids
+	self.refs = {}		# index type+id->item ref_id, for ref_ids generated so far
 
     def iql(self, q):
 	url = self.url+"/service/query/results?format=json&start=0"+ \
@@ -86,7 +88,14 @@ class FriendlyMineFeatureDumper:
 	return o
 
     def mkRef(self, type, id):
-        return "%d_%d" % (self.TYPEKEYS[type], abs(id))
+	k = (type, id)
+	r = self.refs.get(k,None)
+	if r is None:
+	    n = self.counters.setdefault(type,1)
+	    self.counters[type] = n+1
+	    r = "%d_%d" % (self.TYPEKEYS[type], n)
+	    self.refs[k] = r
+	return r
 
     def cleanse(self, s):
         return s.replace("&","&amp;").replace('"', "&quot;").replace("<","&lt;")
@@ -153,6 +162,7 @@ class FriendlyMineFeatureDumper:
 		cid = "0"+cid
 	    # write chromosome
 	    self.ofd.write(self.ITMPLTS[n] % {
+		"imid" : c[0],
 		"id" : self.mkRef(n, c[0]),
 		"primaryIdentifier" : cid,
 		"organismName" : self.organism,
@@ -180,6 +190,7 @@ class FriendlyMineFeatureDumper:
 	        cloc = '<reference name="chromosomeLocation" ref_id="%s" />'%self.mkRef("Location", g[5])
 	    self.gids.add(g[0])
 	    self.ofd.write(self.ITMPLTS[n] % {
+		"imid" : g[0],
 		"id" : self.mkRef(n, g[0]),
 		"primaryIdentifier" : g[1],
 		"symbol" : g[2],
@@ -203,6 +214,7 @@ class FriendlyMineFeatureDumper:
 	    self.maxLens[l[1]] = max(l[3], self.maxLens.get(l[1],0))
 	    #
 	    self.ofd.write(self.ITMPLTS[n] % {
+		"imid" : l[0],
 		"id" : self.mkRef(n, l[0]),
 		"locatedOn" : self.mkRef("Chromosome", l[1]),
 		"start" : l[2],
@@ -270,7 +282,7 @@ class FriendlyMineFeatureDumper:
   </item>
 ''',
 	"Chromosome" : '''
-<item class="Chromosome" id="%(id)s">
+<item class="Chromosome" id="%(id)s"> <!-- %(imid)s -->
   <attribute name="primaryIdentifier" value="%(primaryIdentifier)s" />
   <attribute name="symbol" value="chr%(primaryIdentifier)s" />
   <attribute name="name" value="Chromosome %(primaryIdentifier)s (%(organismName)s)" />
@@ -280,7 +292,7 @@ class FriendlyMineFeatureDumper:
   </item>
 ''',
 	"Gene" : '''
-<item class="Gene" id="%(id)s">
+<item class="Gene" id="%(id)s"> <!-- %(imid)s -->
   <attribute name="primaryIdentifier" value="%(primaryIdentifier)s" />
   <attribute name="symbol" value="%(symbol)s" />
   %(name)s
@@ -291,7 +303,7 @@ class FriendlyMineFeatureDumper:
   </item>
 ''',
 	"Location" : '''
-<item class="Location" id="%(id)s">
+<item class="Location" id="%(id)s"> <!-- %(imid)s -->
   <reference name="feature" ref_id="%(feature)s" />
   <reference name="locatedOn" ref_id="%(locatedOn)s" />
   <attribute name="start" value="%(start)s" />
