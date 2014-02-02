@@ -4,12 +4,15 @@ import re
 
 class AbstractItemDumper:
     SUPER_RE = re.compile(r'<([^>]+)>')
+    NA_RE = re.compile(r'<attribute\s+name=".*"\s+value="Not Applicable"\s+/>', re.M|re.I)
+
     def __init__(self, context):
 	self.context = context
 	self.dumpArgs = None
 	self.writeCount = 0
 	self.dotEvery = 1000
 	self.dotsPerLine = 50
+	self.suppressNA = True
 
     def superscript(self, s):
         return self.SUPER_RE.sub(r'<sup>\1</sup>',s)
@@ -68,6 +71,8 @@ class AbstractItemDumper:
 	else:
 	    s = tmplt[i] % r
 	if self.filter(r, s) is not False:
+	    if self.suppressNA:
+		s = self.NA_RE.sub('',s)
 	    self.context.writeOutput(r['id'],s)
 	    self.writeCount += 1
 
