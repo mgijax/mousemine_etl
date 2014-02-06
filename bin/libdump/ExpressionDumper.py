@@ -214,13 +214,16 @@ class ExpressionDumper(AbstractItemDumper):
             if r['_gellane_key'] in gl2strength:
                 r['strength'] = gl2strength[r['_gellane_key']]
                 r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
-                r['structure'] = self.context.makeItemRef('EMAPXTerm', r['_structure_key'])
 
                 ak = r['_assay_key']
                 if r['_assay_key'] in ak2figurelabel:
                     r['image'] = ak2figurelabel[r['_assay_key']]
                     
-                self.writeRecord(r)
+                try:
+                    r['structure'] = self.context.makeItemRef('EMAPATerm', r['_structure_key'])
+                    self.writeRecord(r)
+                except DumperContext.DanglingReferenceError, e:
+                    self.context.log('Dangling EMAPA reference detected: ' + str(r['_structure_key']))
         return
 
 
@@ -245,74 +248,59 @@ class ExpressionDumper(AbstractItemDumper):
 
         for r in self.context.sql(q):
             for (structure_key, theilerstage) in is2structure[r['_result_key']]:
-                r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
-                r['structure'] = self.context.makeItemRef('EMAPXTerm', structure_key)
                 r['stage'] = theilerstage
+                r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
                 
                 if r['_result_key'] not in isImageResultKeys:
                     r['image'] = ''
                 
-                self.writeRecord(r)
+                try:
+                    r['structure'] = self.context.makeItemRef('EMAPATerm', structure_key)
+                    self.writeRecord(r)
+                except DumperContext.DanglingReferenceError, e:
+                    self.context.log('Dangling EMAPA reference detected: ' + str(structure_key))
         return
 
 
-    # Maps MGI:# to EMAP:# or MA:# from obo file
-    def loadEMAPXMappings(self, file):
-        def stanzaProc( stype, slines ):
-            emapxId = None
-            for tag, val in slines:
-                if tag == "id" and (val.startswith("EMAP") or val.startswith("MA")):
-                    emapxId = val
-                    self.emapxList.append(val)
-                elif tag == "alt_id" and val.startswith("MGI") and (emapxId is not None):
-                    self.emapxRemap[val] = emapxId
-        OboParser(stanzaProc).parseFile(file)
-
-
-    # write out the EMAPX terms first, then GXD Expression terms can reference them
-    def writeEMAPXTerms(self):
-        self.emapxList = list()
-        self.emapxRemap = {}
-        if hasattr(self.context, 'emapxfile'):
-            mfile = os.path.abspath(os.path.join(os.getcwd(),self.context.emapxfile))
-            self.loadEMAPXMappings(mfile)
-        
+    # write out the EMAPA terms first, then GXD Expression terms can reference them
+    def writeEMAPATerms(self):
         tmplt = '''
-                <item class="EMAPXTerm" id="%(id)s" >
+                <item class="EMAPATerm" id="%(id)s" >
                   <attribute name="identifier" value="%(identifier)s" />
                 </item>
                 '''
 
         q = self.constructQuery('''
-            SELECT s._structure_key, s.edinburghkey, acc.accid
-            FROM gxd_structure s, acc_accession acc
-            WHERE s._structure_key = acc._object_key
-            AND acc._mgitype_key = 38
-            AND acc._logicaldb_key = 1
-            AND acc.preferred = 1
-            AND acc.private = 0
-            AND s._structure_key != 6936
+            SELECT m.emapsid, a1._object_key
+            FROM mgi_emaps_mapping m, acc_accession a1, 
+            acc_accession a2, voc_term_emaps t1, voc_term t 
+            WHERE m.accid = a1.accid
+            AND a1._mgitype_key = 38
+            AND a1._logicaldb_key = 1
+            AND a1.private = 0
+            AND a1.preferred = 1
+            AND m.emapsid = a2.accid
+            AND a2._logicaldb_key = 170
+            AND a2._mgitype_key = 13
+            AND a2._object_key = t1._term_key
+            AND a2._object_key = t._term_key
             ''')
 
         for r in self.context.sql(q):
-            emapKey = "EMAP:" + str(r['edinburghkey'])
-            if emapKey in self.emapxList:
-                # EMAP term is current and used in obo file
-                r['identifier'] = emapKey
-            elif r['accid'] in self.emapxRemap: 
-                # MGI id maps to an EMAP term or an MA term
-                r['identifier'] = self.emapxRemap[r['accid']]
-            else:
-                # No EMAP or MA reference, use the MGI id
-                r['identifier'] = r['accid']
+            # transform EMAPS to EMAPA
+            emapaid = r['emapsid'].replace('EMAPS','EMAPA')
+            # strip last two digits (the stage) from emapsid
+            emapaid = emapaid[:-2]
+            r['identifier'] = emapaid
 
-            r['id'] = self.context.makeItemId('EMAPXTerm', r['_structure_key'])
+            r['id'] = self.context.makeItemId('EMAPATerm', r['_object_key'])
             self.writeItem(r, tmplt)
         return
 
 
+
     def preDump(self):
-        self.writeEMAPXTerms()
+        self.writeEMAPATerms()
         self.assay = defaultdict(dict)
 
         self.loadAssay()
