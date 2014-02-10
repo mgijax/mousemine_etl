@@ -219,10 +219,10 @@ class ExpressionDumper(AbstractItemDumper):
                 if r['_assay_key'] in ak2figurelabel:
                     r['image'] = ak2figurelabel[r['_assay_key']]
                     
-                try:
-                    r['structure'] = self.context.makeItemRef('EMAPATerm', r['_structure_key'])
+                if r['_structure_key'] in self.structure_key2emapa_number:
+                    r['structure'] = self.context.makeItemRef('EMAPATerm', self.structure_key2emapa_number[r['_structure_key']])
                     self.writeRecord(r)
-                except DumperContext.DanglingReferenceError, e:
+                else:
                     self.context.log('Dangling EMAPA reference detected: ' + str(r['_structure_key']))
         return
 
@@ -254,10 +254,10 @@ class ExpressionDumper(AbstractItemDumper):
                 if r['_result_key'] not in isImageResultKeys:
                     r['image'] = ''
                 
-                try:
-                    r['structure'] = self.context.makeItemRef('EMAPATerm', structure_key)
+                if structure_key in self.structure_key2emapa_number:
+                    r['structure'] = self.context.makeItemRef('EMAPATerm', self.structure_key2emapa_number[structure_key])
                     self.writeRecord(r)
-                except DumperContext.DanglingReferenceError, e:
+                else:
                     self.context.log('Dangling EMAPA reference detected: ' + str(structure_key))
         return
 
@@ -286,15 +286,23 @@ class ExpressionDumper(AbstractItemDumper):
             AND a2._object_key = t._term_key
             ''')
 
+        self.structure_key2emapa_number = dict()
+        referenced_emapaids = []
+
         for r in self.context.sql(q):
             # transform EMAPS to EMAPA
             emapaid = r['emapsid'].replace('EMAPS','EMAPA')
             # strip last two digits (the stage) from emapsid
             emapaid = emapaid[:-2]
-            r['identifier'] = emapaid
 
-            r['id'] = self.context.makeItemId('EMAPATerm', r['_object_key'])
-            self.writeItem(r, tmplt)
+            if emapaid not in referenced_emapaids:
+                r['identifier'] = emapaid
+                r['id'] = self.context.makeItemId('EMAPATerm', int(emapaid[-5:]))
+                referenced_emapaids.append(emapaid)
+
+                self.writeItem(r, tmplt)
+
+            self.structure_key2emapa_number[r['_object_key']] = int(emapaid[-5:])
         return
 
 
