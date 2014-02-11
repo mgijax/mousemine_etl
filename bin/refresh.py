@@ -97,6 +97,7 @@ def getOpts():
     op = OptionParser()
     op.add_option(
     	"-s", "--source", dest="sources",
+	metavar="SOURCE",
     	default=[], action="append",
 	help="Name of a source (repeatable).")
     return op.parse_args()
