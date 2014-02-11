@@ -15,6 +15,18 @@ QTERMS = '''
     AND t._term_key = aa._object_key
     AND aa._logicaldb_key = 169
     AND aa._mgitype_key = 13
+    AND aa.preferred = 1
+    ORDER BY aa.accid
+    '''
+
+QALTIDS = '''
+    SELECT t._term_key, aa.accid as id
+    FROM VOC_Term t, ACC_Accession aa
+    WHERE t._term_key = aa._object_key
+    AND t._vocab_key = 90
+    AND aa._logicaldb_key = 169
+    AND aa._mgitype_key = 13
+    AND aa.preferred = 0
     ORDER BY aa.accid
     '''
 
@@ -71,8 +83,7 @@ name: %(name)s
 namespace: emapa
 starts_at: %(startstage)s
 ends_at: %(endstage)s
-%(relationships)s
-%(synonyms)s
+%(altids)s%(synonyms)s%(relationships)s
 '''
 
 NL = "\n"
@@ -109,20 +120,27 @@ class EmapaOboDumper:
 	for e in db.sql(QEDGES):
 	    l = e['label']
 	    if l == "is-a":
-		rel = "is_a: %(pid)s ! %(parent)s" % e
+		rel = "is_a: %(pid)s ! %(parent)s\n" % e
 	    else:
-		rel = "relationship: part_of %(pid)s ! %(parent)s" % e
+		rel = "relationship: part_of %(pid)s ! %(parent)s\n" % e
 	    tid2parents.setdefault(e['_term_key'],[]).append( rel )
 	#
 	tid2synonyms = {}
 	for s in db.sql(QSYNONYMS):
-	    syn = 'synonym: "%(synonym)s" RELATED []' % s
+	    syn = 'synonym: "%(synonym)s" RELATED []\n' % s
 	    tid2synonyms.setdefault(s['_term_key'],[]).append( syn )
 	    
 	#
+	tid2altids = {}
+	for a in db.sql(QALTIDS):
+	    aid = 'alt_id: %(id)s\n' % a
+	    tid2altids.setdefault(a['_term_key'],[]).append(aid)
+
+	#
         for r in db.sql(QTERMS):
-	    r['relationships'] = NL.join(tid2parents.get(r['_term_key'],[]))
-	    r['synonyms'] = NL.join(tid2synonyms.get(r['_term_key'],[]))
+	    r['relationships'] = ''.join(tid2parents.get(r['_term_key'],[]))
+	    r['synonyms'] = ''.join(tid2synonyms.get(r['_term_key'],[]))
+	    r['altids'] = ''.join(tid2altids.get(r['_term_key'],[]))
 	    self.ofd.write( ITERM % r )
 
 	#
