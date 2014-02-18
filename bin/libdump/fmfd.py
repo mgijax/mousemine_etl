@@ -18,13 +18,15 @@
 
 import sys
 import os
-import urllib
+import urllib2
 import json
 import time
 import types
 import logging
 
 LIMIT = ""
+
+TIMEOUT = 60 # in seconds, for connection attempts
 
 MINES = {
     "mouse": { 
@@ -72,6 +74,7 @@ class FriendlyMineFeatureDumper:
 	self.url = cfg.get('url', None)
 	self.taxon = cfg.get('taxon', None)
 	self.file = cfg.get('file', None)
+	self.timeout = cfg.get('timeout', TIMEOUT)
 	self.date = time.asctime(time.localtime(time.time()))
 	self.description = self.name
 	self.ofd = None
@@ -82,8 +85,8 @@ class FriendlyMineFeatureDumper:
 
     def iql(self, q):
 	url = self.url+"/service/query/results?format=json&start=0"+ \
-	      LIMIT+"&query="+urllib.quote(q)
-	fd = urllib.urlopen(url)
+	      LIMIT+"&query="+urllib2.quote(q)
+	fd = urllib2.urlopen(url,None,self.timeout)
 	o=json.load(fd)
         fd.close()
 	return o

@@ -125,6 +125,7 @@ def main():
 	orderedSources = filter(lambda x:x in opts.sources, orderedSources)
 
     lfn = None
+    success = True
     for sn in orderedSources:
         if not cp.has_section(sn):
 	    logging.error("Unknown source name: %s"%sn)
@@ -140,6 +141,14 @@ def main():
 	#
 	sr = SourceRefresher(sn, cp)
 	sr.refresh()
-    logging.info("END OF REFRESH " +40*"-")
+	success = success and sr.success
+    if success:
+	logging.info("Refresh succeeded!")
+	logging.info("END OF REFRESH " +40*"-")
+	sys.exit(0)
+    else:
+	logging.info("Refresh failed!")
+	logging.info("END OF REFRESH " +40*"-")
+	sys.exit(1)
 
 main()
