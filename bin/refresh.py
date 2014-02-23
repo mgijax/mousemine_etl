@@ -144,11 +144,8 @@ def main():
 	success = success and sr.success
     if success:
 	logging.info("Refresh succeeded!")
-	logging.info("END OF REFRESH " +40*"-")
-	sys.exit(0)
     else:
-	logging.info("Refresh failed!")
-	logging.info("END OF REFRESH " +40*"-")
-	sys.exit(1)
+        logging.info("Refresh failed!")
+    logging.info("END OF REFRESH " +40*"-")
 
 main()
