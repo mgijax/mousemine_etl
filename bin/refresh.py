@@ -136,7 +136,7 @@ def main():
 		level=logging.DEBUG,
 		format='%(asctime)s %(levelname)s %(message)s',
 		filename=lfn,
-		filemode='a')
+		filemode='w')
 	    logging.info("STARTING SOURCE ETL REFRESH " +40*"-")
 	#
 	sr = SourceRefresher(sn, cp)

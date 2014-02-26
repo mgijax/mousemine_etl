@@ -91,7 +91,8 @@ class ExpressionDumper(AbstractItemDumper):
                   <attribute name="age" value="%(age)s" />
                   <attribute name="strength" value="%(strength)s" />
                   <reference name="genotype" ref_id="%(genotype)s" />
-                  <attribute name="theilerStage" value="%(stage)d" />
+                  <attribute name="stage" value="TS%(stage)02d" />
+                  <attribute name="emaps" value="%(emaps)s" />
                   <reference name="structure" ref_id="%(structure)s" />
                   %(probe_wv)s
                   %(pattern_wv)s
@@ -116,7 +117,7 @@ class ExpressionDumper(AbstractItemDumper):
         return
 
     
-    # Pre-load the result (gellane/insitu) to structure relationship and include theilerstage
+    # Pre-load the result (gellane/insitu) to structure relationship and include theiler stage
     def loadResultStructure(self, query):
         result2structure = defaultdict(list)
 
@@ -221,6 +222,7 @@ class ExpressionDumper(AbstractItemDumper):
                     
                 if r['_structure_key'] in self.structure_key2emapa_number:
                     r['structure'] = self.context.makeItemRef('EMAPATerm', self.structure_key2emapa_number[r['_structure_key']])
+		    r['emaps'] = self.structure_key2emaps[r['_structure_key']]
                     self.writeRecord(r)
                 else:
                     self.context.log('Dangling EMAPA reference detected: ' + str(r['_structure_key']))
@@ -256,6 +258,7 @@ class ExpressionDumper(AbstractItemDumper):
                 
                 if structure_key in self.structure_key2emapa_number:
                     r['structure'] = self.context.makeItemRef('EMAPATerm', self.structure_key2emapa_number[structure_key])
+		    r['emaps'] = self.structure_key2emaps[structure_key]
                     self.writeRecord(r)
                 else:
                     self.context.log('Dangling EMAPA reference detected: ' + str(structure_key))
@@ -287,6 +290,7 @@ class ExpressionDumper(AbstractItemDumper):
             ''')
 
         self.structure_key2emapa_number = dict()
+        self.structure_key2emaps = dict()
         referenced_emapaids = []
 
         for r in self.context.sql(q):
@@ -303,6 +307,7 @@ class ExpressionDumper(AbstractItemDumper):
                 self.writeItem(r, tmplt)
 
             self.structure_key2emapa_number[r['_object_key']] = int(emapaid[-5:])
+            self.structure_key2emaps[r['_object_key']] = r['emapsid']
         return
 
 
