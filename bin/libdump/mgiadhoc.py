@@ -12,10 +12,14 @@ import psycopg2
 import psycopg2.extras
 
 # Default connection parameters
-HOST="adhoc.informatics.jax.org"
-DATABASE="mgd"
-USER="mgd_public"
-PASSWORD="mgdpub"
+#HOST="adhoc.informatics.jax.org"
+#DATABASE="mgd"
+#USER="mgd_public"
+#PASSWORD="mgdpub"
+HOST="mtdoom.informatics.jax.org"
+DATABASE="export"
+USER="mgd_dbo"
+PASSWORD="db0dev"
 
 #
 def connect(host=None,database=None, user=None, password=None):
