@@ -19,6 +19,15 @@ USER="mgd_public"
 PASSWORD="mgdpub"
 
 #
+def getConnectionDefaults():
+    return {
+    'host'     : HOST,
+    'database' : DATABASE,
+    'user'     : USER,
+    'password' : PASSWORD 
+    }
+
+#
 def setConnectionDefaults(**cparms):
     global HOST, DATABASE, USER, PASSWORD
     HOST     = cparms.get('host',HOST)
@@ -27,13 +36,13 @@ def setConnectionDefaults(**cparms):
     PASSWORD = cparms.get('password',PASSWORD)
 
 #
-def setConnectionDefaultsFromPropertiesFile(fname="~/.intermine/mousemine.properties", dname="mgiadhoc"):
+def getConnectionParamsFromPropertiesFile(fname="~/.intermine/mousemine.properties", dname="mgiadhoc"):
     try:
         fname = os.path.abspath(os.path.expanduser(fname))
         fd = open(fname,'r')
         data = fd.read()
         fd.close()
-        cparms = {
+        return {
         'host'    : re.search('^db.%s.datasource.serverName=(.*)'%dname,   data, re.M).group(1).strip(),
         'database': re.search('^db.%s.datasource.databaseName=(.*)'%dname, data, re.M).group(1).strip(),
         'user'    : re.search('^db.%s.datasource.user=(.*)'%dname,         data, re.M).group(1).strip(),
@@ -41,6 +50,10 @@ def setConnectionDefaultsFromPropertiesFile(fname="~/.intermine/mousemine.proper
         }
     except:
         raise RuntimeError("Could not get connection data from: "+fname)
+
+#
+def setConnectionDefaultsFromPropertiesFile(fname="~/.intermine/mousemine.properties", dname="mgiadhoc"):
+    cparms = getConnectionParamsFromPropertiesFile(fname,dname)
     setConnectionDefaults(**cparms)
 
 #

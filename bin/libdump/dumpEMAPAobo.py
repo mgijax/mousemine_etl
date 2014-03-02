@@ -8,6 +8,7 @@ import sys
 import mgiadhoc as db
 import time
 
+# retrieves all EMAPA terms with basic into
 QTERMS = '''
     SELECT aa.accid as id, t._term_key, t.term as name, a.startstage, a.endstage
     FROM VOC_Term t, VOC_Term_EMAPA a, ACC_Accession aa
@@ -19,6 +20,7 @@ QTERMS = '''
     ORDER BY aa.accid
     '''
 
+# retrieves alternate ids for EMAPA terms
 QALTIDS = '''
     SELECT t._term_key, aa.accid as id
     FROM VOC_Term t, ACC_Accession aa
@@ -30,6 +32,7 @@ QALTIDS = '''
     ORDER BY aa.accid
     '''
 
+# retrieves synonyms for EMAPA terms
 QSYNONYMS = '''
     SELECT t._term_key, t.term, s.synonym, st.synonymType
     FROM VOC_Term t, MGI_Synonym s, MGI_SynonymType st
@@ -39,6 +42,7 @@ QSYNONYMS = '''
     AND s._synonymtype_key = st._synonymtype_key
     '''
 
+# retrieves all edges in the EMAPA dag
 QEDGES = '''
     SELECT ct._term_key, 
 	ct.term as child, 

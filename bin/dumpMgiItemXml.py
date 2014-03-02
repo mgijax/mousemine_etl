@@ -94,7 +94,6 @@ def main(argv):
     if len(clcs) == 0:
         clcs = allDumpers[:]
 	        
-    db.setConnectionDefaultsFromPropertiesFile(pfile)
 
     dcx = DumperContext(
     	debug=debug, 
@@ -106,6 +105,9 @@ def main(argv):
     dcx.log("\n============================================================")
     dcx.log("Starting MGI item dump...")
     dcx.log("Command line parameters = %s" % str(argv))
+
+    db.setConnectionDefaultsFromPropertiesFile(pfile)
+    dcx.log("Database connection:" + str(db.getConnectionDefaults()))
     total = 0
     for cls,args in clcs:
 	total += cls(dcx, *args).dump(fname=cls.__name__[:-6]+".xml")
