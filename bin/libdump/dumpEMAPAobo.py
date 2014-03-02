@@ -149,5 +149,6 @@ class EmapaOboDumper:
 	#
 	self.ofd.close()
 
+db.setConnectionDefaultsFromPropertiesFile()
 EmapaOboDumper().main()
 

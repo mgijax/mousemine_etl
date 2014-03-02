@@ -209,4 +209,5 @@ class MedicConflater:
         self.writeStanzas(conflated_file)
 
 
+db.setConnectionDefaultsFromPropertiesFile()
 MedicConflater().main(sys.argv[1], sys.argv[2])

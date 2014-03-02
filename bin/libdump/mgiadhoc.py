@@ -5,6 +5,7 @@
 # Simple library for querying the MGI ad hoc database.
 #
 import os
+import re
 import sys
 import types
 
@@ -12,14 +13,35 @@ import psycopg2
 import psycopg2.extras
 
 # Default connection parameters
-#HOST="adhoc.informatics.jax.org"
-#DATABASE="mgd"
-#USER="mgd_public"
-#PASSWORD="mgdpub"
-HOST="mtdoom.informatics.jax.org"
-DATABASE="export"
-USER="mgd_dbo"
-PASSWORD="db0dev"
+HOST="adhoc.informatics.jax.org"
+DATABASE="mgd"
+USER="mgd_public"
+PASSWORD="mgdpub"
+
+#
+def setConnectionDefaults(**cparms):
+    global HOST, DATABASE, USER, PASSWORD
+    HOST     = cparms.get('host',HOST)
+    DATABASE = cparms.get('database',DATABASE)
+    USER     = cparms.get('user',USER)
+    PASSWORD = cparms.get('password',PASSWORD)
+
+#
+def setConnectionDefaultsFromPropertiesFile(fname="~/.intermine/mousemine.properties", dname="mgiadhoc"):
+    try:
+        fname = os.path.abspath(os.path.expanduser(fname))
+        fd = open(fname,'r')
+        data = fd.read()
+        fd.close()
+        cparms = {
+        'host'    : re.search('^db.%s.datasource.serverName=(.*)'%dname,   data, re.M).group(1).strip(),
+        'database': re.search('^db.%s.datasource.databaseName=(.*)'%dname, data, re.M).group(1).strip(),
+        'user'    : re.search('^db.%s.datasource.user=(.*)'%dname,         data, re.M).group(1).strip(),
+        'password': re.search('^db.%s.datasource.password=(.*)'%dname,     data, re.M).group(1).strip()
+        }
+    except:
+        raise RuntimeError("Could not get connection data from: "+fname)
+    setConnectionDefaults(**cparms)
 
 #
 def connect(host=None,database=None, user=None, password=None):
