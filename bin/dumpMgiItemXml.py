@@ -10,6 +10,8 @@ import sys
 import getopt
 from libdump import *
 import types
+import os
+from libdump import mgiadhoc as db
 
 ##########################################
 VERSION = "0.1"
@@ -42,8 +44,8 @@ defaultParams = dict(allDumpers)
 ##########################################
 def parseArgs(argv):
     opts,args = getopt.getopt(argv, 
-        'c:d:D:l:vL', 
-	['class=', 'dir=','define','debug', 'limit=','version','logfile=','norefcheck','install='])
+        'c:d:D:l:vL:p:', 
+	['class=', 'dir=','define','debug', 'limit=','version','logfile=','norefcheck','install=','properties='])
     return opts,args
 
 def main(argv):
@@ -54,6 +56,7 @@ def main(argv):
     clcs = []
     defs = {}
     logfile=None
+    pfile = "~/.intermine/mousemine.properties"
     checkRefs = True
     for o,v in opts:
         if o == '--debug':
@@ -72,6 +75,8 @@ def main(argv):
 	    checkRefs = False
 	elif o in ('-L','--logfile'):
 	    logfile = v
+	elif o in ('-p','--properties'):
+	    pfile = v
 	elif o == '--install':
 	    m = __import__(v)
 	    installMethods(m)
@@ -89,6 +94,7 @@ def main(argv):
     if len(clcs) == 0:
         clcs = allDumpers[:]
 	        
+
     dcx = DumperContext(
     	debug=debug, 
 	dir=dir, 
@@ -99,6 +105,9 @@ def main(argv):
     dcx.log("\n============================================================")
     dcx.log("Starting MGI item dump...")
     dcx.log("Command line parameters = %s" % str(argv))
+
+    db.setConnectionDefaultsFromPropertiesFile(pfile)
+    dcx.log("Database connection:" + str(db.getConnectionDefaults()))
     total = 0
     for cls,args in clcs:
 	total += cls(dcx, *args).dump(fname=cls.__name__[:-6]+".xml")

@@ -6,7 +6,6 @@
 \#*\#
 
 # generated files and directories
-output/
 LOG
 .DS_Store
 
