@@ -37,7 +37,7 @@ MINES = {
     },
     "fly" : { 
 	"name" : "FlyMine",
-        "url" : "http://www.flymine.org/release-38.0", 
+        "url" : "http://www.flymine.org/query", 
 	"taxon" : 7227,
 	"organism" : "D. melanogaster",
     },
