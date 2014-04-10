@@ -134,6 +134,10 @@ class AnnotationDumper(AbstractItemDumper):
 	  1005 : ('Genotype', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
 	  # Human gene-OMIM annotations
 	  1006 : ('Marker', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
+	  # Mouse allele-OMIM annotations
+	  1012 : ('Allele', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
+	  # Human pheno-OMIM annotations
+	  1013 : ('Marker', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
 	}
 	self.ANNOTTYPEKEYS = self.atk2classes.keys()
 	self.ANNOTTYPEKEYS_S = COMMA.join(map(lambda x:str(x),self.ANNOTTYPEKEYS))
