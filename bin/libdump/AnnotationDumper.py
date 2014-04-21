@@ -4,6 +4,7 @@ from DumperContext import DumperContext
 from OboParser import OboParser
 from DataSourceDumper import DataSetDumper
 import os
+from DerivedAnnotationHelper import DerivedAnnotationHelper
 
 class AnnotationDumper(AbstractItemDumper):
     QTMPLT = [
@@ -157,15 +158,14 @@ class AnnotationDumper(AbstractItemDumper):
 	    self.loadOmimMappings(mfile)
 
 	self.loadEvidenceProperties()
-
 	self.writeDataSets()
 
     def writeDataSets(self):
-	dsd = DataSetDumper(self.context)
+	self.dsd = DataSetDumper(self.context)
 	self.atk2dsid = {}
 	for atk, atinfo in self.atk2classes.items():
 	    dsname = '%s to %s %s Annotations from MGI' % (atinfo[1],atinfo[5],atinfo[0])
-	    self.atk2dsid[atk] = dsd.dataSet(name=dsname)
+	    self.atk2dsid[atk] = self.dsd.dataSet(name=dsname)
 
     #
     # Loads the evidence property records for the specified annotation types.
@@ -287,3 +287,49 @@ class AnnotationDumper(AbstractItemDumper):
         for t in self.termsToWrite:
 	    r = { 'class':t[0], 'id':t[1], 'identifier':t[2] }
 	    self.writeItem(r, tmplt)
+
+	# switch output files
+	self.context.openOutput("DerivedAnnotations.xml")
+
+	# need one more evidence code 
+	c = {}
+	c['id'] = self.context.makeItemId('OntologyAnnotationEvidenceCode')
+	c['class']= "OntologyAnnotationEvidenceCode"
+	c['code'] = "DOA"
+	c['name'] = "derived from other annotations"
+	self.writeItem(c, self.ITMPLT[1])
+
+	# compute and write out derived annotations
+	dsref = self.dsd.dataSet(name="Derived Annotations from MGI")
+	helper = DerivedAnnotationHelper(self.context)
+
+	# NOTE: helper data is gotten from the MGI independently. Possible that some of the
+	# objects might have been skipped by the dumper code prior to this. 
+	# Therefore handle dangling reference errors by skipping the record..
+	# 
+	for (mk, vk, tk, rks) in helper.iterAnnots():
+	    try:
+		#
+		r = {}
+		r['id'] = self.context.makeItemId('OntologyAnnotation') # start auto-assigning.
+		r['class'] = "OntologyAnnotation"
+		r['subject'] = self.context.makeItemRef('Marker', mk)
+		r['ontologyterm'] = self.context.makeItemRef('Vocabulary Term', tk)
+		r['qualifier'] = ''
+		r['dataSets'] = '<reference ref_id="%s"/>' % dsref
+		#
+		s = {}
+		s['id'] = self.context.makeItemId('OntologyAnnotationEvidence') # start auto-assigning
+		s['class'] = 'OntologyAnnotationEvidence'
+		s['annotation'] = r['id']
+		s['inferredfrom'] = ''
+		s['code'] = c['id']
+		s['publications'] = ''.join(self.makeRefsFromKeys( rks, "Reference" ))
+		s['annotationExtension'] = ''
+		#
+	    except DumperContext.DanglingReferenceError:
+	        pass
+	    else:
+		self.writeItem(r, self.ITMPLT[0])
+		self.writeItem(s, self.ITMPLT[2])
+
