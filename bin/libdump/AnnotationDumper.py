@@ -303,17 +303,17 @@ class AnnotationDumper(AbstractItemDumper):
 	dsref = self.dsd.dataSet(name="Derived Annotations from MGI")
 	helper = DerivedAnnotationHelper(self.context)
 
-	# NOTE: helper data is gotten from the MGI independently. Possible that some of the
-	# objects might have been skipped by the dumper code prior to this. 
-	# Therefore handle dangling reference errors by skipping the record..
-	# 
-	for (mk, vk, tk, rks) in helper.iterAnnots():
+	def writeDerivedAnnot( type, k, vk, tk, rks ):
+	    # NOTE: helper data is gotten from the MGI independently. Possible that some of the
+	    # objects might have been skipped by the dumper code prior to this. 
+	    # Therefore handle dangling reference errors by skipping the record..
+	    # 
 	    try:
 		#
 		r = {}
 		r['id'] = self.context.makeItemId('OntologyAnnotation') # start auto-assigning.
 		r['class'] = "OntologyAnnotation"
-		r['subject'] = self.context.makeItemRef('Marker', mk)
+		r['subject'] = self.context.makeItemRef(type, k)
 		r['ontologyterm'] = self.context.makeItemRef('Vocabulary Term', tk)
 		r['qualifier'] = ''
 		r['dataSets'] = '<reference ref_id="%s"/>' % dsref
@@ -324,7 +324,14 @@ class AnnotationDumper(AbstractItemDumper):
 		s['annotation'] = r['id']
 		s['inferredfrom'] = ''
 		s['code'] = c['id']
-		s['publications'] = ''.join(self.makeRefsFromKeys( rks, "Reference" ))
+		rrs = []
+		for rk in rks:
+		    try:
+			rr = self.context.makeItemRef("Reference", rk)
+			rrs.append('<reference ref_id="%s" />'%rr)
+		    except DumperContext.DanglingReferenceError:
+		        pass
+		s['publications'] = ''.join(rrs)
 		s['annotationExtension'] = ''
 		#
 	    except DumperContext.DanglingReferenceError:
@@ -332,4 +339,9 @@ class AnnotationDumper(AbstractItemDumper):
 	    else:
 		self.writeItem(r, self.ITMPLT[0])
 		self.writeItem(s, self.ITMPLT[2])
+	    
+	for (mk, vk, tk, rks) in helper.iterAnnots("Marker"):
+	    writeDerivedAnnot("Marker", mk, vk, tk, rks)
+	for (ak, vk, tk, rks) in helper.iterAnnots("Allele"):
+	    writeDerivedAnnot("Allele", ak, vk, tk, rks)
 

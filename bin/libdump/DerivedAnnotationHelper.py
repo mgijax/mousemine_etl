@@ -54,23 +54,38 @@ associated to an allele in this way should also be associated with the allele's 
 import mgiadhoc as db
 class DerivedAnnotationHelper:
 
-    def iterAnnots(self):
-	for mk, mdata  in self.m2t2annots.iteritems():
-	    for vk, tdata in mdata.iteritems():
-		for tk, rks in tdata.iteritems():
-		    yield (mk, vk, tk, rks)
-
     def __init__(self, context):
 	self.context = context
 	self.g2m = {}
 	self.g2a = {}
-	#   { markerkey -> { vocabkey -> { termkey -> [ annotkeys ] }}}
+	#   { markerkey -> { vocabkey -> { termkey -> { refskeys } }}}
 	self.m2t2annots = {}
+	#   { allelekey -> { vocabkey -> { termkey -> { refskeys } }}}
 	self.a2t2annots = {}
+	self._loadGenotypeIndexes()
+	self._loadGenotypeAnnotations()
+	self._loadAlleleAnnotations()
 
-	###############################################
-	# Step 1. Get all geno+allele+marker key combos, where the allele qualifies
-	# Create index from genotype to single marker and from genotype to alleles.
+    # The main entry point. Iterates over results. Specify "Allele" or "Marker".
+    # Yields a sequence of tuples (of database keys)
+    # from which to generate inferred/derived gene-MP/OMIM annotations
+    def iterAnnots(self, which):
+	if which == "Marker":
+	    ix = self.m2t2annots
+	elif which == "Allele":
+	    ix = self.a2t2annots
+
+	for k, kdata  in ix.iteritems():
+	    for vk, tdata in kdata.iteritems():
+		for tk, rks in tdata.iteritems():
+		    yield (k, vk, tk, rks)
+
+    ###############################################
+    def _loadGenotypeIndexes(self):
+	# Step 1. Get all geno+allele+marker key combos, where the allele qualifies.
+	# Create 2 indexes: one from genotype to single marker, and another from genotype 
+	# to alleles.
+	# 
 
 	q1 = '''
 	SELECT
@@ -96,21 +111,30 @@ class DerivedAnnotationHelper:
 
 	def p1(r):
 	    gk = r['_genotype_key']
+	    # genotype-to-marker
 	    if not self.g2m.has_key(gk):
+		# first marker seen for this geno
 		self.g2m[gk] = r['_marker_key']
 	    else:
+		# oops, multiples not allowed. NO marker for you!!
 		self.g2m[gk] = None
+	    # genotype-to-alleles
 	    self.g2a.setdefault(gk, []).append(r['_allele_key'])
 
-	###############################################
+	self.context.sql(q1,p1)
+
+    ###############################################
+    def _loadGenotypeAnnotations(self):
 	# Step 2. Select existing (base) pheno and disease annotations. Use geno key to
 	# map to a gene (or not). Create an index mapping gene keys to dictionaries, 
 	# which map term keys to lists of refs keys:
-	#	{ markerkey -> { vocabkey -> { termkey -> [ refs ] } } }
+	#	{ markerkey -> { vocabkey -> { termkey -> { refkey } } } }
+	# Do the same for alleles. The second index has the form:
+	#	{ allelekey -> { vocabkey -> { termkey -> { refkey } } } }
 	#
 	q2 = '''
 	    SELECT
-		va._object_key, vt._term_key, vt._vocab_key, ve._refs_key
+		va._object_key, vt._term_key, vt._vocab_key, ve._refs_key, va._annot_key
 	    FROM
 		VOC_Annot va,
 		VOC_Evidence ve,
@@ -132,12 +156,15 @@ class DerivedAnnotationHelper:
 		self.m2t2annots.setdefault(mk,{}).setdefault(vk,{}).setdefault(tk,set()).add(r['_refs_key'])
 	    for ak in self.g2a.get(gk,[]):
 		self.a2t2annots.setdefault(ak,{}).setdefault(vk,{}).setdefault(tk,set()).add(r['_refs_key'])
+	self.context.sql(q2,p2)
 
-	###############################################
-	# Step 3. Fold in the direct allele-disease annotations
+    ###############################################
+    def _loadAlleleAnnotations(self):
+	# Step 3. Fold in the direct allele-disease annotations. Only do this for markers. (No need to 
+	# propagate these annotations to Alleles - they're already there.)
 	q3 = '''
 	    SELECT
-		ve._refs_key, a._allele_key, a._marker_key, vt._term_key, vt._vocab_key 
+		ve._refs_key, a._allele_key, a._marker_key, vt._term_key, vt._vocab_key, va._annot_key
 	    FROM
 		VOC_Annot va,
 		VOC_Evidence ve,
@@ -157,12 +184,7 @@ class DerivedAnnotationHelper:
 	    vk = r['_vocab_key']
 	    if mk:
 		self.m2t2annots.setdefault(mk,{}).setdefault(vk,{}).setdefault(tk,set()).add(r['_refs_key'])
-	    self.a2t2annots.setdefault(ak,{}).setdefault(vk,{}).setdefault(tk,set()).add(r['_refs_key'])
 
-	###############################################
-
-	self.context.sql(q1,p1)
-	self.context.sql(q2,p2)
 	self.context.sql(q3,p3)
 
 
