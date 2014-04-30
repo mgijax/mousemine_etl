@@ -111,6 +111,7 @@ class AnnotationDumper(AbstractItemDumper):
 	  <reference name="code" ref_id="%(code)s"/>
 	  <collection name="publications">%(publications)s</collection>
 	  %(annotationExtension)s
+	  <collection name="baseAnnotations">%(baseAnnotations)s</collection>
 	  </item>
 	''',
 	]
@@ -272,6 +273,7 @@ class AnnotationDumper(AbstractItemDumper):
 	    r['code'] = self.context.makeItemRef('OntologyAnnotationEvidenceCode', r['_evidenceterm_key'])
 	    r['annotation'] = self.context.makeItemRef('OntologyAnnotation', r['_annot_key'])
 	    r['inferredfrom'] = r['inferredfrom'] and ('<attribute name="withText" value="%(inferredfrom)s"/>'%r) or ''
+	    r['baseAnnotations'] = ''
 	    r['publications'] = '<reference ref_id="%s"/>' % \
 	        self.context.makeItemRef('Reference', r['_refs_key'])
 
@@ -303,7 +305,7 @@ class AnnotationDumper(AbstractItemDumper):
 	dsref = self.dsd.dataSet(name="Derived Annotations from MGI")
 	helper = DerivedAnnotationHelper(self.context)
 
-	def writeDerivedAnnot( type, k, vk, tk, rks ):
+	def writeDerivedAnnot( type, k, vk, tk, arks ):
 	    # NOTE: helper data is gotten from the MGI independently. Possible that some of the
 	    # objects might have been skipped by the dumper code prior to this. 
 	    # Therefore handle dangling reference errors by skipping the record..
@@ -324,8 +326,18 @@ class AnnotationDumper(AbstractItemDumper):
 		s['annotation'] = r['id']
 		s['inferredfrom'] = ''
 		s['code'] = c['id']
+		#
+		ars = []
+		for ak in arks['annots']:
+		    try:
+			ar = self.context.makeItemRef("OntologyAnnotation", ak)
+			ars.append('<reference ref_id="%s" />'%ar)
+		    except DumperContext.DanglingReferenceError:
+		        pass
+		s['baseAnnotations'] = ''.join(ars)
+		#
 		rrs = []
-		for rk in rks:
+		for rk in arks['refs']:
 		    try:
 			rr = self.context.makeItemRef("Reference", rk)
 			rrs.append('<reference ref_id="%s" />'%rr)
@@ -340,8 +352,8 @@ class AnnotationDumper(AbstractItemDumper):
 		self.writeItem(r, self.ITMPLT[0])
 		self.writeItem(s, self.ITMPLT[2])
 	    
-	for (mk, vk, tk, rks) in helper.iterAnnots("Marker"):
-	    writeDerivedAnnot("Marker", mk, vk, tk, rks)
-	for (ak, vk, tk, rks) in helper.iterAnnots("Allele"):
-	    writeDerivedAnnot("Allele", ak, vk, tk, rks)
+	for (mk, vk, tk, arks) in helper.iterAnnots("Marker"):
+	    writeDerivedAnnot("Marker", mk, vk, tk, arks)
+	for (ak, vk, tk, arks) in helper.iterAnnots("Allele"):
+	    writeDerivedAnnot("Allele", ak, vk, tk, arks)
 

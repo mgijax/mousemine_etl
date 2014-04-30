@@ -58,27 +58,29 @@ class DerivedAnnotationHelper:
 	self.context = context
 	self.g2m = {}
 	self.g2a = {}
-	#   { markerkey -> { vocabkey -> { termkey -> { refskeys } }}}
-	self.m2t2annots = {}
-	#   { allelekey -> { vocabkey -> { termkey -> { refskeys } }}}
-	self.a2t2annots = {}
+	#   { type -> { key -> { vocabkey -> { termkey -> [{refskeys},{annotkeys}] }}}}
+	self.k2annots = {}
 	self._loadGenotypeIndexes()
 	self._loadGenotypeAnnotations()
 	self._loadAlleleAnnotations()
+
+    def __addkeys__(self, type, k, vk, tk, rk,ak):
+        vti = self.k2annots.setdefault(type,{}).setdefault(k,{}).setdefault(vk,{})
+	ti = vti.get(tk,None)
+	if not ti:
+	    ti = {'refs':set(),'annots':set()}
+	    vti[tk] = ti
+	ti['refs'].add(rk)
+	ti['annots'].add(ak)
 
     # The main entry point. Iterates over results. Specify "Allele" or "Marker".
     # Yields a sequence of tuples (of database keys)
     # from which to generate inferred/derived gene-MP/OMIM annotations
     def iterAnnots(self, which):
-	if which == "Marker":
-	    ix = self.m2t2annots
-	elif which == "Allele":
-	    ix = self.a2t2annots
-
-	for k, kdata  in ix.iteritems():
+	for k, kdata  in self.k2annots[which].iteritems():
 	    for vk, tdata in kdata.iteritems():
-		for tk, rks in tdata.iteritems():
-		    yield (k, vk, tk, rks)
+		for tk, arks in tdata.iteritems():
+		    yield (k, vk, tk, arks)
 
     ###############################################
     def _loadGenotypeIndexes(self):
@@ -151,11 +153,14 @@ class DerivedAnnotationHelper:
 	    tk = r['_term_key']
 	    vk = r['_vocab_key']
 	    rk = r['_refs_key']
+	    ak = r['_annot_key']
 	    mk = self.g2m.get(gk, None)
 	    if mk:
-		self.m2t2annots.setdefault(mk,{}).setdefault(vk,{}).setdefault(tk,set()).add(r['_refs_key'])
+		self.__addkeys__('Marker',mk,vk,tk,rk,ak)
+		#self.m2t2annots.setdefault(mk,{}).setdefault(vk,{}).setdefault(tk,set()).add(r['_refs_key'])
 	    for ak in self.g2a.get(gk,[]):
-		self.a2t2annots.setdefault(ak,{}).setdefault(vk,{}).setdefault(tk,set()).add(r['_refs_key'])
+		self.__addkeys__('Allele',ak,vk,tk,rk,ak)
+		#self.a2t2annots.setdefault(ak,{}).setdefault(vk,{}).setdefault(tk,set()).add(r['_refs_key'])
 	self.context.sql(q2,p2)
 
     ###############################################
@@ -182,8 +187,11 @@ class DerivedAnnotationHelper:
 	    mk = r['_marker_key']
 	    tk = r['_term_key']
 	    vk = r['_vocab_key']
+	    rk = r['_refs_key']
+	    ak = r['_annot_key']
 	    if mk:
-		self.m2t2annots.setdefault(mk,{}).setdefault(vk,{}).setdefault(tk,set()).add(r['_refs_key'])
+		self.__addkeys__('Marker',mk,vk,tk,rk,ak)
+		#self.m2t2annots.setdefault(mk,{}).setdefault(vk,{}).setdefault(tk,set()).add(r['_refs_key'])
 
 	self.context.sql(q3,p3)
 
