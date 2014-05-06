@@ -97,6 +97,7 @@ class ExpressionDumper(AbstractItemDumper):
                   %(probe_wv)s
                   %(pattern_wv)s
                   %(image_wv)s
+                  %(detected_wv)s
                  </item>
                  '''
 
@@ -106,14 +107,20 @@ class ExpressionDumper(AbstractItemDumper):
                 r[k] = v
 
             for att in attributeList:
-                att_wv = att + "_wv"   # write value
+                att_wv = att + "_wv"   # _wv: write value
                 if att in r and len(r[att]) > 0:
                     r[att_wv] = '<attribute name="{0}" value="{1}" />'.format(att, self.quote(r[att]))
                 else:
-                    r[att_wv] = ''
+                    r[att_wv] = ''                        
+
+            # None respresents 'No Value' for detected (eg. Not Specified, Not Applicable, Ambiguous)
+            if 'detected' in r and r['detected'] is not None:
+                r['detected_wv'] = '<attribute name="{0}" value="{1}" />'.format("detected", self.quote(r['detected']))
+            else:
+                r['detected_wv'] = ''
 
             self.writeItem(r, tmplt)
-            
+
         return
 
     
@@ -216,6 +223,10 @@ class ExpressionDumper(AbstractItemDumper):
                 r['strength'] = gl2strength[r['_gellane_key']]
                 r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
 
+                isDetected = self.strengthToBoolean(r['strength'])
+                if isDetected is not None:
+                    r['detected'] = isDetected
+
                 ak = r['_assay_key']
                 if r['_assay_key'] in ak2figurelabel:
                     r['image'] = ak2figurelabel[r['_assay_key']]
@@ -227,6 +238,20 @@ class ExpressionDumper(AbstractItemDumper):
                 else:
                     self.context.log('Dangling EMAPA reference detected: ' + str(r['_structure_key']))
         return
+
+
+    # Convert strength to a boolean value
+    def strengthToBoolean(self, strength):
+        strengthLowerCase = strength.lower()
+        if strengthLowerCase in ["very strong", "strong", "moderate", "weak", "trace", "present"]:
+            return True
+        elif strengthLowerCase in ["absent"]:
+            return False
+        elif strengthLowerCase in ["ambiguous", "not specified", "not applicable"]:
+            return None
+        else:
+            print("Error - Expression Dumper:strengthToDetected: ", strength, " not found.")
+            return None
 
 
     # Write a record: specimen X insituResult X insitu.structure
@@ -253,6 +278,10 @@ class ExpressionDumper(AbstractItemDumper):
                 r['stage'] = theilerstage
                 r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
                 
+                isDetected = self.strengthToBoolean(r['strength'])
+                if isDetected is not None:
+                    r['detected'] = isDetected
+
                 if r['_result_key'] not in isImageResultKeys:
                     r['image'] = ''
                 
