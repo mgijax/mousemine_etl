@@ -306,6 +306,14 @@ class AnnotationDumper(AbstractItemDumper):
 	helper = DerivedAnnotationHelper(self.context)
 
 	def writeDerivedAnnot( type, k, vk, tk, arks ):
+	    # Args:
+	    #	type	"Marker" or "Allele"
+	    #	k	its MGI database key
+	    #	vk	vocabulary key
+	    #	tk	term key
+	    #	arks	object containing: a set of annotation keys (annots),
+	    #		a set of reference keys (refs), and (if applicable) an
+	    #		existing annotation key
 	    # NOTE: helper data is gotten from the MGI independently. Possible that some of the
 	    # objects might have been skipped by the dumper code prior to this. 
 	    # Therefore handle dangling reference errors by skipping the record..
@@ -313,12 +321,15 @@ class AnnotationDumper(AbstractItemDumper):
 	    try:
 		#
 		r = {}
-		r['id'] = self.context.makeItemId('OntologyAnnotation') # start auto-assigning.
-		r['class'] = "OntologyAnnotation"
-		r['subject'] = self.context.makeItemRef(type, k)
-		r['ontologyterm'] = self.context.makeItemRef('Vocabulary Term', tk)
-		r['qualifier'] = ''
-		r['dataSets'] = '<reference ref_id="%s"/>' % dsref
+		if arks['existing']:
+		    r['id'] = self.context.makeItemRef('OntologyAnnotation', arks['existing'])
+		else:
+		    r['id'] = self.context.makeItemId('OntologyAnnotation') # start auto-assigning.
+		    r['class'] = "OntologyAnnotation"
+		    r['subject'] = self.context.makeItemRef(type, k)
+		    r['ontologyterm'] = self.context.makeItemRef('Vocabulary Term', tk)
+		    r['qualifier'] = ''
+		    r['dataSets'] = '<reference ref_id="%s"/>' % dsref
 		#
 		s = {}
 		s['id'] = self.context.makeItemId('OntologyAnnotationEvidence') # start auto-assigning
@@ -349,7 +360,8 @@ class AnnotationDumper(AbstractItemDumper):
 	    except DumperContext.DanglingReferenceError:
 	        pass
 	    else:
-		self.writeItem(r, self.ITMPLT[0])
+		if not arks['existing']:
+		    self.writeItem(r, self.ITMPLT[0])
 		self.writeItem(s, self.ITMPLT[2])
 	    
 	for (mk, vk, tk, arks) in helper.iterAnnots("Marker"):

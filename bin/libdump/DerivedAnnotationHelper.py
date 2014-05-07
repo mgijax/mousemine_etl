@@ -49,6 +49,12 @@ Small twist: There is another set of disease associations in MGI that attach
 directly to an allele, no genotype involved. (annotation type key 1012). Any disease 
 associated to an allele in this way should also be associated with the allele's gene.
 
+Twist on that twist: An allele can have an annotation to a disease (annot type 1012), and
+can also have genotypes annotated to the same disease. The allele therefore can end up 
+with both a "real" annotation and a "derived" annotation to the same disease. Example:
+allele = MGI:3803301 Tnnt2<tm2Mmto>, disease = OMIM:601494 Cardiomyopathy, Dilated, 1D.
+
+
 '''
 
 import mgiadhoc as db
@@ -68,7 +74,7 @@ class DerivedAnnotationHelper:
         vti = self.k2annots.setdefault(type,{}).setdefault(k,{}).setdefault(vk,{})
 	ti = vti.get(tk,None)
 	if not ti:
-	    ti = {'refs':set(),'annots':set()}
+	    ti = {'refs':set(),'annots':set(),'existing':None}
 	    vti[tk] = ti
 	ti['refs'].add(rk)
 	ti['annots'].add(ak)
@@ -157,10 +163,8 @@ class DerivedAnnotationHelper:
 	    mk = self.g2m.get(gk, None)
 	    if mk:
 		self.__addkeys__('Marker',mk,vk,tk,rk,ak)
-		#self.m2t2annots.setdefault(mk,{}).setdefault(vk,{}).setdefault(tk,set()).add(r['_refs_key'])
 	    for ak in self.g2a.get(gk,[]):
 		self.__addkeys__('Allele',ak,vk,tk,rk,ak)
-		#self.a2t2annots.setdefault(ak,{}).setdefault(vk,{}).setdefault(tk,set()).add(r['_refs_key'])
 	self.context.sql(q2,p2)
 
     ###############################################
@@ -183,7 +187,7 @@ class DerivedAnnotationHelper:
 	    '''
 
 	def p3(r):
-	    ak = r['_allele_key']
+	    alk = r['_allele_key']
 	    mk = r['_marker_key']
 	    tk = r['_term_key']
 	    vk = r['_vocab_key']
@@ -191,7 +195,14 @@ class DerivedAnnotationHelper:
 	    ak = r['_annot_key']
 	    if mk:
 		self.__addkeys__('Marker',mk,vk,tk,rk,ak)
-		#self.m2t2annots.setdefault(mk,{}).setdefault(vk,{}).setdefault(tk,set()).add(r['_refs_key'])
+	    #
+	    # Special handling. Here we have a real/direct annotation to an allele.
+	    # If we have previously registered a derived annotation for this same allele
+	    # and term, need to mark it. That will allow the dumper code to avoid
+	    # creating a duplicate annotation object. 
+	    da = self.k2annots['Allele'].get(alk,{}).get(vk,{}).get(tk,None)
+	    if da:
+		da['existing'] = ak
 
 	self.context.sql(q3,p3)
 
