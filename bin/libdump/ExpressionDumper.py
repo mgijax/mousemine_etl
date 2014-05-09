@@ -80,6 +80,7 @@ class ExpressionDumper(AbstractItemDumper):
     # Writes the whole record based on r and the key/value pairs in assay[][]
     def writeRecord(self, r):
         attributeList = ("probe", "pattern", "image")
+        noneTypeList = ("detected", "note")
 
         tmplt = '''
                 <item class="GXDExpression" id="%(id)s" >
@@ -98,6 +99,7 @@ class ExpressionDumper(AbstractItemDumper):
                   %(pattern_wv)s
                   %(image_wv)s
                   %(detected_wv)s
+                  %(note_wv)s
                  </item>
                  '''
 
@@ -113,11 +115,12 @@ class ExpressionDumper(AbstractItemDumper):
                 else:
                     r[att_wv] = ''                        
 
-            # None respresents 'No Value' for detected (eg. Not Specified, Not Applicable, Ambiguous)
-            if 'detected' in r and r['detected'] is not None:
-                r['detected_wv'] = '<attribute name="{0}" value="{1}" />'.format("detected", self.quote(r['detected']))
-            else:
-                r['detected_wv'] = ''
+            for nt in noneTypeList:
+                nt_wv = nt + "_wv"
+                if nt in r and r[nt] is not None:
+                    r[nt_wv] = '<attribute name="{0}" value="{1}" />'.format(nt, self.quote(r[nt]))
+                else:
+                    r[nt_wv] = ''
 
             self.writeItem(r, tmplt)
 
@@ -266,7 +269,7 @@ class ExpressionDumper(AbstractItemDumper):
         isImageResultKeys = self.loadImageResultKeys()
 
         q = '''
-            SELECT s._assay_key, s.sex, s.age, s._genotype_key, s.specimenlabel AS image, isr._result_key, str.strength, p.pattern
+            SELECT s._assay_key, s.sex, s.age, s._genotype_key, s.specimenlabel AS image, isr._result_key, isr.resultNote AS note, str.strength, p.pattern
             FROM gxd_specimen s, gxd_insituresult isr, gxd_strength str, gxd_pattern p
             WHERE s._specimen_key = isr._specimen_key
             AND isr._strength_key = str._strength_key
