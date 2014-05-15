@@ -108,22 +108,27 @@ def main():
     timestamp = time.strftime(STRF,time.localtime(time.time()))
     basedir = os.path.abspath(os.path.join(mydir, '..'))
     configFile =  os.path.join(mydir,'config.cfg') 
-    rex = re.compile(r"^\[(.*)\]")
 
     cp = ConfigParser({"BASEDIR":basedir,"TIMESTAMP":timestamp})
     cp.read(configFile)
 
+    # Refresh sources in the order given in the file
+    # Standard config lib does not support ordered sequence of sections.
+    # 
     orderedSources = []
     cfd = open(configFile,'r')
+    rex = re.compile(r"^\[(.*)\]") # match .cfg section headings
     for l in cfd:
         m = rex.match(l)
 	if m and m.group(1) != "DEFAULT":
 	    orderedSources.append( m.group(1))
     cfd.close()
 
+    # if user specified certain sources, filter for just those
     if len(opts.sources) > 0:
 	orderedSources = filter(lambda x:x in opts.sources, orderedSources)
 
+    # refresh each source 
     lfn = None
     success = True
     for sn in orderedSources:
@@ -131,6 +136,7 @@ def main():
 	    logging.error("Unknown source name: %s"%sn)
 	    continue
 	if lfn is None:
+	    # init logger first time through
 	    lfn = cp.get(sn,'LOGFILE')
 	    logging.basicConfig(
 		level=logging.DEBUG,
@@ -138,10 +144,12 @@ def main():
 		filename=lfn,
 		filemode='w')
 	    logging.info("STARTING SOURCE ETL REFRESH " +40*"-")
-	#
+	# refresh the source
 	sr = SourceRefresher(sn, cp)
 	sr.refresh()
+	# accumulate success
 	success = success and sr.success
+    # All done.
     if success:
 	logging.info("Refresh succeeded!")
     else:

@@ -123,7 +123,7 @@ class DerivedAnnotationHelper:
 	    if not self.g2m.has_key(gk):
 		# first marker seen for this geno
 		self.g2m[gk] = r['_marker_key']
-	    else:
+	    elif self.g2m[gk] != r['_marker_key']:
 		# oops, multiples not allowed. NO marker for you!!
 		self.g2m[gk] = None
 	    # genotype-to-alleles
