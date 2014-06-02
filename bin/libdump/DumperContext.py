@@ -160,8 +160,9 @@ class DumperContext:
     #
     def makeGlobalKey(self, itemType, localkey=None, exists=None):
 	autokey = (localkey is None)
+	self.NEXT_ID.setdefault(itemType, 1001)
 	if autokey:
-	    localkey = self.NEXT_ID.setdefault(itemType, 1001)
+	    localkey = self.NEXT_ID[itemType]
 	    self.NEXT_ID[itemType] += 1
 	elif localkey < 0:
 	    # Ugh. We can't use negative keys. MGI often uses -1 for
@@ -170,6 +171,8 @@ class DumperContext:
 	    # negative keys in a region we HOPE won't clash with
 	    # real keys.
 	    localkey += 10000000
+	else:
+	    self.NEXT_ID[itemType] = max(self.NEXT_ID[itemType], localkey+1)
 	if type(itemType) is types.StringType:
 	    itemType = self.TYPE_KEYS[itemType]
 	key = '%d_%d' % (itemType,localkey)

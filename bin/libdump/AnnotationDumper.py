@@ -4,6 +4,7 @@ from DumperContext import DumperContext
 from OboParser import OboParser
 from DataSourceDumper import DataSetDumper
 import os
+from DerivedAnnotationHelper import DerivedAnnotationHelper
 
 class AnnotationDumper(AbstractItemDumper):
     QTMPLT = [
@@ -110,6 +111,7 @@ class AnnotationDumper(AbstractItemDumper):
 	  <reference name="code" ref_id="%(code)s"/>
 	  <collection name="publications">%(publications)s</collection>
 	  %(annotationExtension)s
+	  <collection name="baseAnnotations">%(baseAnnotations)s</collection>
 	  </item>
 	''',
 	]
@@ -134,6 +136,10 @@ class AnnotationDumper(AbstractItemDumper):
 	  1005 : ('Genotype', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
 	  # Human gene-OMIM annotations
 	  1006 : ('Marker', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
+	  # Mouse allele-OMIM annotations
+	  1012 : ('Allele', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
+	  # Human pheno-OMIM annotations
+	  1013 : ('Marker', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
 	}
 	self.ANNOTTYPEKEYS = self.atk2classes.keys()
 	self.ANNOTTYPEKEYS_S = COMMA.join(map(lambda x:str(x),self.ANNOTTYPEKEYS))
@@ -153,15 +159,14 @@ class AnnotationDumper(AbstractItemDumper):
 	    self.loadOmimMappings(mfile)
 
 	self.loadEvidenceProperties()
-
 	self.writeDataSets()
 
     def writeDataSets(self):
-	dsd = DataSetDumper(self.context)
+	self.dsd = DataSetDumper(self.context)
 	self.atk2dsid = {}
 	for atk, atinfo in self.atk2classes.items():
 	    dsname = '%s to %s %s Annotations from MGI' % (atinfo[1],atinfo[5],atinfo[0])
-	    self.atk2dsid[atk] = dsd.dataSet(name=dsname)
+	    self.atk2dsid[atk] = self.dsd.dataSet(name=dsname)
 
     #
     # Loads the evidence property records for the specified annotation types.
@@ -268,6 +273,7 @@ class AnnotationDumper(AbstractItemDumper):
 	    r['code'] = self.context.makeItemRef('OntologyAnnotationEvidenceCode', r['_evidenceterm_key'])
 	    r['annotation'] = self.context.makeItemRef('OntologyAnnotation', r['_annot_key'])
 	    r['inferredfrom'] = r['inferredfrom'] and ('<attribute name="withText" value="%(inferredfrom)s"/>'%r) or ''
+	    r['baseAnnotations'] = ''
 	    r['publications'] = '<reference ref_id="%s"/>' % \
 	        self.context.makeItemRef('Reference', r['_refs_key'])
 
@@ -283,3 +289,83 @@ class AnnotationDumper(AbstractItemDumper):
         for t in self.termsToWrite:
 	    r = { 'class':t[0], 'id':t[1], 'identifier':t[2] }
 	    self.writeItem(r, tmplt)
+
+	# switch output files
+	self.context.openOutput("DerivedAnnotations.xml")
+
+	# need one more evidence code 
+	c = {}
+	c['id'] = self.context.makeItemId('OntologyAnnotationEvidenceCode')
+	c['class']= "OntologyAnnotationEvidenceCode"
+	c['code'] = "DOA"
+	c['name'] = "derived from other annotations"
+	self.writeItem(c, self.ITMPLT[1])
+
+	# compute and write out derived annotations
+	dsref = self.dsd.dataSet(name="Derived Annotations from MGI")
+	helper = DerivedAnnotationHelper(self.context)
+
+	def writeDerivedAnnot( type, k, vk, tk, arks ):
+	    # Args:
+	    #	type	"Marker" or "Allele"
+	    #	k	its MGI database key
+	    #	vk	vocabulary key
+	    #	tk	term key
+	    #	arks	object containing: a set of annotation keys (annots),
+	    #		a set of reference keys (refs), and (if applicable) an
+	    #		existing annotation key
+	    # NOTE: helper data is gotten from the MGI independently. Possible that some of the
+	    # objects might have been skipped by the dumper code prior to this. 
+	    # Therefore handle dangling reference errors by skipping the record..
+	    # 
+	    try:
+		#
+		r = {}
+		if arks['existing']:
+		    r['id'] = self.context.makeItemRef('OntologyAnnotation', arks['existing'])
+		else:
+		    r['id'] = self.context.makeItemId('OntologyAnnotation') # start auto-assigning.
+		    r['class'] = "OntologyAnnotation"
+		    r['subject'] = self.context.makeItemRef(type, k)
+		    r['ontologyterm'] = self.context.makeItemRef('Vocabulary Term', tk)
+		    r['qualifier'] = ''
+		    r['dataSets'] = '<reference ref_id="%s"/>' % dsref
+		#
+		s = {}
+		s['id'] = self.context.makeItemId('OntologyAnnotationEvidence') # start auto-assigning
+		s['class'] = 'OntologyAnnotationEvidence'
+		s['annotation'] = r['id']
+		s['inferredfrom'] = ''
+		s['code'] = c['id']
+		#
+		ars = []
+		for ak in arks['annots']:
+		    try:
+			ar = self.context.makeItemRef("OntologyAnnotation", ak)
+			ars.append('<reference ref_id="%s" />'%ar)
+		    except DumperContext.DanglingReferenceError:
+		        pass
+		s['baseAnnotations'] = ''.join(ars)
+		#
+		rrs = []
+		for rk in arks['refs']:
+		    try:
+			rr = self.context.makeItemRef("Reference", rk)
+			rrs.append('<reference ref_id="%s" />'%rr)
+		    except DumperContext.DanglingReferenceError:
+		        pass
+		s['publications'] = ''.join(rrs)
+		s['annotationExtension'] = ''
+		#
+	    except DumperContext.DanglingReferenceError:
+	        pass
+	    else:
+		if not arks['existing']:
+		    self.writeItem(r, self.ITMPLT[0])
+		self.writeItem(s, self.ITMPLT[2])
+	    
+	for (mk, vk, tk, arks) in helper.iterAnnots("Marker"):
+	    writeDerivedAnnot("Marker", mk, vk, tk, arks)
+	for (ak, vk, tk, arks) in helper.iterAnnots("Allele"):
+	    writeDerivedAnnot("Allele", ak, vk, tk, arks)
+
