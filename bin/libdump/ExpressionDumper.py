@@ -95,6 +95,7 @@ class ExpressionDumper(AbstractItemDumper):
                   <attribute name="stage" value="TS%(stage)02d" />
                   <attribute name="emaps" value="%(emaps)s" />
                   <reference name="structure" ref_id="%(structure)s" />
+                  <attribute name="specimenNum" value="%(specimennum)i" />
                   %(probe_wv)s
                   %(pattern_wv)s
                   %(image_wv)s
@@ -213,7 +214,7 @@ class ExpressionDumper(AbstractItemDumper):
         ak2figurelabel = self.loadAssayImageFigureLabels()
 
         q = '''
-            SELECT gl._gellane_key, gl._assay_key, gl.sex, gl.age, gl._genotype_key, gls._structure_key, ts.stage
+            SELECT gl._gellane_key, gl._assay_key, gl.sex, gl.age, gl._genotype_key, gl.sequencenum as specimennum, gls._structure_key, ts.stage
             FROM gxd_gellane gl, gxd_gellanestructure gls, gxd_structure s, gxd_theilerstage ts
             WHERE gl._gellane_key = gls._gellane_key
             AND gls._structure_key = s._structure_key
@@ -269,7 +270,7 @@ class ExpressionDumper(AbstractItemDumper):
         isImageResultKeys = self.loadImageResultKeys()
 
         q = '''
-            SELECT s._assay_key, s.sex, s.age, s._genotype_key, s.specimenlabel AS image, isr._result_key, isr.resultNote AS note, str.strength, p.pattern
+            SELECT s._assay_key, s.sex, s.age, s._genotype_key, s.sequencenum as specimennum, s.specimenlabel AS image, isr._result_key, isr.resultNote AS note, str.strength, p.pattern
             FROM gxd_specimen s, gxd_insituresult isr, gxd_strength str, gxd_pattern p
             WHERE s._specimen_key = isr._specimen_key
             AND isr._strength_key = str._strength_key
