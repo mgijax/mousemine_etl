@@ -146,11 +146,17 @@ class MouseFeatureDumper(AbstractFeatureDumper):
     SELECT m._organism_key, m._marker_key, m.symbol, m.name, mc._chromosome_key,
 	c.term AS mcvtype, a.accid AS primaryidentifier, lc.startcoordinate
     FROM 
-	MRK_Marker m,
+	MRK_Marker m
+	LEFT OUTER JOIN ACC_Accession a
+	    ON m._marker_key = a._object_key
+	    AND a._mgitype_key = %(MARKER_TYPEKEY)d
+	    AND a._logicaldb_key = %(MGI_LDBKEY)d
+	    AND a.preferred = 1
+	    AND a.private = 0
+	    ,
 	MRK_Location_Cache lc,
 	MRK_MCV_Cache c, 
-	MRK_Chromosome mc, 
-	ACC_Accession a
+	MRK_Chromosome mc
     WHERE m._organism_key = 1
     AND m._marker_key = lc._marker_key
     AND m._marker_status_key in (%(OFFICIAL_STATUS)d,%(INTERIM_STATUS)d)
@@ -158,13 +164,15 @@ class MouseFeatureDumper(AbstractFeatureDumper):
     AND c.qualifier = 'D'
     AND m.chromosome = mc.chromosome
     AND m._organism_key = mc._organism_key
-    AND m._marker_key = a._object_key
-    AND a._mgitype_key = %(MARKER_TYPEKEY)d
-    AND a._logicaldb_key = %(MGI_LDBKEY)d
-    AND a.preferred = 1
-    AND a.private = 0
     %(LIMIT_CLAUSE)s
     '''
+
+    def processRecord(self, r):
+	if r['primaryidentifier'] is None:
+	    self.context.log("Detected mouse feature with no MGI id. Please report this to MGI!")
+	    self.context.log("_marker_key=%(_marker_key)d symbol=%(symbol)s" % r)
+	    r['primaryidentifier'] = "MGI:0"
+        return AbstractFeatureDumper.processRecord(self, r)
 
     def getMcvType(self, r):
         return r['mcvtype']
