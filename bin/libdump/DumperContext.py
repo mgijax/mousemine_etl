@@ -57,6 +57,11 @@ class DumperContext:
 
 	    # VOC_Vocab keys
 	    'ALLELE_MUTATION_VKEY' : 36,
+	    'ALLELE_COLLECTION_VKEY' : 92,
+	    'ALLELE_ATTRIBUTE_VKEY' : 93,
+
+	    # Annotation type keys
+	    'ALLELE_ATTRIBUTE_AKEY' : 1014,
 
 	    # Coordinate maps
 	    'HUMAN_MAPKEY' : 47,
@@ -99,6 +104,7 @@ class DumperContext:
 	    'CellLineDerivation'	: 10018,
 	    'Expression'                : 10019,
             'EMAPATerm'                 : 10020,
+            'AlleleAttribute'           : 10021,
 	    })
 
 	# load MGI datadump timestamp from the database

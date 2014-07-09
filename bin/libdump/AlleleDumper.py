@@ -18,6 +18,7 @@ class AlleleDumper(AbstractItemDumper):
         t1.term AS alleletype, 
         t2.term AS inheritanceMode,
         t3.term AS gltransmission,
+	t4.term AS projectcollection,
         a._strain_key
     FROM 
         ALL_Allele a LEFT OUTER JOIN MRK_Marker m
@@ -25,7 +26,8 @@ class AlleleDumper(AbstractItemDumper):
         ACC_Accession ac,
         VOC_Term t1,
         VOC_Term t2,
-        VOC_Term t3
+        VOC_Term t3,
+	VOC_Term t4
     WHERE a._allele_key = ac._object_key
     AND ac._mgitype_key = %(ALLELE_TYPEKEY)d
     AND ac._logicaldb_key = %(MGI_LDBKEY)d
@@ -34,6 +36,7 @@ class AlleleDumper(AbstractItemDumper):
     AND a._allele_type_key = t1._term_key
     AND a._mode_key = t2._term_key
     AND a._transmission_key = t3._term_key
+    AND a._collection_key = t4._term_key
 
     %(LIMIT_CLAUSE)s
     '''
@@ -47,13 +50,14 @@ class AlleleDumper(AbstractItemDumper):
       <attribute name="name" value="%(name)s" />
       <attribute name="isWildType" value="%(iswildtype)s" />
       <attribute name="alleleType" value="%(alleletype)s" />
+      <collection name="alleleAttributes">%(alleleAttributes)s</collection>
       <attribute name="inheritanceMode" value="%(inheritancemode)s" />
       <attribute name="glTransmission" value="%(gltransmission)s" />
       <collection name="publications">%(publications)s</collection>
       <reference name="strainOfOrigin" ref_id="%(strainid)s" />
       <collection name="mutations">%(mutations)s</collection>
       <attribute name="isRecombinase" value="%(isRecombinase)s" />
-      %(description)s %(molecularNote)s %(drivenBy)s %(inducedWith)s 
+      %(projectcollection)s %(description)s %(molecularNote)s %(drivenBy)s %(inducedWith)s 
       %(featureRef)s
       </item>
     '''
@@ -67,6 +71,18 @@ class AlleleDumper(AbstractItemDumper):
 	for r in self.context.sql(q):
 	    iref = self.context.makeItemRef('AlleleMolecularMutation',r['_mutation_key'])
 	    self.ak2mk.setdefault(r['_allele_key'],[]).append(iref)
+
+    def loadAllele2AttributeMap(self):
+        self.ak2atrs = {}
+	q = '''
+	    SELECT _object_key AS _allele_key, _term_key AS _attribute_key
+	    FROM VOC_Annot va
+	    WHERE va._annottype_key = %(ALLELE_ATTRIBUTE_AKEY)d
+	    ''' % self.context.QUERYPARAMS
+	for r in self.context.sql(q):
+	    iref = self.context.makeItemRef('AlleleAttribute',r['_attribute_key'])
+	    self.ak2atrs.setdefault(r['_allele_key'],[]).append(iref)
+	    
 
     def _loadNotes(self, _notetype_key, parser=None):
 	ak2notes = {}
@@ -101,7 +117,9 @@ class AlleleDumper(AbstractItemDumper):
 
     def preDump(self):
 	AlleleMutationDumper(self.context).dump()
+	AlleleAttributeDumper(self.context).dump()
 	self.loadAllele2MutationMap()
+	self.loadAllele2AttributeMap()
 	self.loadNotes()
         self.loadAllelePublications()
 
@@ -123,6 +141,7 @@ class AlleleDumper(AbstractItemDumper):
         dsid = DataSetDumper(self.context).dataSet(name="Mouse Allele Catalog from MGI")
 	r['dataSets'] = '<reference ref_id="%s"/>'%dsid
 	r['mutations'] = ''.join(['<reference ref_id="%s" />'%x for x in self.ak2mk.get(ak,[])])
+	r['alleleAttributes'] = ''.join(['<reference ref_id="%s" />'%x for x in self.ak2atrs.get(ak,[])])
         r['publications'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.pub_refs.get(ak,[])])
 
 	r['isRecombinase'] = "true" if self.ak2drivernotes.has_key(ak) else "false"
@@ -139,12 +158,33 @@ class AlleleDumper(AbstractItemDumper):
 	r['symbol'] = self.quote(r['symbol'])
 	r['name']   = self.quote(r['name'])
 
+	if r['projectcollection'] == "Not Specified":
+	    r['projectcollection'] = ''
+	else:
+	    r['projectcollection'] = \
+	      '<attribute name="projectCollection" value="%s" />\n' % r['projectcollection']
 	return r
 
     def postDump(self):
         self.writeCount += AlleleSynonymDumper(self.context).dump(fname="Synonym.xml")
 	self.ak2generalnotes = None
 	self.ak2mk = None
+
+class AlleleAttributeDumper(AbstractItemDumper):
+    QTMPLT = '''
+    SELECT t._term_key, t.term
+    FROM VOC_Term t
+    WHERE t._vocab_key = %(ALLELE_ATTRIBUTE_VKEY)d
+    ORDER BY t.term
+    '''
+    ITMPLT = '''
+    <item class="AlleleAttribute" id="%(id)s" >
+	<attribute name="name" value="%(term)s" />
+	</item>
+    '''
+    def processRecord(self, r):
+        r['id'] = self.context.makeGlobalKey('AlleleAttribute', r['_term_key'])
+        return r
 
 class AlleleMutationDumper(AbstractItemDumper):
     QTMPLT = '''
