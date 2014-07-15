@@ -159,12 +159,12 @@ class DerivedAnnotationHelper:
 	    tk = r['_term_key']
 	    vk = r['_vocab_key']
 	    rk = r['_refs_key']
-	    ak = r['_annot_key']
+	    nk = r['_annot_key']
 	    mk = self.g2m.get(gk, None)
 	    if mk:
-		self.__addkeys__('Marker',mk,vk,tk,rk,ak)
+		self.__addkeys__('Marker',mk,vk,tk,rk,nk)
 	    for ak in self.g2a.get(gk,[]):
-		self.__addkeys__('Allele',ak,vk,tk,rk,ak)
+		self.__addkeys__('Allele',ak,vk,tk,rk,nk)
 	self.context.sql(q2,p2)
 
     ###############################################
