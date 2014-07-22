@@ -57,7 +57,7 @@ class AlleleDumper(AbstractItemDumper):
       <reference name="strainOfOrigin" ref_id="%(strainid)s" />
       <collection name="mutations">%(mutations)s</collection>
       <attribute name="isRecombinase" value="%(isRecombinase)s" />
-      %(projectcollection)s %(description)s %(molecularNote)s %(drivenBy)s %(inducedWith)s 
+      %(attributeString)s %(projectcollection)s %(description)s %(molecularNote)s %(drivenBy)s %(inducedWith)s 
       %(featureRef)s
       </item>
     '''
@@ -74,14 +74,18 @@ class AlleleDumper(AbstractItemDumper):
 
     def loadAllele2AttributeMap(self):
         self.ak2atrs = {}
+	self.ak2atrss= {}
 	q = '''
-	    SELECT _object_key AS _allele_key, _term_key AS _attribute_key
-	    FROM VOC_Annot va
+	    SELECT va._object_key AS _allele_key, va._term_key AS _attribute_key, vt.term
+	    FROM VOC_Annot va, VOC_Term vt
 	    WHERE va._annottype_key = %(ALLELE_ATTRIBUTE_AKEY)d
+	    AND va._term_key = vt._term_key
+	    ORDER BY _allele_key, term
 	    ''' % self.context.QUERYPARAMS
 	for r in self.context.sql(q):
 	    iref = self.context.makeItemRef('AlleleAttribute',r['_attribute_key'])
 	    self.ak2atrs.setdefault(r['_allele_key'],[]).append(iref)
+	    self.ak2atrss.setdefault(r['_allele_key'],[]).append(r['term'])
 	    
 
     def _loadNotes(self, _notetype_key, parser=None):
@@ -141,7 +145,6 @@ class AlleleDumper(AbstractItemDumper):
         dsid = DataSetDumper(self.context).dataSet(name="Mouse Allele Catalog from MGI")
 	r['dataSets'] = '<reference ref_id="%s"/>'%dsid
 	r['mutations'] = ''.join(['<reference ref_id="%s" />'%x for x in self.ak2mk.get(ak,[])])
-	r['alleleAttributes'] = ''.join(['<reference ref_id="%s" />'%x for x in self.ak2atrs.get(ak,[])])
         r['publications'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.pub_refs.get(ak,[])])
 
 	r['isRecombinase'] = "true" if self.ak2drivernotes.has_key(ak) else "false"
@@ -158,12 +161,18 @@ class AlleleDumper(AbstractItemDumper):
 	r['symbol'] = self.quote(r['symbol'])
 	r['name']   = self.quote(r['name'])
 
+	r['alleleAttributes'] = ''.join(['<reference ref_id="%s" />'%x for x in self.ak2atrs.get(ak,[])])
+	atrs = self.ak2atrss.get(ak,None)
+	r['attributeString'] = '' if atrs is None else \
+	  '<attribute name="attributeString" value="%s" />\n' % ', '.join(self.ak2atrss.get(ak,[])) 
+
 	if r['projectcollection'] == "Not Specified":
 	    r['projectcollection'] = ''
 	else:
 	    r['projectcollection'] = \
 	      '<attribute name="projectCollection" value="%s" />\n' % r['projectcollection']
 	return r
+
 
     def postDump(self):
         self.writeCount += AlleleSynonymDumper(self.context).dump(fname="Synonym.xml")
