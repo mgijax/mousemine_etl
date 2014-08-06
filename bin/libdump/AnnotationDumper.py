@@ -206,9 +206,9 @@ class AnnotationDumper(AbstractItemDumper):
             order by p._annotevidence_key, p.stanza, p.sequencenum
         '''
         for r in self.context.sql(q):
-	    if r['value'] != 'NA':
+	    v = r['value'][0:1].upper()
+	    if v == 'F' or v == 'M':
 	        ek = r['_annotevidence_key']
-	        v = r['value'].upper()
 	        self.ek2props[ek] = 'specific_to(%s)' % (v == 'M' and 'male' or 'female')
 
     #
