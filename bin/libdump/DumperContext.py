@@ -108,7 +108,7 @@ class DumperContext:
 	    })
 
 	# load MGI datadump timestamp from the database
-	self.loadMgiDate()
+	self.loadMgiDbinfo()
 
 	# map integer type ids to type names
 	self.TK2TNAME = dict(map(lambda x: (x[1],x[0]), self.TYPE_KEYS.items()))
@@ -140,12 +140,15 @@ class DumperContext:
 
     # Loads datadump timestamp from MGI.
     #
-    def loadMgiDate(self):
-	query = 'select lastdump_date from mgi_dbinfo'
-	self.mgiDumpDate = db.sql(query)[0]['lastdump_date']
-	self.mgiDumpDateS = self.mgiDumpDate.strftime('%Y-%m-%d')
-	self.log('MGI database dump date: %s [strftime formatted as: %s]' % \
-	    (str(self.mgiDumpDate), self.mgiDumpDateS)  )
+    def loadMgiDbinfo(self):
+	self.mgi_dbinfo = None
+	q = '''
+	SELECT *
+	FROM MGI_dbinfo
+	'''
+	self.mgi_dbinfo = self.sql(q)[0]
+	self.mgi_dbinfo['lastdump_date_f'] = self.mgi_dbinfo['lastdump_date'].strftime('%Y-%m-%d')
+	self.log('MGI database dump date: %s' % self.mgi_dbinfo['lastdump_date_f'])
 
     # Loads type information from ACC_MGIType.
     #

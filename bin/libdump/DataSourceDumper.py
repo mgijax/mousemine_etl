@@ -31,6 +31,7 @@ class DataSourceDumper(AbstractItemDumper):
 	for r in self.context.sql(q):
 	    self.multActual.add(r['_logicaldb_key'])
 
+
     def processRecord(self, r):
 	try:
 	    r['id'] = self.context.makeItemId('DataSource', r['_logicaldb_key'])
@@ -48,6 +49,9 @@ class DataSourceDumper(AbstractItemDumper):
 	self.context.dataSourceByName[r['name']] = r['id']
 	r['name'] = self.quote(r['name'])
 	r['description'] = self.quote(r['description'])
+	if r['_logicaldb_key'] == self.context.QUERYPARAMS['MGI_LDBKEY']:
+	    r['description'] += \
+	      ' [%(public_version)s %(lastdump_date_f)s]' % self.context.mgi_dbinfo
 	return r
 
 class DataSetDumper(AbstractItemDumper):

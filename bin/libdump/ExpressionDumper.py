@@ -324,7 +324,7 @@ class ExpressionDumper(AbstractItemDumper):
 
         self.structure_key2emapa_number = dict()
         self.structure_key2emaps = dict()
-        referenced_emapaids = []
+        referenced_emapaids = set()
 
         for r in self.context.sql(q):
             # transform EMAPS to EMAPA
@@ -335,7 +335,7 @@ class ExpressionDumper(AbstractItemDumper):
             if emapaid not in referenced_emapaids:
                 r['identifier'] = emapaid
                 r['id'] = self.context.makeItemId('EMAPATerm', int(emapaid[-5:]))
-                referenced_emapaids.append(emapaid)
+                referenced_emapaids.add(emapaid)
 
                 self.writeItem(r, tmplt)
 
