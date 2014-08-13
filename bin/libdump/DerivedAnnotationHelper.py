@@ -75,7 +75,6 @@ allele = MGI:3803301 Tnnt2<tm2Mmto>, disease = OMIM:601494 Cardiomyopathy, Dilat
 
 '''
 
-import mgiadhoc as db
 class DerivedAnnotationHelper:
 
     def __init__(self, context):
@@ -238,7 +237,10 @@ class DerivedAnnotationHelper:
 ####
 
 def __test__():
-    import mgiadhoc as db
+    try:
+	import db
+    except:
+	import mgiadhoc as db
     dah = DerivedAnnotationHelper(db)
     for mk, vk, tk, arks in dah.iterAnnots('Marker'):
         print "M", mk, vk, tk, arks
