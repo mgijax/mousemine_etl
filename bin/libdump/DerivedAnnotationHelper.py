@@ -2,6 +2,24 @@
 '''
 DerivedAnnotationHelper.py
 
+A helper class that implements "the rules" for making derived annotation between genes
+and phenotypes/diseases. (Also, between alleles and phenotypes/diseases.)
+
+To use:
+1. instantiate a DerivedAnnotationHelper instance, pass it an object with an sql method:
+	import db
+	from DerivedAnnotationHelper import DerivedAnnotationHelper
+	dah = DerivedAnnotationHelper(db)
+
+2. iterate over the derived annotation info. Each result gives the essential data (i.e.,
+database keys) for creating one derived annotation:
+	for mk, vk, tk, arks in dah.iterAnnots('Marker'):
+	    # mk = marker key
+	    # vk = vocab key
+	    # tk = term key
+	    # arks = object:
+	    #	refs = set of bib refs keys
+	    #   ann
 
 The Situation: in MGI, genes are connected to alleles, alleles are connected to genotypes,
 and genotypes are annotated to MP and OMIM terms. HOWEVER, just because there is a path from 
@@ -82,6 +100,16 @@ class DerivedAnnotationHelper:
     # The main entry point. Iterates over results. Specify "Allele" or "Marker".
     # Yields a sequence of tuples (of database keys)
     # from which to generate inferred/derived gene-MP/OMIM annotations
+    # Each yielded tuple has these members:
+    #	0: _marker_key or _allele_key
+    #	1: _vocab_key
+    #	2: _term_key
+    #	3: list of objects of form: 
+    #	   { refs: set of ref keys, 
+    #	     annots: set of annot keys, 
+    #	     existing: annot key or None
+    #	   }
+    #
     def iterAnnots(self, which):
 	for k, kdata  in self.k2annots[which].iteritems():
 	    for vk, tdata in kdata.iteritems():
@@ -211,10 +239,11 @@ class DerivedAnnotationHelper:
 
 def __test__():
     import mgiadhoc as db
-    class Cxt:
-	def sql(self, q, p):
-	    return db.sql(q,p)
-    return DerivedAnnotationHelper(Cxt())
+    dah = DerivedAnnotationHelper(db)
+    for mk, vk, tk, arks in dah.iterAnnots('Marker'):
+        print "M", mk, vk, tk, arks
+    for ak, vk, tk, arks in dah.iterAnnots('Allele'):
+        print "A", ak, vk, tk, arks
 
 if __name__== "__main__":
-    dah = __test__()
+    __test__()
