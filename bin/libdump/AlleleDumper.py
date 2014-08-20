@@ -131,7 +131,7 @@ class AlleleDumper(AbstractItemDumper):
     def processRecord(self, r):
 	ak = r['_allele_key']
 	r['id'] = self.context.makeItemId('Allele', ak)
-	if r['mname']:
+	if r['mname'] and r['mname'] != r['name']:
 	    r['name'] = r['mname'] + "; " + r['name']
 	r['strainid'] = self.context.makeItemRef('Strain', r['_strain_key'])
 	mk = r['_marker_key']
