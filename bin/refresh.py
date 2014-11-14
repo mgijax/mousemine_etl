@@ -93,6 +93,16 @@ class SourceRefresher:
 	    logging.info("%s: command failed!"%self.name)
 	self.cleanup()
 
+class MyConfigParser(ConfigParser):
+    def get(self, sn, n, *args):
+        val = ConfigParser.get(self, sn, n, *args)
+	try:
+	    PCT=ConfigParser.get(self, sn, 'PCT')
+	except:
+	    return val
+	else:
+	    return val.replace(PCT,'%')
+
 def getOpts():
     op = OptionParser()
     op.add_option(
@@ -109,7 +119,7 @@ def main():
     basedir = os.path.abspath(os.path.join(mydir, '..'))
     configFile =  os.path.join(mydir,'config.cfg') 
 
-    cp = ConfigParser({"BASEDIR":basedir,"TIMESTAMP":timestamp})
+    cp = MyConfigParser({"BASEDIR":basedir,"TIMESTAMP":timestamp})
     cp.read(configFile)
 
     # Refresh sources in the order given in the file
