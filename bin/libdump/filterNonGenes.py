@@ -2,11 +2,10 @@
 # filterNonGenes.py
 #
 # Removes lines from Homologene or Panther files that refer to non-gene
-# mouse markers. Reads from stdin, writes to stdout. The script autodetects
-# which source (Homologene or Panther) the input comes from.
+# mouse markers. Reads from stdin, writes to stdout. 
 #
 # USAGE:
-#	$ python filterNonGenes.py < INPUT > OUTPUT
+#	$ python filterNonGenes.py -t [homologene|panther] < INPUT > OUTPUT
 #
 # Why:
 # Homologene and Panther data files contain some entries for non-gene 
@@ -28,27 +27,14 @@ geneIds = set()
 suppressed = set()
 
 '''
-detectSource:
-Given a line from a data file, determines which source it is from and sets up
-for filtering that source. 
-Side effects: loads the right kind of ids (e.g., MGI or EntrezGene) for all genes
-and MCV subtypes into a cache.
-Returns: a function to test whether a given line should be written (True) or suppressed (False).
+Given the specified source (homologene or panther), loads the right IDs into 
+the lookup cache, and returns a line testing function.
+The function tests whether a given line should be written (True) or suppressed (False).
 '''
-def detectSource(line):
-    fs = line.split(TAB)
-    if len(fs) == 6:
-	# Homologene. One gene per line, identified by EntrezGene id.
-	src = "homologene"
-	query = '''
-	SELECT aa.accid
-	FROM ACC_Accession aa, MRK_MCV_Cache mm
-	WHERE  aa._mgitype_key = 2
-	AND aa.private = 0
-	AND aa._object_key = mm._marker_key
-	AND mm.term = 'gene'
-	AND _logicaldb_key = 55
-	'''
+def detectSource(src):
+    if src == "homologene":
+	# One gene per line, identified by EntrezGene id.
+	ldb_keys = "55"
 	def test(line,geneIds):
 	    fields = line.split(TAB)
 	    if fields[1] == '10090':
@@ -57,42 +43,50 @@ def detectSource(line):
 	    else:
 	        return True
 
-    elif len(fs) == 5:
-	# Panther. Two genes per line. Identified by MGI id.
-        src =  "panther"
-	query = '''
-	SELECT aa.accid
-	FROM ACC_Accession aa, MRK_MCV_Cache mm
-	WHERE aa._mgitype_key = 2
-	AND aa.private = 0
-	AND aa._object_key = mm._marker_key
-	AND mm.term = 'gene'
-	AND aa._logicaldb_key = 1
-	AND aa.prefixPart = 'MGI:'
-	'''
+    elif src == "panther":
+	# Panther. Two genes per line. Identified by MGI id or Ensembl id.
+	ldb_keys = "1,60"
+	def _test1(field, geneIds):
+	    id = None
+	    if field.startswith('MOUSE|MGI'):
+		id = field.split(PIPE)[1].replace("MGI=MGI=", "MGI:")
+	    elif field.startswith('MOUSE|Ensembl'):
+		id = field.split(PIPE)[1].replace("Ensembl=","")
+	    return id is None or id in geneIds
+
 	def test(line,geneIds):
 	    fields = line.split(TAB)
-	    if fields[0].startswith('MOUSE|MGI'):
-		id = fields[0].split(PIPE)[1].replace("MGI=MGI=", "MGI:")
-		if id not in geneIds:
-		    return False
-	    if fields[1].startswith('MOUSE|MGI'):
-		id = fields[1].split(PIPE)[1].replace("MGI=MGI=", "MGI:")
-		if id not in geneIds:
-		    return False
-	    return True
+	    return _test1(fields[0],geneIds) or _test1(fields[1],geneIds)
     else:
         raise RuntimeError("Unrecognized input source.") 
 
+    # load the id cache
+    query = '''
+	SELECT aa.accid
+	FROM ACC_Accession aa, MRK_MCV_Cache mm
+	WHERE  aa._mgitype_key = 2
+	AND aa.private = 0
+	AND aa._object_key = mm._marker_key
+	AND mm.term = 'gene'
+	AND _logicaldb_key in (%s)
+	''' % ldb_keys
     db.sql(query, lambda r: geneIds.add(r['accid']))
+
     return test
 
+def getCmdLine():
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.add_option("-t", "--type", dest="filetype",
+                  help="File type. One of: homologene, panther")
+    (options, args) = parser.parse_args()
+    return (options,args)
+
 def main():
-    line = sys.stdin.readline()
-    test = detectSource(line)
-    while line:
+    opts, args = getCmdLine()
+    test = detectSource(opts.filetype)
+    for line in sys.stdin:
 	if test(line, geneIds):
 	    sys.stdout.write(line)
-	line = sys.stdin.readline()
 
 main()
