@@ -60,7 +60,7 @@ class Filter:
 # if the line should be written out and False if not.
 #
 class LineByLineFilter(Filter):
-    def main(self):
+    def go(self):
 	for line in self.ifd:
 	    if self.test(line):
 		self.ofd.write(line)

@@ -55,7 +55,7 @@ MINES = {
     },
     "zebrafish" : { 
 	"name" : "ZebraFishMine",
-        "url" : "http://zmine.zfin.org", 
+        "url" : "http://zebrafishmine.org", 
 	"taxon" : 7955,
 	"organism" : "D. rario",
     },
