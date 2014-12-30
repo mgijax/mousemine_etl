@@ -1,5 +1,6 @@
 from AbstractItemDumper import *
 from DataSourceDumper import DataSetDumper
+from DumperContext import DumperContext
 
 class FeatureDumper(AbstractItemDumper):
     ITMPLT = '''
@@ -172,7 +173,16 @@ class MouseFeatureDumper(AbstractFeatureDumper):
 	    self.context.log("Detected mouse feature with no MGI id. Please report this to MGI!")
 	    self.context.log("_marker_key=%(_marker_key)d symbol=%(symbol)s" % r)
 	    r['primaryidentifier'] = "MGI:0"
-        return AbstractFeatureDumper.processRecord(self, r)
+	try:
+	    return AbstractFeatureDumper.processRecord(self, r)
+	except DumperContext.DuplicateIdError:
+	    # FIXME: MGD has a handful of markers with multiple MCV types. This causes the query
+	    # to return multiple records for those markers. Here we skip over the dups. 
+	    # The feature in mousemine gets only the first type; the rest are dropped.
+	    # Need to handle this better, but it won't be easy.
+	    self.context.log("Ignoring duplicate id error. ASSUMING this is because marker has multiple types!!")
+	    self.context.log("Skipping: " + str(r))
+	    return None
 
     def getMcvType(self, r):
         return r['mcvtype']
