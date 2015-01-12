@@ -203,13 +203,13 @@ class AnnotationDumper(AbstractItemDumper):
             and p._annotevidence_key = e._annotevidence_key
             and e._annot_key = a._annot_key
             and a._annottype_key = 1002
+	    and p.value in ('F','f','M','m')
             order by p._annotevidence_key, p.stanza, p.sequencenum
         '''
         for r in self.context.sql(q):
-	    v = r['value'][0:1].upper()
-	    if v == 'F' or v == 'M':
-	        ek = r['_annotevidence_key']
-	        self.ek2props[ek] = 'specific_to(%s)' % (v == 'M' and 'male' or 'female')
+	    v = r['value'].upper()
+	    ek = r['_annotevidence_key']
+	    self.ek2props[ek] = 'specific_to(%s)' % (v == 'M' and 'male' or 'female')
 
     #
     # Reads the MEDIC ontology file to build a mapping from
