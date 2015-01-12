@@ -47,6 +47,7 @@ class SourceRefresher:
 	self.dname = os.path.basename(self.odir)
 	self.latest = os.path.join(self.pdir, "latest")
 	self.cmd = cp.get(sn,'cmd')
+        self.required = cp.get(sn,'required').strip() == 'True'
 	self.success = None
 
     def cleanup(self):
@@ -66,6 +67,10 @@ class SourceRefresher:
 	    os.system(cmd)
 
     def refresh(self):
+        if self.required:
+            logging.info("Updating %s is required."%self.name)
+        else:
+            logging.info("Can use cached data for %s."%self.name);
 	logging.info("%s: starting ..."%self.name)
 	logging.info("%s: running command: %s"%(self.name,self.cmd))
 	os.makedirs(self.odir)
@@ -90,6 +95,11 @@ class SourceRefresher:
 	else:
 	    # cmd failed
 	    self.success=False
+            if self.required:
+                logging.info("Unacceptable failure, exiting.")
+                sys.exit(1)
+            else:
+                logging.info("Failure of this source is acceptable dump will continue.");
 	    logging.info("%s: command failed!"%self.name)
 	self.cleanup()
 
