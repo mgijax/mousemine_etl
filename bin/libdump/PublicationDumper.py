@@ -189,15 +189,19 @@ class PublicationDumper(AbstractItemDumper):
 	arefs = []
 	for a in anames:
 	    if not self.authors.has_key(a):
-		self.authors[a] = self.context.makeGlobalKey('Author')
-		arec = {'id':self.authors[a], 'name':self.quote(a)}
-		self.writeItem( arec, self.ATMPLT )
-	    arefs.append('<reference ref_id="%s"/>'%self.authors[a])
+            	if r['pubMedId'] is None:
+			self.authors[a] = self.context.makeGlobalKey('Author')
+			arec = {'id':self.authors[a], 'name':self.quote(a)}
+			self.writeItem( arec, self.ATMPLT )
+	    		arefs.append('<reference ref_id="%s"/>'%self.authors[a])
 	r['citation'] = self.calcCitation(r)
-	attrs.append('<collection name="authors">%s</collection>' % ''.join(arefs))
+        if r['pubMedId'] is None:
+	    attrs.append('<collection name="authors">%s</collection>' % ''.join(arefs))
 	flds = (r['pubMedId'] and ['pubMedId'] or []) + \
 	  ['citation','title','journal','volume','issue','pages','year','firstAuthor', 'abstractText', 'doi']
-	#
+	# if there is a pubMedId all other fields will be looked up from PubMed
+        if r['pubMedId'] is not None:
+		flds = (r['pubMedId'] and ['pubMedId'] or []) + ['citation','abstractText','doi']
 	for n in flds:
 	    if r[n]:
 		attrs.append('<attribute name="%s" value="%s"/>'%(n, self.quote(r[n])))
