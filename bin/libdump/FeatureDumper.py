@@ -82,19 +82,27 @@ class AbstractFeatureDumper(AbstractItemDumper):
         # preload all the earliest publications 
         self.earliest_publications = {}
         q = '''
-            select mr._marker_key AS _marker_key, mr._refs_key AS _refs_key, br.year, mr.jnum
+            select distinct mr._marker_key AS _marker_key, mr._refs_key AS _refs_key, br.year, mr.jnum
             from mrk_reference mr, bib_refs br
             where mr._refs_key = br._refs_key
             order by _marker_key, br.year, mr.jnum
             '''
-        current_marker_key = 0;
+        current_marker_key = 0
+        found_citeable = False
         for r in self.context.sql(q):
             if current_marker_key != r['_marker_key']:
-                if not self.context.isPubUnciteable(r['_refs_key']):
-                    self.earliest_publications[r['_marker_key']] = self.context.makeItemRef('Reference', r['_refs_key'])
-                    current_marker_key = r['_marker_key']
-                else:
-                    self.context.log("skipping unciteable pub %s for marker %s" % (r['_refs_key'],r['_marker_key']))
+                found_citeable = False                
+                # use the first publication even if it is unciteable
+                self.earliest_publications[r['_marker_key']] = self.context.makeItemRef('Reference', r['_refs_key'])
+                if self.context.isPubCiteable(r['_refs_key']):
+                    found_citeable = True
+            else:
+                # if there are multiple publciations use the first one that is citeable
+                if not found_citeable:
+		    if self.context.isPubCiteable(r['_refs_key']):
+                        self.earliest_publications[r['_marker_key']] = self.context.makeItemRef('Reference', r['_refs_key'])
+			found_citeable = True
+            current_marker = r['_marker_key']         
 
     def getDescription(self, r):
         n = self.mk2description.get(r['_marker_key'], '')
@@ -121,19 +129,6 @@ class AbstractFeatureDumper(AbstractItemDumper):
     def getDataSetRef(self):
 	return "" # override me
 
-    def loadEarliestPublications(self):
-        self.earliest_publications = {}
-        q = '''
-            select mr._marker_key AS _marker_key, mr._refs_key AS _refs_key, br.year, mr.jnum
-            from mrk_reference mr, bib_refs br
-            where mr._refs_key = br._refs_key
-            order by _marker_key, br.year, mr.jnum
-            '''
-        current_marker_key = 0;
-        for r in self.context.sql(q):
-            if current_marker_key != r['_marker_key']:
-                self.earliest_publications[r['_marker_key']] = self.context.makeItemRef('Reference', r['_refs_key'])
-                current_marker_key = r['_marker_key']
 
     # Special processing for the ncbiGeneNumber attribute. In the Intermine core model,
     # this attr is introduced in class Gene. However some MGI features have NCBI (Entrez)

@@ -122,22 +122,29 @@ class AlleleDumper(AbstractItemDumper):
     def loadEarliestPublications(self):
        self.earliest_publications = {}
        q = '''
-           select aa._allele_key AS _allele_key, br._refs_key AS _refs_key, br.year
+           select distinct aa._allele_key AS _allele_key, br._refs_key AS _refs_key, br.year
            from MGI_Reference_Assoc ra, BIB_Refs br, ALL_Allele aa
            where ra._refs_key = br._refs_key
            and ra._object_key = aa._allele_key
            and ra._mgitype_key = 11
            order by aa._allele_key, br.year, br._refs_key
            '''
-       current_allele_key =0;
+       current_allele_key = 0;
+       found_citeable = False
        for r in self.context.sql(q):
            if current_allele_key != r['_allele_key']:
-               if not self.context.isPubUnciteable(r['_refs_key']):
-                   self.context.log("skipping unciteable pub %s for allele %s" % (r['_refs_key'],r['_allele_key'])) 
-               else:
-                   self.earliest_publications[r['_allele_key']] = self.context.makeItemRef('Reference', r['_refs_key'])
-                   current_allele_key = r['_allele_key']
-
+               found_citeable = False
+               # use the first publciation even if it is unciteable
+               self.earliest_publications[r['_allele_key']] = self.context.makeItemRef('Reference', r['_refs_key'])
+               if self.context.isPubCiteable(r['_refs_key']):
+                   found_citeable = True 
+           else:
+               # if there are multiple publications use the fist citeable one 
+               if not found_citeable:
+                   if self.context.isPubCiteable(r['_refs_key']):
+                       self.earliest_publications[r['_allele_key']] = self.context.makeItemRef('Reference', r['_refs_key'])
+                       found_citeable = True 
+           current_allele_key = r['_allele_key']
 
     def preDump(self):
 	AlleleMutationDumper(self.context).dump()

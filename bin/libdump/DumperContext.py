@@ -163,10 +163,10 @@ class DumperContext:
        for r in db.sql(q):
          self.unciteablePubs[r['_refs_key']] = 1;
 
-    # returns true if the refKey is in the list of unciteable reference keys
+    # returns true if the refKey is not in the list of unciteable reference keys
     #
-    def isPubUnciteable(self,refKey):
-        return self.unciteablePubs.has_key(refKey)
+    def isPubCiteable(self,refKey):
+        return not self.unciteablePubs.has_key(refKey)
 
  
     # Loads datadump timestamp from MGI.
