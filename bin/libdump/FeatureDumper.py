@@ -102,7 +102,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
 		    if self.context.isPubCiteable(r['_refs_key']):
                         self.earliest_publications[r['_marker_key']] = self.context.makeItemRef('Reference', r['_refs_key'])
 			found_citeable = True
-            current_marker = r['_marker_key']         
+            current_marker_key = r['_marker_key']         
 
     def getDescription(self, r):
         n = self.mk2description.get(r['_marker_key'], '')
