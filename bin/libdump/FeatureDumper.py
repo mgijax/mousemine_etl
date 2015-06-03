@@ -36,6 +36,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
       <reference name="chromosome" ref_id="%(chromosomeid)s" />
       %(locationRef)s
       <collection name="publications">%(publications)s</collection>
+      %(earliestPublication)s
       <collection name="dataSets">%(dataSets)s</collection>
       </item>
     '''
@@ -77,6 +78,32 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    mk = r['_marker_key']
 	    self.mk2description[mk] = self.mk2description.get(mk,'') + r['note']
 
+        
+        # preload all the earliest publications 
+        self.earliest_publications = {}
+        q = '''
+            select distinct mr._marker_key AS _marker_key, mr._refs_key AS _refs_key, br.year, mr.jnum
+            from mrk_reference mr, bib_refs br
+            where mr._refs_key = br._refs_key
+            order by _marker_key, br.year, mr.jnum
+            '''
+        current_marker_key = 0
+        found_citeable = False
+        for r in self.context.sql(q):
+            if current_marker_key != r['_marker_key']:
+                found_citeable = False                
+                # use the first publication even if it is unciteable
+                self.earliest_publications[r['_marker_key']] = self.context.makeItemRef('Reference', r['_refs_key'])
+                if self.context.isPubCiteable(r['_refs_key']):
+                    found_citeable = True
+            else:
+                # if there are multiple publciations use the first one that is citeable
+                if not found_citeable:
+		    if self.context.isPubCiteable(r['_refs_key']):
+                        self.earliest_publications[r['_marker_key']] = self.context.makeItemRef('Reference', r['_refs_key'])
+			found_citeable = True
+            current_marker_key = r['_marker_key']         
+
     def getDescription(self, r):
         n = self.mk2description.get(r['_marker_key'], '')
 	if n:
@@ -101,6 +128,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
 
     def getDataSetRef(self):
 	return "" # override me
+
 
     # Special processing for the ncbiGeneNumber attribute. In the Intermine core model,
     # this attr is introduced in class Gene. However some MGI features have NCBI (Entrez)
@@ -133,6 +161,11 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	else:
 	    r['soterm'] = ''
 	r['publications'] = ''.join(self.mk2refs.get(r['_marker_key'],[]))
+        ep = self.earliest_publications.get(r['_marker_key'])
+        if ep is None:
+            r['earliestPublication'] = ''
+        else:
+	    r['earliestPublication'] = '<reference name="earliestPublication" ref_id="%s" />' % ep
 	r['dataSets'] = self.getDataSetRef()
 	r['symbol'] = self.quote(r['symbol'])
 	r['name'] = self.quote(r['name'])

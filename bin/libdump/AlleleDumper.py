@@ -54,6 +54,7 @@ class AlleleDumper(AbstractItemDumper):
       <attribute name="inheritanceMode" value="%(inheritancemode)s" />
       <attribute name="glTransmission" value="%(gltransmission)s" />
       <collection name="publications">%(publications)s</collection>
+      %(earliestPublication)s
       <reference name="strainOfOrigin" ref_id="%(strainid)s" />
       <collection name="mutations">%(mutations)s</collection>
       <attribute name="isRecombinase" value="%(isRecombinase)s" />
@@ -118,6 +119,32 @@ class AlleleDumper(AbstractItemDumper):
         for r in self.context.sql(q):
             self.pub_refs.setdefault(r['_object_key'], []).append(self.context.makeItemRef('Reference', r['_refs_key']))
 
+    def loadEarliestPublications(self):
+       self.earliest_publications = {}
+       q = '''
+           select distinct aa._allele_key AS _allele_key, br._refs_key AS _refs_key, br.year
+           from MGI_Reference_Assoc ra, BIB_Refs br, ALL_Allele aa
+           where ra._refs_key = br._refs_key
+           and ra._object_key = aa._allele_key
+           and ra._mgitype_key = 11
+           order by aa._allele_key, br.year, br._refs_key
+           '''
+       current_allele_key = 0;
+       found_citeable = False
+       for r in self.context.sql(q):
+           if current_allele_key != r['_allele_key']:
+               found_citeable = False
+               # use the first publciation even if it is unciteable
+               self.earliest_publications[r['_allele_key']] = self.context.makeItemRef('Reference', r['_refs_key'])
+               if self.context.isPubCiteable(r['_refs_key']):
+                   found_citeable = True 
+           else:
+               # if there are multiple publications use the fist citeable one 
+               if not found_citeable:
+                   if self.context.isPubCiteable(r['_refs_key']):
+                       self.earliest_publications[r['_allele_key']] = self.context.makeItemRef('Reference', r['_refs_key'])
+                       found_citeable = True 
+           current_allele_key = r['_allele_key']
 
     def preDump(self):
 	AlleleMutationDumper(self.context).dump()
@@ -126,6 +153,7 @@ class AlleleDumper(AbstractItemDumper):
 	self.loadAllele2AttributeMap()
 	self.loadNotes()
         self.loadAllelePublications()
+        self.loadEarliestPublications()
 
 
     def processRecord(self, r):
@@ -146,6 +174,12 @@ class AlleleDumper(AbstractItemDumper):
 	r['dataSets'] = '<reference ref_id="%s"/>'%dsid
 	r['mutations'] = ''.join(['<reference ref_id="%s" />'%x for x in self.ak2mk.get(ak,[])])
         r['publications'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.pub_refs.get(ak,[])])
+
+        ep = self.earliest_publications.get(ak)
+        if  ep is None:
+	    r['earliestPublication'] = ''
+        else:
+            r['earliestPublication'] = '<reference name="earliestPublication" ref_id="%s" />' % ep
 
 	r['isRecombinase'] = "true" if self.ak2drivernotes.has_key(ak) else "false"
 

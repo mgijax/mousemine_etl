@@ -138,6 +138,37 @@ class DumperContext:
 	#
 	self.outfiles = {}
 
+        # list of non standard publications  
+        # aka private or de-emphasized in MGI
+
+        self.unciteablePubs = {}
+        self.loadUnciteablePubs()
+
+    # query based on PrivateRefSet.py in femover
+    def loadUnciteablePubs(self):
+       q = '''select br._Refs_key as _refs_key
+              from BIB_Refs br, ACC_Accession acc
+              where br._Refs_key = acc._Object_key
+              and acc._MGIType_key = 1
+              and acc.prefixPart = 'J:'
+              and acc._LogicalDB_key = 1
+              and 
+              ( br.journal ilike 'database%'
+               or    br.journal ilike 'personal%'
+               or br.journal ilike 'Genbank Submission'
+               or br.refType = 'BOOK'
+               or  br.journal ilike '%Data Submission%'
+               or ( br.journal is null and br._ReviewStatus_key = 2)
+              )'''
+       for r in db.sql(q):
+         self.unciteablePubs[r['_refs_key']] = 1;
+
+    # returns true if the refKey is not in the list of unciteable reference keys
+    #
+    def isPubCiteable(self,refKey):
+        return not self.unciteablePubs.has_key(refKey)
+
+ 
     # Loads datadump timestamp from MGI.
     #
     def loadMgiDbinfo(self):
