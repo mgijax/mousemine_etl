@@ -60,6 +60,9 @@ class DumperContext:
 	    'ALLELE_COLLECTION_VKEY' : 92,
 	    'ALLELE_ATTRIBUTE_VKEY' : 93,
 
+	    # VOC_Term keys
+	    'HYBRID_HOMOL_KEY' : 13764519,
+
 	    # Annotation type keys
 	    'ALLELE_ATTRIBUTE_AKEY' : 1014,
 
