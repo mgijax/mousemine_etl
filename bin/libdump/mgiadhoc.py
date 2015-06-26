@@ -61,6 +61,31 @@ def connect(host=None,database=None, user=None, password=None):
     con = psycopg2.connect( host=host or HOST, database=database or DATABASE, user=user or USER, password=password or PASSWORD )
     return con
 
+# Cursor name parameters
+NAMELEN = 10
+ITERSIZE = 1000000
+import random
+import string
+
+#
+def sqliter(query, connection=None):
+    closeCon = False
+    if connection is None:
+        connection = connect()
+        closeCon = True
+
+    # generate a server-side (named) cursor
+    cn = 'C_' + ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(NAMELEN))
+    cur = connection.cursor(name=cn, cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.itersize = ITERSIZE
+    cur.execute(query)
+    for r in cur:
+        yield r
+    cur.close()
+
+    if closeCon:
+        connection.close()
+
 #
 def sql(queries, parsers=None, args={}, connection=None):
     single = False
@@ -92,11 +117,13 @@ def sql(queries, parsers=None, args={}, connection=None):
 	    if p is None:
 		qr = []
 		for r in cur:
-		    qr.append( dict(r) )
+		    #qr.append( dict(r) )
+		    qr.append( r )
 		results.append(qr)
 	    else:
 	        for r in cur:
-		    p( dict(r), **a )
+		    #p( dict(r), **a )
+		    p( r, **a )
 		results.append(None)
 	else:
 	    results.append(None)
@@ -120,6 +147,9 @@ def __test__():
       'select * from mrk_marker where _marker_key = 964'
       ]
     sql( qlist, ['ignore', p])
+
+    for r in sqliter("select * from acc_mgitype"):
+      print r
 
 if __name__ == "__main__":
     __test__()
