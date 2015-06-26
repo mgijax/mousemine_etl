@@ -75,13 +75,13 @@ class AbstractItemDumper:
 		s = self.NA_RE.sub('',s)
 	    self.context.writeOutput(r['id'],s)
 	    self.writeCount += 1
+	    if self.dotEvery > 0 and self.writeCount % self.dotEvery == 0:
+		nl = (self.writeCount % (self.dotEvery*self.dotsPerLine) == 0)
+	        self.context.log('.',timestamp=False,newline=nl)
 
     def _processRecord(self, r, qIndex=None):
 	try:
 	    self.recordCount += 1
-	    if self.dotEvery > 0 and self.recordCount % self.dotEvery == 0:
-		nl = (self.recordCount % (self.dotEvery*self.dotsPerLine) == 0)
-	        self.context.log('.',timestamp=False,newline=nl)
 	    if qIndex is None:
 		rr = self.processRecord(r)
 	    else:
@@ -104,16 +104,12 @@ class AbstractItemDumper:
 	    q = self.constructQuery()
 	    if len(q.strip()) > 0:
 		self.context.sql(q, self._processRecord)
-	    self.context.log('',timestamp=False)
-	    self.context.log('Processed %d records.' % self.recordCount)
 	else:
 	    for i,qt in enumerate(self.QTMPLT):
 		self.recordCount = 0
 		q = self.constructQuery(qt)
 		if len(q.strip()) > 0:
 		    self.context.sql(q, self._processRecord, args={'qIndex':i})
-		self.context.log('',timestamp=False)
-		self.context.log('Processed %d records.' % self.recordCount)
 
     def dump(self, **kwargs):
 	self.context.log('%s: Starting dump. args=%s' %(self.__class__.__name__, str(kwargs)))
@@ -126,7 +122,8 @@ class AbstractItemDumper:
 	    return
 	self.mainDump()
 	self.postDump()
-	self.context.log('Total items written: %d' % self.writeCount)
+	self.context.log('', timestamp=False)
+	self.context.log('%s: Finished dump. Total items written: %d' % (self.__class__.__name__, self.writeCount))
 	return self.writeCount
 
     #==========================================================================

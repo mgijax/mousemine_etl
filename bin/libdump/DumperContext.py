@@ -108,6 +108,8 @@ class DumperContext:
 	    'Expression'                : 10019,
             'EMAPATerm'                 : 10020,
             'AlleleAttribute'           : 10021,
+            'DirectedRelationship'      : 10022,
+            'DirectedRelationshipProperty' : 10023,
 	    })
 
 	# load MGI datadump timestamp from the database
@@ -241,6 +243,10 @@ class DumperContext:
     def sql(self, q, p=None, args={}):
 	self.log(str(q))
         return db.sql(q, p, args=args)
+
+    def sqliter(self, q):
+        self.log(str(q))
+	return db.sqliter(q)
 
     def openOutput(self, fname):
 	if self.fd and not self.fd.closed:
