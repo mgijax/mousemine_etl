@@ -76,8 +76,9 @@ class AbstractItemDumper:
 	    self.context.writeOutput(r['id'],s)
 	    self.writeCount += 1
 	    if self.dotEvery > 0 and self.writeCount % self.dotEvery == 0:
-		nl = (self.writeCount % (self.dotEvery*self.dotsPerLine) == 0)
-	        self.context.log('.',timestamp=False,newline=nl)
+	        self.context.log('.',timestamp=False,newline=False)
+		if (self.writeCount % (self.dotEvery*self.dotsPerLine) == 0):
+		    self.context.log(' %d'% self.writeCount,timestamp=False,newline=True)
 
     def _processRecord(self, r, qIndex=None):
 	try:

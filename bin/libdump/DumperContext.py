@@ -66,6 +66,9 @@ class DumperContext:
 	    # Annotation type keys
 	    'ALLELE_ATTRIBUTE_AKEY' : 1014,
 
+	    # Feature relationship category keys
+	    'ALL_FR_CATEGORY_KEYS' : [1002,1003,1004,1001],
+
 	    # Coordinate maps
 	    'HUMAN_MAPKEY' : 47,
 
