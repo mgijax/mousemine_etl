@@ -34,6 +34,7 @@ allDumpers = [
     (GenotypeDumper,		()),
     (ExpressionDumper,		()),
     (AnnotationDumper,		()),
+    (RelationshipDumper,	()),
     (SynonymDumper,		()),
     (CrossReferenceDumper,	()),
     ]
