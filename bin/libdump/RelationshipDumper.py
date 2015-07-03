@@ -3,26 +3,6 @@ from AbstractItemDumper import *
 from DataSourceDumper import DataSetDumper
 import itertools
 
-# Translation of "Non-mouse organism" values into taxon ids.
-# This really needs to go somewhere better, but where??  FIXME.
-# For now, take the simplest literal approach - define mapping for all known variants.
-ORGANISM_NAMES = '''
-9606	human|Human
-10116	Rat|rat
-131567	Not specified
-9031	Chicken|chicken
-9825	Pig
-9913	Cattle
-10028	Hamster
-10029	Chinese hamster
-8930	Pigeon
-7955	Zebrafish
-9598	Chimpanzee
-9615	"dog, domestic"
-9986	Rabbit
-5811	T. gondii
-'''
-
 class RelationshipDumper(AbstractItemDumper):
     qCategories = '''
     SELECT c._category_key, c.name, st.name as stype, ot.name as otype
@@ -103,13 +83,15 @@ class RelationshipDumper(AbstractItemDumper):
 	    try:
 		rel['subject'] = self.context.makeItemRef(c['stype'], rel['_object_key_1'])
 		rel['object'] = self.context.makeItemRef(c['otype'], rel['_object_key_2'])
+		rel['publication'] = self.context.makeItemRef('Reference', rel['_refs_key'])
 	    except DumperContext.DanglingReferenceError:
-	        continue
+		self.context.log("Dangling reference error. Relationship record skipped: " + \
+		    str(rel))
+		continue
 	    if rel['qualifier'] == "Not Specified":
 	        rel['qualifier'] = ''
 	    else:
 	        rel['qualifier'] = '<attribute name="qualifier" value="%s" />\n'%rel['qualifier']
-	    rel['publication'] = self.context.makeItemRef('Reference', rel['_refs_key'])
 	    rel['dataset'] = dsid
 	    rel['propertystring'] = ''
 
