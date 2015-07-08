@@ -66,8 +66,26 @@ class DumperContext:
 	    # Annotation type keys
 	    'ALLELE_ATTRIBUTE_AKEY' : 1014,
 
-	    # Feature relationship category keys
+	    # Feature relationship category keys 
 	    'ALL_FR_CATEGORY_KEYS' : [1002,1003,1004,1001],
+	    'ALL_FR_NAME_MAP' : {
+		1001 : { # interacts_with
+		    'subjectAttrName' : 'interactor',
+		    'objectAttrName'  : 'target'
+		    },
+		1002 : { # cluster_has_member
+		    'subjectAttrName' : 'cluster',
+		    'objectAttrName'  : 'member'
+		    },
+		1003 : { # mutation_involves
+		    'subjectAttrName' : 'mutation',
+		    'objectAttrName'  : 'feature'
+		    },
+		1004 : { # expresses_component
+		    'subjectAttrName' : 'allele',
+		    'objectAttrName'  : 'feature'
+		    }
+	        },
 
 	    # Coordinate maps
 	    'HUMAN_MAPKEY' : 47,

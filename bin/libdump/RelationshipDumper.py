@@ -39,8 +39,8 @@ class RelationshipDumper(AbstractItemDumper):
     '''
     rTmplt = '''
 <item class="%(relclass)s" id="%(id)s">
-<reference name="subject" ref_id="%(subject)s" />
-<reference name="object" ref_id="%(object)s" />
+<reference name="%(subjectAttrName)s" ref_id="%(subject)s" />
+<reference name="%(objectAttrName)s" ref_id="%(object)s" />
 <attribute name="relationshipTerm" value="%(relationship)s" />
 %(qualifier)s<attribute name="evidenceCode" value="%(evidencecode)s" />
 %(propertystring)s<reference name="publication" ref_id="%(publication)s" />
@@ -74,6 +74,7 @@ class RelationshipDumper(AbstractItemDumper):
 	    yield r1, filter(lambda p:p['property'], list(r2))
 
     def dumpCategory(self, _category_key):
+	nmap = self.context.QUERYPARAMS['ALL_FR_NAME_MAP'][_category_key]
 	cname = self.categories[_category_key]['name']
         dsid = DataSetDumper(self.context).dataSet(name="%s relationships from MGI"%cname)
 	for rel, props in self.iterData(_category_key):
@@ -82,7 +83,9 @@ class RelationshipDumper(AbstractItemDumper):
 	    rel['relclass'] = 'MGI' + self.normalizeName(cname)
 	    try:
 		rel['subject'] = self.context.makeItemRef(c['stype'], rel['_object_key_1'])
+		rel['subjectAttrName'] = nmap['subjectAttrName']
 		rel['object'] = self.context.makeItemRef(c['otype'], rel['_object_key_2'])
+		rel['objectAttrName'] = nmap['objectAttrName']
 		rel['publication'] = self.context.makeItemRef('Reference', rel['_refs_key'])
 	    except DumperContext.DanglingReferenceError:
 		self.context.log("Dangling reference error. Relationship record skipped: " + \
