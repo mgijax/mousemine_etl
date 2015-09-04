@@ -6,9 +6,7 @@ class PublicationDumper(AbstractItemDumper):
     SELECT 
         r._refs_key, 
 	r.authors, 
-	r.authors2, 
 	r.title, 
-	r.title2, 
 	r.journal, 
 	r.vol AS volume, 
 	r.issue, 
@@ -175,12 +173,8 @@ class PublicationDumper(AbstractItemDumper):
 	        return None
 	#---------------------------------------
 	#
-	if r['title2']:
-	    r['title'] += r['title2']
 	if r['authors'] is None:
 	    r['authors'] = ''
-	if r['authors2']:
-	    r['authors'] += r['authors2']
 	r['firstAuthor'] = ''
 	anames = filter(None, map(string.strip, r['authors'].split(';')))
 	r['authors'] = anames
