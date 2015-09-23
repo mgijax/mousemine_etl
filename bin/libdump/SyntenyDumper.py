@@ -84,6 +84,7 @@ SELECT distinct
         cast(mlc2.endCoordinate AS int) AS hend,
         mlc2.strand AS hstrand
     FROM
+	MRK_Cluster mc,
         MRK_ClusterMember mcm,
         MRK_ClusterMember mcm2,
         mrk_marker m1,
@@ -93,7 +94,9 @@ SELECT distinct
         mrk_location_cache mlc2,
         mrk_chromosome hch
     WHERE
-    mcm._cluster_key = mcm2._cluster_key
+    mc._clustersource_key = %(HYBRID_HOMOL_KEY)s
+    AND mc._cluster_key = mcm._cluster_key
+    AND mcm._cluster_key = mcm2._cluster_key
     AND mcm._marker_key	= m1._marker_key
     AND m1._organism_key = 1
     AND m1._marker_key = mlc1._marker_key

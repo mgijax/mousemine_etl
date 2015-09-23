@@ -60,8 +60,32 @@ class DumperContext:
 	    'ALLELE_COLLECTION_VKEY' : 92,
 	    'ALLELE_ATTRIBUTE_VKEY' : 93,
 
+	    # VOC_Term keys
+	    'HYBRID_HOMOL_KEY' : 13764519,
+
 	    # Annotation type keys
 	    'ALLELE_ATTRIBUTE_AKEY' : 1014,
+
+	    # Feature relationship category keys 
+	    'ALL_FR_CATEGORY_KEYS' : [1002,1003,1004,1001],
+	    'ALL_FR_NAME_MAP' : {
+		1001 : { # interacts_with
+		    'subjectAttrName' : 'interactor',
+		    'objectAttrName'  : 'target'
+		    },
+		1002 : { # cluster_has_member
+		    'subjectAttrName' : 'cluster',
+		    'objectAttrName'  : 'member'
+		    },
+		1003 : { # mutation_involves
+		    'subjectAttrName' : 'mutation',
+		    'objectAttrName'  : 'feature'
+		    },
+		1004 : { # expresses_component
+		    'subjectAttrName' : 'allele',
+		    'objectAttrName'  : 'feature'
+		    }
+	        },
 
 	    # Coordinate maps
 	    'HUMAN_MAPKEY' : 47,
@@ -105,6 +129,8 @@ class DumperContext:
 	    'Expression'                : 10019,
             'EMAPATerm'                 : 10020,
             'AlleleAttribute'           : 10021,
+            'DirectedRelationship'      : 10022,
+            'DirectedRelationshipProperty' : 10023,
 	    })
 
 	# load MGI datadump timestamp from the database
@@ -238,6 +264,10 @@ class DumperContext:
     def sql(self, q, p=None, args={}):
 	self.log(str(q))
         return db.sql(q, p, args=args)
+
+    def sqliter(self, q):
+        self.log(str(q))
+	return db.sqliter(q)
 
     def openOutput(self, fname):
 	if self.fd and not self.fd.closed:

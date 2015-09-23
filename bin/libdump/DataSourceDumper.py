@@ -71,6 +71,7 @@ class DataSetDumper(AbstractItemDumper):
         id = self.context.makeItemId('DataSet')
 	rec['id'] = id
 	if not rec.has_key('dataSource'):
+	    # if not specified, assume source is MGI
 	    rec['dataSource'] = self.context.makeItemRef('DataSource',1)
 	self.writeItem(rec)
 	self.context.dataSetByName[n] = id
