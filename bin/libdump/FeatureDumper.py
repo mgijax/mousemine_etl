@@ -279,13 +279,12 @@ MGIType2MCVType = {
 # has no corresponding SO term, we use the generic term sequence_feature (SO:0000110).
 #
 MCV2ClassName = {
-
-    # Mappable types
+    'antisense lncRNA gene'	: ('Gene',				'SO:0001904'),
     'BAC end'			: ('Read',				'SO:0000999'),
     'BAC/YAC end'		: ('Read',				'SO:0000150'),
     'chromosomal deletion'	: ('ChromosomeStructureVariation',	'SO:1000029'),
-    'chromosomal inversion'	: ('ChromosomeStructureVariation',	'SO:1000030'),
     'chromosomal duplication'	: ('ChromosomeStructureVariation',	'SO:1000037'),
+    'chromosomal inversion'	: ('ChromosomeStructureVariation',	'SO:1000030'),
     'chromosomal translocation'	: ('ChromosomeStructureVariation',	'SO:1000044'),
     'chromosomal transposition'	: ('ChromosomeStructureVariation',	'SO:1000453'),
     'complex/cluster/region'	: ('ComplexClusterRegion',		'SO:0000110'),
@@ -296,7 +295,9 @@ MCV2ClassName = {
     'gene segment'		: ('GeneSegment',			'SO:3000000'),
     'heritable phenotypic marker' : ('HeritablePhenotypicMarker',	'SO:0001500'),
     'insertion'			: ('Insertion',				'SO:0000667'),
+    'intronic lncRNA gene'	: ('Gene',				'SO:0001903'),
     'lincRNA gene'		: ('Gene',				'SO:0001641'),
+    'lncRNA gene'		: ('Gene',				'SO:0001877'),
     'minisatellite'		: ('OtherGenomeFeature',		'SO:0000643'),
     'miRNA gene'		: ('Gene',				'SO:0001265'),
     'non-coding RNA gene'	: ('Gene',				'SO:0001263'),
@@ -304,6 +305,7 @@ MCV2ClassName = {
     'other genome feature'	: ('OtherGenomeFeature',		'SO:0000110'),
     'PAC end'			: ('Read',				'SO:0001480'),
     'polymorphic pseudogene'	: ('PolymorphicPseudogene',		'SO:0001841'),
+    'promoter'			: ('OtherGenomeFeature',		'SO:0000167'),
     'protein coding gene'	: ('Gene',				'SO:0001217'),
     'pseudogene'		: ('Pseudogene',			'SO:0000336'),
     'pseudogenic gene segment'	: ('PseudogenicGeneSegment',		'SO:0001741'),
@@ -320,8 +322,8 @@ MCV2ClassName = {
     'snoRNA gene'		: ('Gene',				'SO:0001267'),
     'snRNA gene'		: ('Gene',				'SO:0001268'),
     'SRP RNA gene'		: ('Gene',				'SO:0001269'),
-    'telomere'			: ('OtherGenomeFeature',		'SO:0000624'),
     'telomerase RNA gene'	: ('Gene',				'SO:0001643'),
+    'telomere'			: ('OtherGenomeFeature',		'SO:0000624'),
     'transgene'			: ('Transgene',				'SO:0000902'),
     'tRNA gene'			: ('Gene',				'SO:0001272'),
     'unclassified cytogenetic marker'	: \
@@ -334,61 +336,3 @@ MCV2ClassName = {
     'YAC end'			: ('Read',				'SO:0001498'),
     }
 
-xxMCV2ClassName = {
-    # These are abstract only - nothing should have these types directly.
-    #'all feature types'	: None,
-    #'cytogenetic marker'	: None,
-    #'other feature type'	: None,
-
-    # Mappable types
-    'BAC end'			: ('BACEnd',				'SO:0000999'),
-    'BAC/YAC end'		: ('Read',				'SO:0000150'),
-    'chromosomal deletion'	: ('ChromosomalDeletion',		'SO:1000029'),
-    'chromosomal inversion'	: ('ChromosomalInversion',		'SO:1000030'),
-    'chromosomal duplication'	: ('ChromosomalDuplication',		'SO:1000037'),
-    'chromosomal translocation'	: ('ChromosomalTranslocation',		'SO:1000044'),
-    'chromosomal transposition'	: ('ChromosomalTransposition',		'SO:1000453'),
-    'complex/cluster/region'	: ('ComplexClusterRegion',		None),
-    'DNA segment'		: ('DNASegment',			None),
-    'gene'			: ('Gene',				'SO:0000704'),
-    'gene segment'		: ('GeneSegment',			'SO:3000000'),
-    'heritable phenotypic marker' : ('HeritablePhenotypicMarker',	'SO:0001500'),
-    'insertion'			: ('Insertion',				'SO:0000667'),
-    'lincRNA gene'		: ('LincRNAGene',			'SO:0001641'),
-    'minisatellite'		: ('Minisatellite',			'SO:0000643'),
-    'miRNA gene'		: ('MiRNAGene',				'SO:0001265'),
-    'non-coding RNA gene'	: ('NcRNAGene',				'SO:0001263'),
-    'other genome feature'	: ('OtherGenomeFeature',		None),
-    'PAC end'			: ('PACEnd',				'SO:0001480'),
-    'polymorphic pseudogene'	: ('PolymorphicPseudogene',		None),
-    'protein coding gene'	: ('ProteinCodingGene',			'SO:0001217'),
-    'pseudogene'		: ('Pseudogene',			'SO:0000336'),
-    'pseudogenic gene segment'	: ('PseudogenicGeneSegment',		None),
-    'pseudogenic region'	: ('PseudogenicRegion',			'SO:0000462'),
-    'QTL'			: ('QTL',				'SO:0000771'),
-    'reciprocal chromosomal translocation' : \
-    				  ('ReciprocalChromosomalTranslocation','SO:1000048'),
-    'retrotransposon'		: ('Retrotransposon',			'SO:0000180'),
-    'RNase MRP RNA gene'	: ('RNaseMRPRNAGene',			'SO:0001640'),
-    'RNase P RNA gene'		: ('RNasePRNAGene',			'SO:0001639'),
-    'Robertsonian fusion'	: ('RobertsonianFusion',		'SO:1000043'),
-    'rRNA gene'			: ('RRNAGene',				'SO:0001637'),
-    'scRNA gene'		: ('ScRNAGene',				'SO:0001266'),
-    'snoRNA gene'		: ('SnoRNAGene',			'SO:0001267'),
-    'snRNA gene'		: ('SnRNAGene',				'SO:0001268'),
-    'SRP RNA gene'		: ('SRPRNAGene',			'SO:0001269'),
-    'telomere'			: ('Telomere',				'SO:0000624'),
-    'telomerase RNA gene'	: ('TelomeraseRNAGene',			'SO:0001643'),
-    'transgene'			: ('Transgene',				'SO:0000902'),
-    'tRNA gene'			: ('TRNAGene',				'SO:0001272'),
-    'unclassified cytogenetic marker'	: \
-    				  ('UnclassifiedCytogeneticMarker',	None),
-    'unclassified gene'		: ('UnclassifiedGene',			None),
-    'unclassified non-coding RNA gene'	: \
-    				  ('UnclassifiedNcRNAGene',		None),
-    'unclassified other genome feature' : \
-    				  ('UnclassifiedOtherGenomeFeature',	None),
-    'YAC end'			: ('YACEnd',				'SO:0001498'),
-    }
-
-# Map from MGI MCV terms (_vocab_key=79) to class names in MouseMine
