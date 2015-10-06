@@ -288,6 +288,7 @@ MCV2ClassName = {
     'chromosomal translocation'	: ('ChromosomeStructureVariation',	'SO:1000044'),
     'chromosomal transposition'	: ('ChromosomeStructureVariation',	'SO:1000453'),
     'complex/cluster/region'	: ('ComplexClusterRegion',		'SO:0000110'),
+    'CpG island'		: ('OtherGenomeFeature',		'SO:0000307'),
     'cytogenetic marker'	: ('ChromosomeStructureVariation',	'SO:1000183'),
     'DNA segment'		: ('DNASegment',			'SO:0000110'),
     'endogenous retroviral region':('OtherGenomeFeature',		'SO:0000903'),
@@ -314,6 +315,7 @@ MCV2ClassName = {
     'reciprocal chromosomal translocation' : \
     				  ('ChromosomeStructureVariation',	'SO:1000048'),
     'retrotransposon'		: ('OtherGenomeFeature',		'SO:0000180'),
+    'ribozyme gene'		: ('Gene',				'SO:0000374'),
     'RNase MRP RNA gene'	: ('Gene',				'SO:0001640'),
     'RNase P RNA gene'		: ('Gene',				'SO:0001639'),
     'Robertsonian fusion'	: ('ChromosomeStructureVariation',	'SO:1000043'),
