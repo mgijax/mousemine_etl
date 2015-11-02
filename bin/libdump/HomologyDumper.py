@@ -6,6 +6,9 @@ from AbstractItemDumper import *
 from DataSourceDumper import DataSetDumper
 
 class HomologyDumper(AbstractItemDumper):
+
+    DATASETNAME = "Mouse/Human Orthologies from MGI"
+
     QTMPLT = '''
 	SELECT mc._cluster_key, mm._marker_key, mm.symbol, mm._organism_key
 	FROM mrk_cluster mc, mrk_clustermember mcm, mrk_marker mm
@@ -14,15 +17,15 @@ class HomologyDumper(AbstractItemDumper):
 	AND mc._clustersource_key = 13764519
 	ORDER BY mc._cluster_key
 	'''
+
     ITMPLT = '''
-    <item class="Homologue" id="%(id)s">
-      <attribute name="type" value="%(type)s" />
-      <reference name="gene" ref_id="%(gene)s" />
-      <reference name="homologue" ref_id="%(homologue)s" />
-      <collection name="dataSets"><reference ref_id="%(dataSet)s"/></collection>
-      </item>
-    '''
-    DATASETNAME = "Mouse/Human Orthologies from MGI"
+	<item class="Homologue" id="%(id)s">
+	<attribute name="type" value="%(type)s" />
+	<reference name="gene" ref_id="%(gene)s" />
+	<reference name="homologue" ref_id="%(homologue)s" />
+	<collection name="dataSets"><reference ref_id="%(dataSet)s"/></collection>
+	</item>
+	'''
 
     def preDump(self):
 	self.currentKey = None
@@ -58,7 +61,9 @@ class HomologyDumper(AbstractItemDumper):
 	    self.currentKey = cck
 	    self.currentCluster = [ r ]
 	return None
-	
-    def postDump(self):
-	pass
 
+    def postDump(self):
+	self.context.log("PostDump:"+str(self.currentCluster))
+	if self.currentKey:
+	    self.flush()
+        
