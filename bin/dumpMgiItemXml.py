@@ -28,6 +28,7 @@ allDumpers = [
     (StrainDumper,		()),
     (FeatureDumper,		()),
     (LocationDumper,		()),
+    (HomologyDumper,		()),
     (SyntenyDumper,		()),
     (AlleleDumper,		()),
     (CellLineDumper,		()),

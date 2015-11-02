@@ -9,6 +9,7 @@ from DataSourceDumper	import DataSourceDumper
 from ExpressionDumper   import ExpressionDumper
 from FeatureDumper	import FeatureDumper, MouseFeatureDumper, NonMouseFeatureDumper
 from GenotypeDumper	import GenotypeDumper
+from HomologyDumper	import HomologyDumper
 from LocationDumper	import LocationDumper
 from OrganismDumper	import OrganismDumper
 from PublicationDumper	import PublicationDumper
