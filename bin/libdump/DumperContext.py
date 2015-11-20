@@ -101,6 +101,9 @@ class DumperContext:
 
 	    #
 	    'ORGANISMKEYS' : '1,2',
+
+	    #
+	    'MGI_HYBRID_HOMOLOGY_KEY' : 13764519,
 	    }
 
 	# Keys from ACC_MGIType.

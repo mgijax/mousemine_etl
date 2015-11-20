@@ -1,6 +1,14 @@
 #
 # HomologyDumper.py
 #
+# Queries MGI for specific homology data sets and dumps them in ItemXML format.
+# For every distinct pair of markers m1,m2 in a cluster in MGI, create two 
+# Homologue records in MouseMine, one owned by m1 where gene=m1 and homologue=m2, 
+# and the other owned by m2 where gene = m2 and homologue = m1.
+# Also, if m1.species == m2.species, then type = "paralogue", else "orthologue".
+#
+# Currently only dumps the hybrid mouse/human homology data set (computed by MGI).
+#
 
 from AbstractItemDumper import *
 from DataSourceDumper import DataSetDumper
@@ -14,7 +22,7 @@ class HomologyDumper(AbstractItemDumper):
 	FROM mrk_cluster mc, mrk_clustermember mcm, mrk_marker mm
 	WHERE mc._cluster_key = mcm._cluster_key
 	AND mcm._marker_key = mm._marker_key
-	AND mc._clustersource_key = 13764519
+	AND mc._clustersource_key = %(MGI_HYBRID_HOMOLOGY_KEY)d
 	ORDER BY mc._cluster_key
 	'''
 
