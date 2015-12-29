@@ -9,7 +9,7 @@
 #	% zcat protein2ipr.dat.gz | python filterProtein2Ipr.py idFile.dat > filteredData.dat
 #
 # Why:
-# The file containing interpro-to-protein domain data is almost 3 GB compressed.
+# The file containing interpro-to-protein domain data is over 3 GB compressed.
 # Not even sure how big it is uncompressed because I keep exceeding my disk quota.
 # It's so big because it contains data for ALL organisms. We only need mouse, which
 # is a tiny fraction. That's what this filter is for.
@@ -18,6 +18,7 @@ import os
 import sys
 
 def readIdFile(fname):
+    # text file, one ID per line
     idset = set()
     fd = open(fname, 'r')
     for line in fd:
@@ -33,4 +34,3 @@ def main(idfile):
 	    sys.stdout.write(line)
 
 main(sys.argv[1])
-    
