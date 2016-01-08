@@ -35,6 +35,7 @@ allDumpers = [
     (CellLineDumper,		()),
     (GenotypeDumper,		()),
     (ExpressionDumper,		()),
+    (AnnotationCommentDumper    ()),
     (AnnotationDumper,		()),
     (RelationshipDumper,	()),
     (SynonymDumper,		()),
