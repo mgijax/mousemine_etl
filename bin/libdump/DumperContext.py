@@ -180,7 +180,7 @@ class DumperContext:
         self.unciteablePubs = {}
         self.loadUnciteablePubs()
 
-        self.annotationComment = {}
+        self.annotationComments = {}
 
     # query based on PrivateRefSet.py in femover
     def loadUnciteablePubs(self):
