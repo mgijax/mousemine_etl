@@ -46,7 +46,7 @@ class SourceRefresher:
 	self.pdir = os.path.dirname(self.odir)
 	self.dname = os.path.basename(self.odir)
 	self.latest = os.path.join(self.pdir, "latest")
-	self.cmd = cp.get(sn,'cmd')
+	self.cmd = cp.get(sn,'__PRE__') + cp.get(sn,'cmd') + cp.get(sn,'__POST__')
         self.required = cp.get(sn,'required').strip() == 'True'
 	self.success = None
 
