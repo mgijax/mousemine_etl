@@ -112,6 +112,7 @@ class AnnotationDumper(AbstractItemDumper):
 	  <collection name="publications">%(publications)s</collection>
 	  %(annotationExtension)s
 	  <collection name="baseAnnotations">%(baseAnnotations)s</collection>
+          <collection name="comments">%(comments)s</collection>
 	  </item>
 	''',
 	]
@@ -280,7 +281,7 @@ class AnnotationDumper(AbstractItemDumper):
 	    p = self.ek2props.get(r['_annotevidence_key'])
 	    p = p and '<attribute name="annotationExtension" value="%s" />'%p or ''
 	    r['annotationExtension'] = p
-
+            r['comments'] = ''.join(self.context.annotationComments.get(r['_annotevidence_key'],[]))
 	    return r
 
     def postDump(self):
@@ -356,6 +357,9 @@ class AnnotationDumper(AbstractItemDumper):
 		        pass
 		s['publications'] = ''.join(rrs)
 		s['annotationExtension'] = ''
+
+                s['comments'] = ''
+
 		#
 	    except DumperContext.DanglingReferenceError:
 	        pass

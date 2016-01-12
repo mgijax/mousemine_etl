@@ -140,6 +140,7 @@ class DumperContext:
             'DirectedRelationship'      : 10022,
             'DirectedRelationshipProperty' : 10023,
 	    'Protein'			: 10024,
+            'Comment'                   : 10025,
 	    })
 
 	# load MGI datadump timestamp from the database
@@ -178,6 +179,8 @@ class DumperContext:
 
         self.unciteablePubs = {}
         self.loadUnciteablePubs()
+
+        self.annotationComments = {}
 
     # query based on PrivateRefSet.py in femover
     def loadUnciteablePubs(self):
