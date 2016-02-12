@@ -134,13 +134,13 @@ class AnnotationDumper(AbstractItemDumper):
 	  # Mouse genotype-MP annotations
 	  1002 : ('Genotype', 'MPTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
 	  # Mouse genotype-OMIM annotations
-	  1005 : ('Genotype', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
+	  1005 : ('Genotype', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
 	  # Human gene-OMIM annotations
-	  1006 : ('Marker', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
+	  1006 : ('Marker', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
 	  # Mouse allele-OMIM annotations
-	  1012 : ('Allele', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
+	  1012 : ('Allele', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
 	  # Human pheno-OMIM annotations
-	  1013 : ('Marker', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
+	  1013 : ('Marker', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
 	}
 	self.ANNOTTYPEKEYS = self.atk2classes.keys()
 	self.ANNOTTYPEKEYS_S = COMMA.join(map(lambda x:str(x),self.ANNOTTYPEKEYS))
@@ -154,11 +154,6 @@ class AnnotationDumper(AbstractItemDumper):
 	#
 	self.termsToWrite = set() # the terms we need to create stubs for
 	self.assignedkeys = {}	# identifier -> key (eg: 'GO:123456' -> '10013_1001')
-	self.omimRemap = {}	# OMIM id -> MeSH id
-	if hasattr(self.context, 'medicfile'):
-	    mfile = os.path.abspath(os.path.join(os.getcwd(),self.context.medicfile))
-	    self.loadOmimMappings(mfile)
-
 	self.loadEvidenceProperties()
 	self.writeDataSets()
 
@@ -212,23 +207,6 @@ class AnnotationDumper(AbstractItemDumper):
 	    ek = r['_annotevidence_key']
 	    self.ek2props[ek] = 'specific_to(%s)' % (v == 'M' and 'male' or 'female')
 
-    #
-    # Reads the MEDIC ontology file to build a mapping from
-    # OMIM id -> MeSH id (for OMIM terms that are merged)
-    #
-    def loadOmimMappings(self, file):
-	def stanzaProc( stype, slines ):
-	    id = ""
-	    for tag,val in slines:
-		if tag=="id" and val.startswith("OMIM"):
-		    self.omimRemap[val]=val
-		    return
-	        if tag=="id" and val.startswith("MESH"):
-		    id = val
-		elif tag=="alt_id" and val.startswith("OMIM"):
-		    self.omimRemap[val] = id
-	OboParser(stanzaProc).parseFile(file)
-
     def processRecord(self, r, iQuery):
 	atk = r['_annottype_key']
 	tname, oclass, aclass, aeclass, aecclass, aspecies, ahasprops = self.atk2classes[atk]
@@ -241,16 +219,10 @@ class AnnotationDumper(AbstractItemDumper):
 	    r['dataSets'] = '<reference ref_id="%s"/>'%self.atk2dsid[atk]
 
 	    identifier = r['identifier']
+	    if oclass == 'OMIMTerm':
+		r['identifier'] = identifier = "OMIM:"+identifier
+
 	    tk = r['_term_key']
-	    if oclass == 'DiseaseTerm':
-		# remap an annotation to an OMIM id to the appropriate MEDIC id
-		omimid = "OMIM:"+identifier
-	        identifier = self.omimRemap.get(omimid,None)
-		if identifier is None:
-		    self.context.log('Annotation skipped. Ontology term id not found: %s\n%s\n' % (omimid,str(r)))
-		    return None
-		r['identifier'] = identifier
-		tk = self.assignedkeys.setdefault(identifier, r['_term_key'])
 	    # make the reference without checking (because this dumper will
 	    # create them later).
 	    otermkey = self.context.makeGlobalKey('Vocabulary Term', tk)
