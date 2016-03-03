@@ -43,6 +43,9 @@ class DumperContext:
 	    'ORGANISM_TYPEKEY'   : 20,
 	    'CHROMOSOME_TYPEKEY' : 27,
 
+	    # MRK_Types (marker type) keys
+	    'GENE_MRKTYPEKEY'	: 1,
+
 	    # Organism keys
 	    'MOUSE_ORGANISMKEY' : 1,
 	    'HUMAN_ORGANISMKEY' : 2,
@@ -54,6 +57,8 @@ class DumperContext:
 	    'PUBMED_LDBKEY'   : 29,
 	    'ENTREZ_LDBKEY'   : 55,
 	    'DOI_LDBKEY'      : 65,
+	    'SP_LDBKEY'       : 13,
+	    'TR_LDBKEY'       : 41,
 
 	    # VOC_Vocab keys
 	    'ALLELE_MUTATION_VKEY' : 36,
@@ -134,6 +139,8 @@ class DumperContext:
             'AlleleAttribute'           : 10021,
             'DirectedRelationship'      : 10022,
             'DirectedRelationshipProperty' : 10023,
+	    'Protein'			: 10024,
+            'Comment'                   : 10025,
 	    })
 
 	# load MGI datadump timestamp from the database
@@ -172,6 +179,8 @@ class DumperContext:
 
         self.unciteablePubs = {}
         self.loadUnciteablePubs()
+
+        self.annotationComments = {}
 
     # query based on PrivateRefSet.py in femover
     def loadUnciteablePubs(self):

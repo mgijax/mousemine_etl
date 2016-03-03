@@ -12,11 +12,13 @@ from GenotypeDumper	import GenotypeDumper
 from HomologyDumper	import HomologyDumper
 from LocationDumper	import LocationDumper
 from OrganismDumper	import OrganismDumper
+from ProteinDumper	import ProteinDumper
 from PublicationDumper	import PublicationDumper
 from RelationshipDumper	import RelationshipDumper
 from StrainDumper	import StrainDumper
 from SynonymDumper	import SynonymDumper
 from SyntenyDumper	import SyntenyDumper
+from AnnotationCommentDumper import AnnotationCommentDumper
 import NoteUtils
 
 def installMethods(module):
