@@ -69,16 +69,17 @@ class GenotypeDumper(AbstractItemDumper):
 
         # mutant alleles
         self.g2ma = {}
-        maquery = '''select _genotype_key
-               from gxd_genotype
-               where _genotype_key not in (select _genotype_key from gxd_allelepair)
-               union
-               select g._genotype_key 
-               from gxd_allelepair g, all_allele a1, all_allele a2
-               where g._allele_key_1 = a1._allele_key and a1.iswildtype = 1
-               and g._allele_key_2 = a2._allele_key and a2.iswildtype  = 1'''
+        maquery = '''select distinct g._genotype_key 
+                     from gxd_allelepair g, all_allele a1
+                     where g._allele_key_1 = a1._allele_key 
+                     and a1.iswildtype = 0
+                     union
+                     select distinct g._genotype_key 
+                     from gxd_allelepair g, all_allele a2
+                     where g._allele_key_2 = a2._allele_key 
+                     and a2.iswildtype  = 0 '''
         for r in self.context.sql(maquery):
-            self.g2ma[r['_genotype_key']] = 'false'
+            self.g2ma[r['_genotype_key']] = 'true'
 
 
         self.gapd = GenotypeAllelePairDumper(self.context)
@@ -104,7 +105,7 @@ class GenotypeDumper(AbstractItemDumper):
 	    r['note'] = ''
 	r['organism'] = self.context.makeItemRef('Organism', 1) # mouse
 	r['zygosity'] = self.g2z.get(gk, 'ot')
-        r['hasMutantAllele'] = self.g2ma.get(gk,'true')
+        r['hasMutantAllele'] = self.g2ma.get(gk,'false')
 	return r
 
     def postDump(self):
