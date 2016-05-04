@@ -16,9 +16,7 @@ import sys
 class OmimDumper:
 
     def __init__(self):
-        self.omim_from_mgi = []
         self.stanzas = []
-
 
     def loadOmimFromMgi(self):
         # Load all OMIM terms from MGD.                                                                                    
@@ -36,13 +34,11 @@ class OmimDumper:
             omim_id = "OMIM:" + r['accid']
             omim_name_parts = r['term'].split(";")
             omim_name = omim_name_parts[0].strip()
-            omim_tuple = (omim_id, omim_name)
-            
-            self.omim_from_mgi.append(omim_tuple)
-
-    def createOmimStanzas(self):
-        for (omim_id, omim_name) in self.omim_from_mgi:
             omim_stanza = ('Term', [('id', omim_id), ('name', omim_name)])
+	    if len(omim_name_parts) > 1:
+		omim_syn = omim_name_parts[1].strip()
+		if len(omim_syn) > 0:
+		    omim_stanza[1].append( ('synonym', omim_syn) )
             self.stanzas.append(omim_stanza)
 
     def writeStanzas(self, file):
@@ -58,7 +54,6 @@ class OmimDumper:
 
     def main(self, omim_output_file):
         self.loadOmimFromMgi()
-        self.createOmimStanzas()
         self.writeStanzas(omim_output_file)
 
 
