@@ -12,6 +12,14 @@ from OboParser import OboParser, formatStanza
 import mgiadhoc as db
 import os
 import sys
+import time
+
+TIMESTAMP = time.strftime("%m:%d:%Y %H:%M",time.localtime(time.time()))
+HEADER = '''format-version: 1.2
+date: %s
+default-namespace: omim
+
+''' % TIMESTAMP
 
 class OmimDumper:
 
@@ -36,7 +44,7 @@ class OmimDumper:
             omim_name = omim_name_parts[0].strip()
             omim_stanza = ('Term', [('id', omim_id), ('name', omim_name)])
 	    if len(omim_name_parts) > 1:
-		omim_syn = omim_name_parts[1].strip()
+		omim_syn = '"%s" EXACT []' % omim_name_parts[1].strip()
 		if len(omim_syn) > 0:
 		    omim_stanza[1].append( ('synonym', omim_syn) )
             self.stanzas.append(omim_stanza)
@@ -44,6 +52,7 @@ class OmimDumper:
     def writeStanzas(self, file):
         # write out the stanza in obo format                                                                                
         fd = open(file, 'w')
+        fd.write(HEADER)
 
         for stype, slines in self.stanzas:
             fd.write(formatStanza(stype, slines))
