@@ -209,6 +209,8 @@ class ExpressionDumper(AbstractItemDumper):
             FROM gxd_gellane gl, gxd_gellanestructure gls, acc_accession a
             WHERE gl._gellane_key = gls._gellane_key                                                            
             AND a._object_key = gls._emapa_term_key
+            AND a._mgitype_key = 13
+            AND a._logicaldb_key = 169
             AND a.preferred = 1
             AND a.private = 0
             AND gl._gelcontrol_key = 1
@@ -259,6 +261,8 @@ class ExpressionDumper(AbstractItemDumper):
             AND isr._pattern_key = p._pattern_key
             AND isr._result_key = irs._result_key
             AND a._object_key = irs._emapa_term_key
+            AND a._mgitype_key = 13
+            AND a._logicaldb_key = 169
             AND a.preferred = 1
             AND a.private = 0
             '''
