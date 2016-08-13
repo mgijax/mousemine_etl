@@ -128,15 +128,6 @@ class ExpressionDumper(AbstractItemDumper):
         return
 
     
-    # Pre-load the result (gellane/insitu) to structure relationship and include theiler stage
-    def loadResultStructure(self, query):
-        result2structure = defaultdict(list)
-
-        for r in self.context.sql(query):
-            result2structure[r['result_key']].append( (r['_structure_key'], r['stage']) )
-        return result2structure
-
-
     # Pre-load the set of insitu images result keys
     def loadImageResultKeys(self):
         insituImageResultKeys = set()
@@ -214,14 +205,17 @@ class ExpressionDumper(AbstractItemDumper):
         ak2figurelabel = self.loadAssayImageFigureLabels()
 
         q = '''
-            SELECT gl._gellane_key, gl._assay_key, gl.sex, gl.age, gl._genotype_key, gl.sequencenum as specimennum, gls._structure_key, ts.stage
-            FROM gxd_gellane gl, gxd_gellanestructure gls, gxd_structure s, gxd_theilerstage ts
-            WHERE gl._gellane_key = gls._gellane_key
-            AND gls._structure_key = s._structure_key
-            AND s._stage_key = ts._stage_key
+            SELECT gl._gellane_key, gl._assay_key, gl.sex, gl.age, gl._genotype_key, gl.sequencenum as specimennum, a.accid AS emapa, gls._stage_key as stage
+            FROM gxd_gellane gl, gxd_gellanestructure gls, acc_accession a
+            WHERE gl._gellane_key = gls._gellane_key                                                            
+            AND a._object_key = gls._emapa_term_key
+            AND a._mgitype_key = 13
+            AND a._logicaldb_key = 169
+            AND a.preferred = 1
+            AND a.private = 0
             AND gl._gelcontrol_key = 1
             '''
-        
+
         for r in self.context.sql(q):
             if r['_gellane_key'] in gl2strength:
                 r['strength'] = gl2strength[r['_gellane_key']]
@@ -235,12 +229,9 @@ class ExpressionDumper(AbstractItemDumper):
                 if r['_assay_key'] in ak2figurelabel:
                     r['image'] = ak2figurelabel[r['_assay_key']]
                     
-                if r['_structure_key'] in self.structure_key2emapa_number:
-                    r['structure'] = self.context.makeItemRef('EMAPATerm', self.structure_key2emapa_number[r['_structure_key']])
-		    r['emaps'] = self.structure_key2emaps[r['_structure_key']]
-                    self.writeRecord(r)
-                else:
-                    self.context.log('Dangling EMAPA reference detected: ' + str(r['_structure_key']))
+                r['structure'] = self.context.makeItemRef('EMAPATerm', int(r['emapa'][-5:]))
+                r['emaps'] = r['emapa'].replace('EMAPA','EMAPS') + str(r['stage'])                
+                self.writeRecord(r)
         return
 
 
@@ -260,41 +251,36 @@ class ExpressionDumper(AbstractItemDumper):
 
     # Write a record: specimen X insituResult X insitu.structure
     def processInSitu(self):
-        insitu2structureQuery = '''
-            SELECT isrs._result_key AS result_key, isrs._structure_key, ts.stage
-            FROM gxd_isresultstructure isrs, gxd_structure s, gxd_theilerstage ts
-            WHERE isrs._structure_key = s._structure_key
-            AND s._stage_key = ts._stage_key
-            '''
-        is2structure = self.loadResultStructure(insitu2structureQuery)
         isImageResultKeys = self.loadImageResultKeys()
 
         q = '''
-            SELECT s._assay_key, s.sex, s.age, s._genotype_key, s.sequencenum as specimennum, s.specimenlabel AS image, isr._result_key, isr.resultNote AS note, str.strength, p.pattern
-            FROM gxd_specimen s, gxd_insituresult isr, gxd_strength str, gxd_pattern p
+            SELECT s._assay_key, s.sex, s.age, s._genotype_key, s.sequencenum as specimennum, s.specimenlabel AS image, isr._result_key, isr.resultNote AS note, str.strength, p.pattern, irs._stage_key as stage, a.accid AS emapa
+            FROM gxd_specimen s, gxd_insituresult isr, gxd_strength str, gxd_pattern p, gxd_isresultstructure irs, acc_accession a 
             WHERE s._specimen_key = isr._specimen_key
             AND isr._strength_key = str._strength_key
             AND isr._pattern_key = p._pattern_key
+            AND isr._result_key = irs._result_key
+            AND a._object_key = irs._emapa_term_key
+            AND a._mgitype_key = 13
+            AND a._logicaldb_key = 169
+            AND a.preferred = 1
+            AND a.private = 0
             '''
 
-        for r in self.context.sql(q):
-            for (structure_key, theilerstage) in is2structure[r['_result_key']]:
-                r['stage'] = theilerstage
-                r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
-                
-                isDetected = self.strengthToBoolean(r['strength'])
-                if isDetected is not None:
-                    r['detected'] = isDetected
 
-                if r['_result_key'] not in isImageResultKeys:
-                    r['image'] = ''
+        for r in self.context.sql(q):
+            r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
                 
-                if structure_key in self.structure_key2emapa_number:
-                    r['structure'] = self.context.makeItemRef('EMAPATerm', self.structure_key2emapa_number[structure_key])
-		    r['emaps'] = self.structure_key2emaps[structure_key]
-                    self.writeRecord(r)
-                else:
-                    self.context.log('Dangling EMAPA reference detected: ' + str(structure_key))
+            isDetected = self.strengthToBoolean(r['strength'])
+            if isDetected is not None:
+                r['detected'] = isDetected
+
+            if r['_result_key'] not in isImageResultKeys:
+                r['image'] = ''
+                
+            r['structure'] = self.context.makeItemRef('EMAPATerm', int(r['emapa'][-5:]))
+            r['emaps'] = r['emapa'].replace('EMAPA','EMAPS') + str(r['stage'])
+            self.writeRecord(r)
         return
 
 
@@ -307,40 +293,25 @@ class ExpressionDumper(AbstractItemDumper):
                 '''
 
         q = self.constructQuery('''
-            SELECT m.emapsid, a1._object_key
-            FROM mgi_emaps_mapping m, acc_accession a1, 
-            acc_accession a2, voc_term_emaps t1, voc_term t 
-            WHERE m.accid = a1.accid
-            AND a1._mgitype_key = 38
-            AND a1._logicaldb_key = 1
-            AND a1.private = 0
-            AND a1.preferred = 1
-            AND m.emapsid = a2.accid
-            AND a2._logicaldb_key = 170
-            AND a2._mgitype_key = 13
-            AND a2._object_key = t1._term_key
-            AND a2._object_key = t._term_key
+            SELECT t.term, a.accid AS emapa
+            FROM voc_term t, acc_accession a
+            WHERE t._vocab_key = 90
+            AND t._term_key = a._object_key
+            AND a._mgitype_key = 13
+            AND a.private = 0
+            AND a.preferred = 1
+            AND a._logicaldb_key = 169
             ''')
 
-        self.structure_key2emapa_number = dict()
-        self.structure_key2emaps = dict()
         referenced_emapaids = set()
 
         for r in self.context.sql(q):
-            # transform EMAPS to EMAPA
-            emapaid = r['emapsid'].replace('EMAPS','EMAPA')
-            # strip last two digits (the stage) from emapsid
-            emapaid = emapaid[:-2]
-
-            if emapaid not in referenced_emapaids:
-                r['identifier'] = emapaid
-                r['id'] = self.context.makeItemId('EMAPATerm', int(emapaid[-5:]))
-                referenced_emapaids.add(emapaid)
+            if r['emapa'] not in referenced_emapaids:
+                r['identifier'] = r['emapa']
+                r['id'] = self.context.makeItemId('EMAPATerm', int(r['emapa'][-5:]))
+                referenced_emapaids.add(r['emapa'])
 
                 self.writeItem(r, tmplt)
-
-            self.structure_key2emapa_number[r['_object_key']] = int(emapaid[-5:])
-            self.structure_key2emaps[r['_object_key']] = r['emapsid']
         return
 
 
