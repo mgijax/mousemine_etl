@@ -63,7 +63,7 @@ class OmimDumper:
 	'''
 	for r in db.sqliter(query):
 	    tk = r['_term_key']
-	    id = r['accid']
+	    id = "OMIM:" + r['accid']
 	    stanza = self.tk2stanza.get(tk, None)
 	    if stanza:
 		stanza[1].append( ('alt_id', id) )

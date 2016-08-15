@@ -137,19 +137,19 @@ class AnnotationDumper(AbstractItemDumper):
 	          'Genotype', 'MPTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
 	  # Mouse genotype-OMIM annotations
 	  1005 : ('DiseaseTerm to Mouse Genotype Annotations from MGI',
-	          'Genotype', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
+	          'Genotype', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
 	  # Human gene-OMIM annotations
 	  1006 : ('DiseaseTerm to Human Feature Annotations from MGI',
-	          'Marker', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
+	          'Marker', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
 	  # Mouse allele-OMIM annotations
 	  1012 : ('DiseaseTerm to Mouse Allele Annotations from MGI',
-	          'Allele', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
+	          'Allele', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
 	  # Mouse marker-derived MP annotation
 	  1015 : ('MPTerm to Mouse Feature Annotations from MGI',
 	          'Marker', 'MPTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
 	  # Mouse marker-derived OMIM annotation
 	  1016 : ('DiseaseTerm to Mouse Feature Annotations from MGI',
-	          'Marker', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
+	          'Marker', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
 	}
 	self.ANNOTTYPEKEYS = self.atk2classes.keys()
 	self.ANNOTTYPEKEYS_S = COMMA.join(map(lambda x:str(x),self.ANNOTTYPEKEYS))
