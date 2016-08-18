@@ -27,6 +27,11 @@ class OmimDumper:
         self.stanzas = []
 	self.tk2stanza = {}
 
+    def formatSynonym(self, synonym, type="exact"):
+	tag = type+"_synonym" if type else "synonym"
+	synonym = '"%s" []' % synonym.strip()
+        return (tag, synonym)
+
     def loadOmimFromMgi(self):
         # Load all OMIM terms from MGD.                                                                                    
         # Where: accid -> OMIM id and term -> OMIM name
@@ -46,9 +51,7 @@ class OmimDumper:
             omim_name = omim_name_parts[0].strip()
 	    omim_lines = [('id', omim_id), ('name', omim_name)]
 	    if len(omim_name_parts) > 1:
-		omim_syn = '"%s" EXACT []' % omim_name_parts[1].strip()
-		if len(omim_syn) > 0:
-		    omim_lines.append( ('synonym', omim_syn) )
+		omim_lines.append( self.formatSynonym(omim_name_parts[1]) )
 	    stanza = ('Term', omim_lines)
             self.stanzas.append( stanza )
 	    self.tk2stanza[r['_term_key']] = stanza
@@ -60,6 +63,7 @@ class OmimDumper:
 	  WHERE a._mgitype_key = 13
           AND a._logicaldb_key = 15
           AND a.preferred = 0
+	  ORDER BY a._object_key
 	'''
 	for r in db.sqliter(query):
 	    tk = r['_term_key']
@@ -67,6 +71,24 @@ class OmimDumper:
 	    stanza = self.tk2stanza.get(tk, None)
 	    if stanza:
 		stanza[1].append( ('alt_id', id) )
+
+	# Load synonyms
+	query = '''
+	  SELECT t._term_key, ms.synonym, ms._synonymtype_key
+	  FROM MGI_Synonym ms, VOC_Term t
+	  WHERE t._vocab_key = 44
+	  AND t._term_key = ms._object_key
+	  ORDER BY t._term_key
+	'''
+	for r in db.sqliter(query):
+	    tk = r['_term_key']
+	    stk = r['_synonymtype_key']
+	    st = "exact" if stk==1017 else "broad"
+	    s  = self.formatSynonym(r['synonym'], st)
+	    stanza = self.tk2stanza.get(tk, None)
+	    if stanza:
+		stanza[1].append( s )
+
 
     def writeStanzas(self, file):
         # write out the stanza in obo format                                                                                
