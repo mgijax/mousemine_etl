@@ -98,7 +98,6 @@ class DumperContext:
 	    # Nomen status values (from MRK_Status)
 	    'OFFICIAL_STATUS' : 1,
 	    'WITHDRAWN_STATUS': 2,
-	    'INTERIM_STATUS'  : 3,
 
 	    #
 	    'TAXAIDS' : COMMA.join(map(lambda o:"'%d'"%o, TAXAIDS)),

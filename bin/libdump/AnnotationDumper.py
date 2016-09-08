@@ -127,24 +127,34 @@ class AnnotationDumper(AbstractItemDumper):
 	  #      voc evidence class, 
 	  #      evidence code class, 
 	  #      species, 
-	  #      hasProperties )
+	  #      loadProperties )
 	  #
 	  # Mouse marker-GO annotations
-	  1000 : ('Marker', 'GOTerm','GOAnnotation','GOEvidence','GOEvidenceCode','Mouse', True),
+	  1000 : ('GOTerm to Mouse Feature Annotations from MGI',
+	          'Marker', 'GOTerm','GOAnnotation','GOEvidence','GOEvidenceCode','Mouse', False),
 	  # Mouse genotype-MP annotations
-	  1002 : ('Genotype', 'MPTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
+	  1002 : ('MPTerm to Mouse Genotype Annotations from MGI',
+	          'Genotype', 'MPTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
 	  # Mouse genotype-OMIM annotations
-	  1005 : ('Genotype', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
+	  1005 : ('DiseaseTerm to Mouse Genotype Annotations from MGI',
+	          'Genotype', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
 	  # Human gene-OMIM annotations
-	  1006 : ('Marker', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
+	  1006 : ('DiseaseTerm to Human Feature Annotations from MGI',
+	          'Marker', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
 	  # Mouse allele-OMIM annotations
-	  1012 : ('Allele', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
-	  # Human pheno-OMIM annotations
-	  1013 : ('Marker', 'DiseaseTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
+	  1012 : ('DiseaseTerm to Mouse Allele Annotations from MGI',
+	          'Allele', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
+	  # Mouse marker-derived MP annotation
+	  1015 : ('MPTerm to Mouse Feature Annotations from MGI',
+	          'Marker', 'MPTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
+	  # Mouse marker-derived OMIM annotation
+	  1016 : ('DiseaseTerm to Mouse Feature Annotations from MGI',
+	          'Marker', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
 	}
 	self.ANNOTTYPEKEYS = self.atk2classes.keys()
 	self.ANNOTTYPEKEYS_S = COMMA.join(map(lambda x:str(x),self.ANNOTTYPEKEYS))
         self.context.QUERYPARAMS['ANNOTTYPEKEYS'] = self.ANNOTTYPEKEYS_S
+	self.ANNOTTYPEKEYS_PROPS = filter( lambda k:self.atk2classes[k][7], self.ANNOTTYPEKEYS ) # keys where loadProperties is true
 
     def preDump(self):
 	#
@@ -154,11 +164,6 @@ class AnnotationDumper(AbstractItemDumper):
 	#
 	self.termsToWrite = set() # the terms we need to create stubs for
 	self.assignedkeys = {}	# identifier -> key (eg: 'GO:123456' -> '10013_1001')
-	self.omimRemap = {}	# OMIM id -> MeSH id
-	if hasattr(self.context, 'medicfile'):
-	    mfile = os.path.abspath(os.path.join(os.getcwd(),self.context.medicfile))
-	    self.loadOmimMappings(mfile)
-
 	self.loadEvidenceProperties()
 	self.writeDataSets()
 
@@ -166,7 +171,7 @@ class AnnotationDumper(AbstractItemDumper):
 	self.dsd = DataSetDumper(self.context)
 	self.atk2dsid = {}
 	for atk, atinfo in self.atk2classes.items():
-	    dsname = '%s to %s %s Annotations from MGI' % (atinfo[1],atinfo[5],atinfo[0])
+	    dsname = atinfo[0]
 	    self.atk2dsid[atk] = self.dsd.dataSet(name=dsname)
 
     #
@@ -203,35 +208,23 @@ class AnnotationDumper(AbstractItemDumper):
             where p._propertyterm_key = t._term_key
             and p._annotevidence_key = e._annotevidence_key
             and e._annot_key = a._annot_key
-            and a._annottype_key = 1002
-	    and p.value in ('F','f','M','m')
+	    and a._annottype_key in (%s)
             order by p._annotevidence_key, p.stanza, p.sequencenum
-        '''
+        ''' % (','.join(map(lambda x:str(x), self.ANNOTTYPEKEYS_PROPS)))
         for r in self.context.sql(q):
-	    v = r['value'].upper()
-	    ek = r['_annotevidence_key']
-	    self.ek2props[ek] = 'specific_to(%s)' % (v == 'M' and 'male' or 'female')
-
-    #
-    # Reads the MEDIC ontology file to build a mapping from
-    # OMIM id -> MeSH id (for OMIM terms that are merged)
-    #
-    def loadOmimMappings(self, file):
-	def stanzaProc( stype, slines ):
-	    id = ""
-	    for tag,val in slines:
-		if tag=="id" and val.startswith("OMIM"):
-		    self.omimRemap[val]=val
-		    return
-	        if tag=="id" and val.startswith("MESH"):
-		    id = val
-		elif tag=="alt_id" and val.startswith("OMIM"):
-		    self.omimRemap[val] = id
-	OboParser(stanzaProc).parseFile(file)
+	    atk = r['_annottype_key']
+	    if atk == 1002:
+		v = r['value'].upper()
+		if v in "MF":
+		    ek = r['_annotevidence_key']
+		    self.ek2props[ek] = 'specific_to(%s)' % (v == 'M' and 'male' or 'female')
+	    elif atk == 1015 or atk == 1016:
+		if r['term'] == "_SourceAnnot_key":
+		    self.ek2props.setdefault(r['_annotevidence_key'],[]).append(int(r['value']))
 
     def processRecord(self, r, iQuery):
 	atk = r['_annottype_key']
-	tname, oclass, aclass, aeclass, aecclass, aspecies, ahasprops = self.atk2classes[atk]
+	dsname, tname, oclass, aclass, aeclass, aecclass, aspecies, ahasprops = self.atk2classes[atk]
 	if iQuery == 0:
 	    # OntologyAnnotation
 	    r['id'] = self.context.makeItemId('OntologyAnnotation', r['_annot_key'])
@@ -241,16 +234,10 @@ class AnnotationDumper(AbstractItemDumper):
 	    r['dataSets'] = '<reference ref_id="%s"/>'%self.atk2dsid[atk]
 
 	    identifier = r['identifier']
+	    if oclass == 'OMIMTerm':
+		r['identifier'] = identifier = "OMIM:"+identifier
+
 	    tk = r['_term_key']
-	    if oclass == 'DiseaseTerm':
-		# remap an annotation to an OMIM id to the appropriate MEDIC id
-		omimid = "OMIM:"+identifier
-	        identifier = self.omimRemap.get(omimid,None)
-		if identifier is None:
-		    self.context.log('Annotation skipped. Ontology term id not found: %s\n%s\n' % (omimid,str(r)))
-		    return None
-		r['identifier'] = identifier
-		tk = self.assignedkeys.setdefault(identifier, r['_term_key'])
 	    # make the reference without checking (because this dumper will
 	    # create them later).
 	    otermkey = self.context.makeGlobalKey('Vocabulary Term', tk)
@@ -274,13 +261,21 @@ class AnnotationDumper(AbstractItemDumper):
 	    r['code'] = self.context.makeItemRef('OntologyAnnotationEvidenceCode', r['_evidenceterm_key'])
 	    r['annotation'] = self.context.makeItemRef('OntologyAnnotation', r['_annot_key'])
 	    r['inferredfrom'] = r['inferredfrom'] and ('<attribute name="withText" value="%(inferredfrom)s"/>'%r) or ''
-	    r['baseAnnotations'] = ''
 	    r['publications'] = '<reference ref_id="%s"/>' % \
 	        self.context.makeItemRef('Reference', r['_refs_key'])
 
-	    p = self.ek2props.get(r['_annotevidence_key'])
-	    p = p and '<attribute name="annotationExtension" value="%s" />'%p or ''
-	    r['annotationExtension'] = p
+	    r['baseAnnotations'] = ''
+	    r['annotationExtension'] = ''
+	    if r['_annottype_key'] == 1002:
+		p = self.ek2props.get(r['_annotevidence_key'])
+		p = p and '<attribute name="annotationExtension" value="%s" />'%p or ''
+		r['annotationExtension'] = p
+	    elif r['_annottype_key'] in [1015,1016]:
+		ps = self.ek2props.get(r['_annotevidence_key'],[])
+		refs = [ self.context.makeItemRef('OntologyAnnotation', k) for k in ps ]
+		refs2 = [ '<reference ref_id="%s"/>'%ref for ref in refs ]
+		r['baseAnnotations'] = ''.join(refs2)
+
             r['comments'] = ''.join(self.context.annotationComments.get(r['_annotevidence_key'],[]))
 	    return r
 
@@ -303,7 +298,7 @@ class AnnotationDumper(AbstractItemDumper):
 	self.writeItem(c, self.ITMPLT[1])
 
 	# compute and write out derived annotations
-	dsref = self.dsd.dataSet(name="Derived Annotations from MGI")
+	dsref = self.dsd.dataSet(name="DiseaseTerm to Mouse Allele Annotations from MGI")
 	helper = DerivedAnnotationHelper(self.context)
 
 	def writeDerivedAnnot( type, k, vk, tk, arks ):
@@ -368,8 +363,8 @@ class AnnotationDumper(AbstractItemDumper):
 		    self.writeItem(r, self.ITMPLT[0])
 		self.writeItem(s, self.ITMPLT[2])
 	    
-	for (mk, vk, tk, arks) in helper.iterAnnots("Marker"):
-	    writeDerivedAnnot("Marker", mk, vk, tk, arks)
+	#for (mk, vk, tk, arks) in helper.iterAnnots("Marker"):
+	#    writeDerivedAnnot("Marker", mk, vk, tk, arks)
 	for (ak, vk, tk, arks) in helper.iterAnnots("Allele"):
 	    writeDerivedAnnot("Allele", ak, vk, tk, arks)
 
