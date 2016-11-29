@@ -31,6 +31,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
       <attribute name="symbol" value="%(symbol)s" />
       <attribute name="name" value="%(name)s" />
       %(description)s
+      %(specificityNote)s
       %(ncbiGeneNumber)s
       <reference name="organism" ref_id="%(organismid)s" />
       <reference name="chromosome" ref_id="%(chromosomeid)s" />
@@ -79,6 +80,20 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    self.mk2description[mk] = self.mk2description.get(mk,'') + r['note']
 
         
+	# preload marker specificity notes
+	self.mk2specificityNote = {}
+	q = self.constructQuery('''
+	    SELECT m._marker_key, nc.note
+	    FROM MGI_Note n, MRK_Marker m, MGI_Notechunk nc
+	    WHERE n._object_key = m._marker_key
+            AND n._note_key = nc._note_key
+	    AND n._notetype_key = %(STRAIN_SPECIFIC_NOTETYPE_KEY)d
+            AND m._marker_status_key = %(OFFICIAL_STATUS)d 
+	    ''')
+	for r in self.context.sql(q):
+	    self.mk2specificityNote[r['_marker_key']] = r['note']
+
+        
         # preload all the earliest publications 
         self.earliest_publications = {}
         q = '''
@@ -109,6 +124,12 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	if n:
 	    n = '<attribute name="description" value="%s" />' % self.quote(n)
 	return n
+
+    def getSpecificityNote(self, r):
+        snote = self.mk2specificityNote.get(r['_marker_key'], '')
+	if snote:
+	    snote = '<attribute name="specificity" value="%s" />' % self.quote(snote)
+	return snote
 
     def getClass(self, r):
 	return MCV2ClassName[self.getMcvType(r)]
@@ -150,6 +171,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	r['featureClass'] = fclass
 	r['mcvType'] = self.getMcvType(r)
 	r['description'] = self.getDescription(r)
+	r['specificityNote'] = self.getSpecificityNote(r)
 	r['ncbiGeneNumber'] = self.getNcbiGeneNumberAttribute(r)
 	r['locationRef'] = self.getLocationRef(r)
 	r['organismid'] = self.context.makeItemRef('Organism', r['_organism_key']) 
