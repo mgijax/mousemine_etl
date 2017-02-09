@@ -99,6 +99,9 @@ class DumperContext:
 	    'OFFICIAL_STATUS' : 1,
 	    'WITHDRAWN_STATUS': 2,
 
+            # MGI_Notetype keys
+            'STRAIN_SPECIFIC_NOTETYPE_KEY' : 1035,
+
 	    #
 	    'TAXAIDS' : COMMA.join(map(lambda o:"'%d'"%o, TAXAIDS)),
 	    'LIMIT_CLAUSE' : limit and (' LIMIT %d '%limit) or '',
