@@ -37,6 +37,7 @@ class DumperContext:
             'ANTIBODY_TYPEKEY'   : 6,
             'ASSAY_TYPEKEY'      : 8,
             'IMAGE_TYPEKEY'      : 9,
+	    'STRAIN_TYPEKEY'     : 10,
 	    'ALLELE_TYPEKEY'     : 11,
 	    'GENOTYPE_TYPEKEY'   : 12,
 	    'TERM_TYPEKEY'       : 13,
