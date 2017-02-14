@@ -4,12 +4,14 @@ from AbstractItemDumper import *
 class StrainDumper(AbstractItemDumper):
     QTMPLT='''
     SELECT a.accid, s._strain_key, s.strain AS name, t.term AS straintype, s.standard
-    FROM PRB_Strain s, VOC_Term t, ACC_Accession a
-    WHERE s._straintype_key = t._term_key
-    AND s._strain_key = a._object_key
-    AND a._mgitype_key = %(STRAIN_TYPEKEY)d
-    AND a._logicaldb_key = 1
-    AND a.preferred = 1
+    FROM
+      PRB_Strain s JOIN VOC_Term t
+      ON s._straintype_key = t._term_key
+    LEFT OUTER JOIN ACC_Accession a
+      ON s._strain_key = a._object_key
+      AND a._mgitype_key = %(STRAIN_TYPEKEY)s
+      AND a._logicaldb_key = 1
+      AND a.preferred = 1
     %(LIMIT_CLAUSE)s
     '''
     ITMPLT = '''
