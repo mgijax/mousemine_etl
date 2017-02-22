@@ -5,6 +5,7 @@ import re
 class AbstractItemDumper:
     SUPER_RE = re.compile(r'<([^>]+)>')
     NA_RE = re.compile(r'<attribute\s+name=".*"\s+value="Not Applicable"\s+/>', re.M|re.I)
+    BAD_XML_CHARS_RE = re.compile(u'[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
 
     def __init__(self, context):
 	self.context = context
@@ -29,6 +30,8 @@ class AbstractItemDumper:
 	"""
 	if s is None:
 	    return None
+        else:
+            s = self.BAD_XML_CHARS_RE.sub('',s)
 	return str(s).replace('&','&amp;').replace('<', '&lt;').replace('"','&quot;')
 
     def makeRefsFromKeys(self, keys, typename):
