@@ -16,7 +16,7 @@ class AbstractItemDumper:
 	self.suppressNA = True
 
     def superscript(self, s):
-        return self.SUPER_RE.sub(r'<sup>\1</sup>',s)
+        return self.SUPER_RE.sub(r'<sup>\1</sup>', s)
 
     def quoteLT(self, s):
 	"""
@@ -31,8 +31,8 @@ class AbstractItemDumper:
 	if s is None:
 	    return None
         else:
-            s = self.BAD_XML_CHARS_RE.sub('',s)
-	return str(s).replace('&','&amp;').replace('<', '&lt;').replace('"','&quot;')
+            scrubbed = self.BAD_XML_CHARS_RE.sub('', str(s))
+	return scrubbed.replace('&', '&amp;').replace('<', '&lt;').replace('"', '&quot;')
 
     def makeRefsFromKeys(self, keys, typename):
 	refs = []
