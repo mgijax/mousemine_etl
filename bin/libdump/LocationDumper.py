@@ -3,7 +3,7 @@ from AbstractItemDumper import *
 
 class LocationDumper(AbstractItemDumper):
     QTMPLT = '''
-    SELECT c._marker_key, mc._chromosome_key, c.startcoordinate, c.endcoordinate, c.strand
+    SELECT c._marker_key, mc._chromosome_key, c.startcoordinate, c.endcoordinate, c.strand, c.version as assembly
     FROM MRK_Location_Cache c, MRK_Chromosome mc
     WHERE c.genomicchromosome = mc.chromosome
     AND c._organism_key = mc._organism_key
@@ -17,6 +17,7 @@ class LocationDumper(AbstractItemDumper):
       <attribute name="start" value="%(startcoordinate)d" />
       <attribute name="end" value="%(endcoordinate)d" />
       <attribute name="strand" value="%(strand)s" />
+      <attribute name="assembly" value="%(assembly)s" />
       </item>
     '''
 

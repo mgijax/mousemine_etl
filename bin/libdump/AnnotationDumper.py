@@ -68,7 +68,8 @@ class AnnotationDumper(AbstractItemDumper):
 	    va._annottype_key,
 	    ve._evidenceterm_key,
 	    ve.inferredfrom, 
-	    ve._refs_key
+	    ve._refs_key,
+	    ve.creation_date
 	FROM 
 	    VOC_Evidence ve, 
 	    VOC_Annot va 
@@ -113,6 +114,7 @@ class AnnotationDumper(AbstractItemDumper):
 	  %(annotationExtension)s
 	  <collection name="baseAnnotations">%(baseAnnotations)s</collection>
           <collection name="comments">%(comments)s</collection>
+	  %(annotationDate)s
 	  </item>
 	''',
 	]
@@ -277,6 +279,8 @@ class AnnotationDumper(AbstractItemDumper):
 		r['baseAnnotations'] = ''.join(refs2)
 
             r['comments'] = ''.join(self.context.annotationComments.get(r['_annotevidence_key'],[]))
+	    r['annotationDate'] = \
+	      '<attribute name="annotationDate" value="%s"/>' % r['creation_date'].strftime('%Y-%m-%d')
 	    return r
 
     def postDump(self):
@@ -354,6 +358,7 @@ class AnnotationDumper(AbstractItemDumper):
 		s['annotationExtension'] = ''
 
                 s['comments'] = ''
+		s['annotationDate'] = ''
 
 		#
 	    except DumperContext.DanglingReferenceError:
