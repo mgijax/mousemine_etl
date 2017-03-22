@@ -4,6 +4,7 @@ from DumperContext import DumperContext
 from OboParser import OboParser
 from DataSourceDumper import DataSetDumper
 import os
+import re
 from DerivedAnnotationHelper import DerivedAnnotationHelper
 
 class AnnotationDumper(AbstractItemDumper):
@@ -225,6 +226,7 @@ class AnnotationDumper(AbstractItemDumper):
 		    self.ek2props.setdefault(r['_annotevidence_key'],[]).append(int(r['value']))
 
     def processRecord(self, r, iQuery):
+        pattern = re.compile('^OMIM:')
 	atk = r['_annottype_key']
 	dsname, tname, oclass, aclass, aeclass, aecclass, aspecies, ahasprops = self.atk2classes[atk]
 	if iQuery == 0:
@@ -236,8 +238,11 @@ class AnnotationDumper(AbstractItemDumper):
 	    r['dataSets'] = '<reference ref_id="%s"/>'%self.atk2dsid[atk]
 
 	    identifier = r['identifier']
-	    if oclass == 'OMIMTerm':
-		r['identifier'] = identifier = "OMIM:"+identifier
+            if oclass == 'OMIMTerm':
+                if pattern.match(identifier):
+                    r['identifier'] = identifier
+                else:
+                    r['identifier'] = identifier = "OMIM:"+identifier
 
 	    tk = r['_term_key']
 	    # make the reference without checking (because this dumper will
