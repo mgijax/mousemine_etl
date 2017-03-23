@@ -46,7 +46,9 @@ class OmimDumper:
 	'''
 
         for r in db.sqliter(query):
-            omim_id = "OMIM:" + r['accid']
+	    if not r['accid'].startswith('OMIM:'):
+	        r['accid'] = 'OMIM:' + r['accid']
+            omim_id = r['accid']
             omim_name_parts = r['term'].split(";")
             omim_name = omim_name_parts[0].strip()
 	    omim_lines = [('id', omim_id), ('name', omim_name)]
@@ -66,8 +68,10 @@ class OmimDumper:
 	  ORDER BY a._object_key
 	'''
 	for r in db.sqliter(query):
+	    if not r['accid'].startswith('OMIM:'):
+	        r['accid'] = 'OMIM:' + r['accid']
 	    tk = r['_term_key']
-	    id = "OMIM:" + r['accid']
+	    id = r['accid']
 	    stanza = self.tk2stanza.get(tk, None)
 	    if stanza:
 		stanza[1].append( ('alt_id', id) )
