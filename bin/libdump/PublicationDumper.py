@@ -14,17 +14,9 @@ class PublicationDumper(AbstractItemDumper):
 	r.year, 
 	r.pgs AS pages,
 	r.abstract AS "abstractText",
-	a.accid AS "pubMedId",
 	a2.accid AS "mgiId",
-	a3.accid AS "mgiJnum",
-        a4.accid as "doi"
+	a3.accid AS "mgiJnum"
     FROM BIB_Refs r
-      LEFT OUTER JOIN ACC_Accession a
-      ON r._refs_key = a._Object_key
-      AND a._logicaldb_key = %(PUBMED_LDBKEY)d
-      AND a._mgitype_key = %(REF_TYPEKEY)d
-      AND a.preferred = 1
-      AND a.private = 0
       INNER JOIN ACC_Accession a2
       ON r._refs_key = a2._Object_key
       AND a2._logicaldb_key = %(MGI_LDBKEY)d
@@ -39,12 +31,6 @@ class PublicationDumper(AbstractItemDumper):
       AND a3.preferred = 1
       AND a3.private = 0
       AND a3.prefixPart='J:'
-      LEFT OUTER JOIN ACC_Accession a4
-      ON r._refs_key = a4._Object_key
-      AND a4._logicaldb_key = %(DOI_LDBKEY)d
-      AND a4._mgitype_key = %(REF_TYPEKEY)d
-      AND a4.preferred = 1
-      AND a4.private = 0
     %(LIMIT_CLAUSE)s
     '''
     ITMPLT = '''
@@ -60,56 +46,37 @@ class PublicationDumper(AbstractItemDumper):
 	</item>
     '''
     def preDump(self):
-	self.trueDups = {}
-	self.badPmids = []
         self.authors = {}
-	self.doiDups = {}
 	#
-	# Error case: we have discovered duplicate publications in MGD, i.e., different 
-	# records with different MGI# (and different J#S), but the SAME pubmed id, same title,
-	# authors, journal, etc., etc. This will cause the downstream update_publications
-	# step to choke.  Check for/collapse duplicate pubmed ids.
-	#
-	# Query for PubMed ids that are attached to multiple reference records.
-	#
-	# There are 2 classes of duplicates:
-	#	1. True duplicates, entered in error.
-	#	2. The pubmed id represents a conference proceedings or a book, and mgi contains
-	#	   multiple papers/chapters. These are represented as individual MGI references, all 
-	#          sharing the same pubmed id.
-	# For the first class, need to dynamically merge the references. This means (a) outputting only 
-	# one Publication object, and (b) mapping references (ie keys) to the one Publication.
-	# For the second class, we will simply ignore (not output) the pubmed id.
-	# Empirically, the two classes correspond to the counts: for class 1, the pubmed id appears 
-	# exactly twice, while for class 2, it appears more than twice.
-	#
-	q = '''
-	    select a.accid, count(a._object_key) as n
-	    from acc_accession a
-	    where  a._logicaldb_key=29
-	    group by a.accid
-	    having count(a._object_key) > 1
-	    '''
-	for r in self.context.sql(q):
-	    if r['n'] == 2:
-		self.trueDups[ r['accid'] ] = None
-		self.context.log("Duplicate PubMed id detected (error case):" + r['accid'])
-	    else:
-		self.context.log("Duplicate PubMed id detected (legit, but ignored):" + r['accid'])
-		self.badPmids.append( r['accid'] )
+	def makeIdIndex(ldb):
+	    dups = set()
+	    q = '''
+	    select accid
+	    from acc_accession
+	    where _logicaldb_key = %d
+	    and _mgitype_key = 1
+	    and preferred = 1
+	    group by accid
+	    having count(*) > 1
+	    ''' % ldb
+	    for r in self.context.sql(q):
+	        dups.add(r['accid'])
 
-	q = '''
-	    select a._object_key, count(a.accID) as n  from ACC_Accession a
-	    where a._LogicalDB_key = 65
-	    and a._mgitype_key =1
-            and a.preferred = 1
-            and a.private = 0
-            group by a._object_key 
-            having count(a.accID) > 1
-            '''
-	for r in self.context.sql(q):
-	    if r['n'] == 2:
-		self.doiDups[ r['_object_key'] ] = 1
+	    ix = {}
+	    q = '''
+	    select _object_key, accid
+	    from acc_accession
+	    where _logicaldb_key = %d
+	    and _mgitype_key = 1
+	    and preferred = 1
+	    ''' % ldb
+	    for r in self.context.sql(q):
+		if r['accid'] not in dups:
+		    ix[r['_object_key']] = r['accid']
+	    return ix
+	#
+	self.rk2pmid = makeIdIndex(29)
+	self.rk2doi  = makeIdIndex(65)
 
     # Calculates a citation string from the attributes.
     # Default format:
@@ -144,33 +111,12 @@ class PublicationDumper(AbstractItemDumper):
 
     def processRecord(self,r):
 	attrs = []
-	#--------------------------------------
-        # For duplicate DOIs
 	rk = r['_refs_key']
-        ids = self.doiDups.keys()
-        if rk in ids:
-	    if self.doiDups[rk] == False:
-		self.context.log("Skipping %s due to duplicate DOI" % (rk))
-		return None
-	    else:
-		self.context.log("Including %s but duplicate DOIs exist" % (rk));
-		self.doiDups[rk] = False;
-
 	r['id'] = self.context.makeItemId('Reference', r['_refs_key'])
 	#---------------------------------------
-	# Special processing for dups
-	p = r['pubMedId']
-	if p in self.badPmids:
-	    r['pubMedId'] = None
-	elif p in self.trueDups:
-	    if self.trueDups[p] is None:
-		# first one wins
-	        self.trueDups[p] = r['id']
-	    else:
-		# later ones map to first one
-		self.context.ID_MAP[r['id']] = self.trueDups[p]
-		self.context.log("Registering mapping: %s --> %s" % (r['id'],self.trueDups[p]))
-	        return None
+	r['pubMedId'] = self.rk2pmid.get(rk, None)
+	r['doi'] = self.rk2doi.get(rk, None)
+
 	#---------------------------------------
 	#
 	if r['authors'] is None:

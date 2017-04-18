@@ -157,9 +157,8 @@ class DumperContext:
 	# or all IDs are constructed from existing MGI keys.
 	self.NEXT_ID = { }
 
-	# maintain a mapping that allows id merging. Whenever we're about to return an id
-	# check if it's in the map, and if so, return the mapped valus instead.
-	self.ID_MAP = {}
+	# Two-level map { type -> { mgi-key -> mapped-key }}
+	self.KEY_MAP = {}
 
 	#
 	# Keep track of item ids that have been written out.
@@ -238,35 +237,50 @@ class DumperContext:
     # type, creates a globally unique string key of the form
     # "n_m", where n is the type's integer key and
     # m is the input key. 
+    # Args:
+    #  itemType (string) The ID space in which to generate the key. Determines the "n" part.
+    #  localKey (integer) If provided, also creates a mapping from localKey (which is generally
+    #    a key value from the MGI database) to the generated key.
+    #  exists (boolean) Only applies if localKey provided. If False, there must be no existing
+    #    mapping for type+localKey. (Used to generate the id values for new items.) If True, there must
+    #    be an existing mapping for type+localKey. (Use for generating values for reference and collection
+    #    attributes. If None, no existence check is made.
+    # Returns:
+    #   An identifier string of the form "n_m"
     #
     def makeGlobalKey(self, itemType, localkey=None, exists=None):
-	autokey = (localkey is None)
-	self.NEXT_ID.setdefault(itemType, 1001)
-	if autokey:
-	    localkey = self.NEXT_ID[itemType]
-	    self.NEXT_ID[itemType] += 1
-	elif localkey < 0:
-	    # Ugh. We can't use negative keys. MGI often uses -1 for
-	    # Not Specified and -2 for Not Applicable. 
-	    # Crude hackery: add 10,000,000 to the key (i.e., allocate
-	    # negative keys in a region we HOPE won't clash with
-	    # real keys.
-	    localkey += 10000000
+	n = self.TYPE_KEYS[itemType] if type(itemType) is types.StringType else itemType
+	kmap = self.KEY_MAP.setdefault(n, {})
+	m = self.NEXT_ID.setdefault(n, 1)
+        if localkey is None:
+	    # no local key, so no key mapping worries
+	    self.NEXT_ID[n] += 1
+	elif self.checkRefs and exists is True:
+	    # Generating a reference.
+	    # Enforce key mapping already exists, and that the object has was actually writtem
+	    # and use the mapped key
+	    m = kmap.get(localkey, None)
+	    if not m or ('%d_%d' % (n,m)) not in self.idsWritten:
+	    	raise DumperContext.DanglingReferenceError('itemType=%d, localkey=%d' % (n, localkey))
+	elif self.checkRefs and exists is False:
+	    # Generating an id. 
+	    # Enforce we haven't already seen it (no duplicates)
+	    # Increment the counter
+	    if localkey in kmap:
+	        raise DumperContext.DuplicateIdError('itemType=%d, localkey=%d' % (n, localkey))
+	    self.NEXT_ID[n] += 1
+	    kmap[localkey] = m
 	else:
-	    self.NEXT_ID[itemType] = max(self.NEXT_ID[itemType], localkey+1)
-	if type(itemType) is types.StringType:
-	    itemType = self.TYPE_KEYS[itemType]
-	key = '%d_%d' % (itemType,localkey)
-	k2 = self.ID_MAP.get(key, key)
-	if k2 != key:
-	    self.log("Mapped ID while creating key: %s --> %s" % (key, k2))
-	    key = k2
-	if self.checkRefs and exists is True and key not in self.idsWritten:
-	    raise DumperContext.DanglingReferenceError(key)
-	elif exists is False and key in self.idsWritten:
-	    raise DumperContext.DuplicateIdError(key)
-	else:
-	    return key
+	    # Don't care, just do the right thing.
+	    # If already seen, use the mapped key.
+	    # Otherwise, increment the counter.
+	    if localkey in kmap:
+	        m = kmap[localkey]
+	    else:
+		kmap[localkey] = m
+	        self.NEXT_ID[n] += 1
+	id = '%d_%d' % (n,m)
+	return id
 
     def makeItemId(self, itemType, localKey=None):
         return self.makeGlobalKey(itemType, localKey, False)

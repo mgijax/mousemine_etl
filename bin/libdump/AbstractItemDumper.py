@@ -97,6 +97,7 @@ class AbstractItemDumper:
 	    # dumper (e.g., withdrawn markers). In either case, we'll simply 
 	    # suppress the current object.
 	    # 
+	    self.context.log('DRE detected. Skipping record...\n' + str(r) + '\n')
 	    return
 	else:
 	    if rr is not None:

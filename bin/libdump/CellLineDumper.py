@@ -96,7 +96,8 @@ class CellLineDerivationDumper(AbstractItemDumper):
     '''
 
     def processRecord(self, r):
-	r['id'] = self.context.makeItemId('CellLineDerivation', r['_derivation_key'])
+	# these ids are generated after the refs to them, so must avid checks
+	r['id'] = self.context.makeGlobalKey('CellLineDerivation', r['_derivation_key'])
 	r['parentcellline'] = self.context.makeItemRef('CellLine', r['_parentcellline_key'])
 	r['name'] = self.quote(r['name'])
 	r['vector'] = self.quote(r['vector'])

@@ -4,10 +4,12 @@ from AbstractItemDumper import *
 class LocationDumper(AbstractItemDumper):
     QTMPLT = '''
     SELECT c._marker_key, mc._chromosome_key, c.startcoordinate, c.endcoordinate, c.strand, c.version as assembly
-    FROM MRK_Location_Cache c, MRK_Chromosome mc
+    FROM MRK_Location_Cache c, MRK_Chromosome mc, MRK_Marker m
     WHERE c.genomicchromosome = mc.chromosome
     AND c._organism_key = mc._organism_key
     AND c.startCoordinate is not null
+    AND c._marker_key = m._marker_key
+    AND m._marker_status_key != %(WITHDRAWN_STATUS)d
     %(LIMIT_CLAUSE)s
     '''
     ITMPLT = '''
@@ -22,7 +24,10 @@ class LocationDumper(AbstractItemDumper):
     '''
 
     def processRecord(self, r):
-	r['id'] = self.context.makeItemId('Location', r['_marker_key'])
+	# Feature dumper generates refs before this dumper runs.
+	# The id mapping already exists, so use makeGlobalKey here.
+	r['id'] = self.context.makeGlobalKey('Location', r['_marker_key'])
+
 	r['markerid'] = self.context.makeItemRef('Marker', r['_marker_key'])
 	r['chromosomeid'] = self.context.makeItemRef('Chromosome', r['_chromosome_key'])
 	# Intermine note: standard is for strand to be "+1" or "-1"

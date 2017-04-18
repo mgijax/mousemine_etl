@@ -18,8 +18,9 @@ class FeatureDumper(AbstractItemDumper):
     def postDump(self):
         soids = list(self.context.soIds)
 	soids.sort()
+	self.context.log(str(soids))
 	for s in soids:
-	    id = self.context.makeItemId('SOTerm',int(s.split(':')[1]))
+	    id = self.context.makeGlobalKey('SOTerm',int(s.split(':')[1]))
 	    self.writeItem( {'id':id, 'soid':s}, self.ITMPLT)
         
 class AbstractFeatureDumper(AbstractItemDumper):
