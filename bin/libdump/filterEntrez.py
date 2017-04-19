@@ -38,7 +38,7 @@ import os
 import sys
 import logging
 import xml.etree.ElementTree as et
-import mgiadhoc as db
+import mgidbconnect as db
 
 
 TAB = '\t'
@@ -111,6 +111,7 @@ def main():
       sys.stdout.write(line2)
 
 #
+db.setConnectionFromPropertiesFile()
 main()
 
 

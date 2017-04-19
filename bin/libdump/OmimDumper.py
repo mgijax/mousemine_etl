@@ -9,7 +9,7 @@
 
 
 from OboParser import OboParser, formatStanza
-import mgiadhoc as db
+import mgidbconnect as db
 import os
 import sys
 import time
@@ -111,5 +111,5 @@ class OmimDumper:
         self.writeStanzas(omim_output_file)
 
 
-db.setConnectionDefaultsFromPropertiesFile()
+db.setConnectionFromPropertiesFile()
 OmimDumper().main(sys.argv[1])

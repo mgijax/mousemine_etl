@@ -10,13 +10,14 @@
 import sys
 import re
 import os
-from libdump import mgiadhoc as db
+from libdump import mgidbconnect as db
 
 class VersionGetter:
     def __init__(self):
 	self.fname = 'lastdump_date'
 	self.query = 'select %s from mgi_dbinfo' % self.fname
 	self.dtmplt= '%Y-%m-%d'
+        db.setConnectionFromPropertiesFile()
 	self.date = db.sql(self.query)[0][self.fname]
 	self.versionString = 'MGI update: %s' % self.date.strftime(self.dtmplt)
 

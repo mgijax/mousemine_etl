@@ -17,12 +17,13 @@
 #		print n['note']
 #
 
-import mgiadhoc as db
+import mgidbconnect as db
 
 
 def iterNotes( **kwargs ):
 	note = None# current note to yield
 	qry = buildQuery( ** kwargs )
+	db.setConnectionFromPropertiesFile()
 	notechunks = db.sql( qry )
 	for nc in notechunks:
 	    if nc['sequencenum'] == 1:

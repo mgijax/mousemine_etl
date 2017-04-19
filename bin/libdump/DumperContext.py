@@ -1,5 +1,5 @@
 from common import *
-import mgiadhoc as db
+import mgidbconnect as db
 import time
 
 class DumperContext:
@@ -19,6 +19,7 @@ class DumperContext:
 	self.limit=limit
 	self.fname = None
 	self.checkRefs = checkRefs
+        db.setConnectionFromPropertiesFile()
 	self.fd = sys.stdout
 	if logfile:
 	    self.logfile = os.path.abspath(os.path.join(os.getcwd(), logfile))
