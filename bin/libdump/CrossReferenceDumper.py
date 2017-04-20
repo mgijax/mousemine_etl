@@ -37,8 +37,11 @@ class CrossReferenceDumper(AbstractItemDumper):
         self.context.QUERYPARAMS['WHERECLAUSE'] = self.whereClause
 
     def processRecord(self, r):
-	r['id'] = self.context.makeItemId('CrossReference', r['_accession_key'])
+	try:
+	    r['subject'] = self.context.makeItemRef(r['_mgitype_key'], r['_object_key'])
+	except:
+	    return None;
 	r['identifier'] = self.quote(r['accid'])
-	r['subject'] = self.context.makeItemRef(r['_mgitype_key'], r['_object_key'])
 	r['source'] = self.context.makeItemRef('DataSource', r['_logicaldb_key'])
+	r['id'] = self.context.makeItemId('CrossReference', r['_accession_key'])
 	return r
