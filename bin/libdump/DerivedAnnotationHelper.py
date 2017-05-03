@@ -22,8 +22,8 @@ database keys) for creating one derived annotation:
 	    #   ann
 
 The Situation: in MGI, genes are connected to alleles, alleles are connected to genotypes,
-and genotypes are annotated to MP and OMIM terms. HOWEVER, just because there is a path from 
-a given gene to a given MP or OMIM term does NOT necessarily imply that we should associate the
+and genotypes are annotated to MP and DO terms. HOWEVER, just because there is a path from 
+a given gene to a given MP or DO term does NOT necessarily imply that we should associate the
 term with the gene. (As in, what genes are associated with this disease? or what phenotypes are
 associated with these genes?)
 
@@ -70,7 +70,7 @@ associated to an allele in this way should also be associated with the allele's 
 Twist on that twist: An allele can have an annotation to a disease (annot type 1012), and
 can also have genotypes annotated to the same disease. The allele therefore can end up 
 with both a "real" annotation and a "derived" annotation to the same disease. Example:
-allele = MGI:3803301 Tnnt2<tm2Mmto>, disease = OMIM:601494 Cardiomyopathy, Dilated, 1D.
+allele = MGI:3803301 Tnnt2<tm2Mmto>, disease = DOID:0110426 Cardiomyopathy, Dilated, 1D.
 
 
 '''
@@ -98,7 +98,7 @@ class DerivedAnnotationHelper:
 
     # The main entry point. Iterates over results. Specify "Allele" or "Marker".
     # Yields a sequence of tuples (of database keys)
-    # from which to generate inferred/derived gene-MP/OMIM annotations
+    # from which to generate inferred/derived gene-MP/DO annotations
     # Each yielded tuple has these members:
     #	0: _marker_key or _allele_key
     #	1: _vocab_key
@@ -175,7 +175,7 @@ class DerivedAnnotationHelper:
 		VOC_Evidence ve,
 		VOC_Term vt
 	    WHERE
-		va._annottype_key in (1002,1005)	/* MP-Geno, OMIM-Geno */
+		va._annottype_key in (1002,1020)	/* MP-Geno, DO-Geno */
 		AND va._annot_key = ve._annot_key
 		AND va._term_key = vt._term_key
 		AND va._qualifier_key not in (2181424, 1614157) /* not "Normal" or "NOT" */
