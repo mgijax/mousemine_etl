@@ -4,20 +4,24 @@ from DataSourceDumper import DataSetDumper
 
 class SynonymDumper(AbstractItemDumper):
     QTMPLT = ['''
+    /* get allele, strain, etc., synonyms from MGI_Synonyms table */
     SELECT s.synonym, s._object_key, s._mgitype_key
     FROM MGI_Synonym s
     WHERE s._mgitype_key in (%(MGITYPEKEYS)s)
     AND s._mgitype_key != %(MARKER_TYPEKEY)d
     %(LIMIT_CLAUSE)s
     ''','''
+    /* get mouse marker synonyms from MRK_Label table */
     SELECT distinct ml.label, ml._marker_key
     FROM MRK_Label ml, MRK_Marker mm
     WHERE ml._orthologorganism_key is null
+    AND ml._organism_key in (%(ORGANISMKEYS)s)
     AND ml.labeltype in ('MS','MN','MY')
     AND ml._marker_key = mm._marker_key
     AND mm._marker_status_key != %(WITHDRAWN_STATUS)d
     %(LIMIT_CLAUSE)s
     ''','''
+    /* Secondary ids for markers */
     SELECT a.accid, a._mgitype_key, a._object_key
     FROM ACC_Accession a, MRK_Marker m
     WHERE a._mgitype_key = %(MARKER_TYPEKEY)d
@@ -27,6 +31,7 @@ class SynonymDumper(AbstractItemDumper):
     AND a._object_key = m._marker_key
     AND m._marker_status_key != %(WITHDRAWN_STATUS)d
     ''','''
+    /* secondary ids for alleles */
     SELECT a.accid, a._mgitype_key, a._object_key
     FROM ACC_Accession a
     WHERE a._mgitype_key = %(ALLELE_TYPEKEY)d
