@@ -64,10 +64,10 @@ regardless of how many genes there are. Each would be associated with
 any/all diseases and phenotypes (in the sense of searching).
 
 Small twist: There is another set of disease associations in MGI that attach
-directly to an allele, no genotype involved. (annotation type key 1012). Any disease 
+directly to an allele, no genotype involved. (annotation type key 1021). Any disease 
 associated to an allele in this way should also be associated with the allele's gene.
 
-Twist on that twist: An allele can have an annotation to a disease (annot type 1012), and
+Twist on that twist: An allele can have an annotation to a disease (annot type 1021), and
 can also have genotypes annotated to the same disease. The allele therefore can end up 
 with both a "real" annotation and a "derived" annotation to the same disease. Example:
 allele = MGI:3803301 Tnnt2<tm2Mmto>, disease = DOID:0110426 Cardiomyopathy, Dilated, 1D.
@@ -207,7 +207,7 @@ class DerivedAnnotationHelper:
 		VOC_Term vt,
 		ALL_Allele a
 	    WHERE
-		va._annottype_key = 1012
+		va._annottype_key = 1021
 		AND va._annot_key = ve._annot_key
 		AND va._term_key = vt._term_key
 		AND va._object_key = a._allele_key

@@ -221,7 +221,7 @@ class AnnotationDumper(AbstractItemDumper):
 		if v in "MF":
 		    ek = r['_annotevidence_key']
 		    self.ek2props[ek] = 'specific_to(%s)' % (v == 'M' and 'male' or 'female')
-	    elif atk == 1015 or atk == 1016:
+	    elif atk == 1015 or atk == 1023:
 		if r['term'] == "_SourceAnnot_key":
 		    self.ek2props.setdefault(r['_annotevidence_key'],[]).append(int(r['value']))
 
@@ -271,7 +271,7 @@ class AnnotationDumper(AbstractItemDumper):
 		p = self.ek2props.get(r['_annotevidence_key'])
 		p = p and '<attribute name="annotationExtension" value="%s" />'%p or ''
 		r['annotationExtension'] = p
-	    elif r['_annottype_key'] in [1015,1016]:
+	    elif r['_annottype_key'] in [1015,1023]:
 		ps = self.ek2props.get(r['_annotevidence_key'],[])
 		refs = [ self.context.makeItemRef('OntologyAnnotation', k) for k in ps ]
 		refs2 = [ '<reference ref_id="%s"/>'%ref for ref in refs ]
