@@ -138,21 +138,21 @@ class AnnotationDumper(AbstractItemDumper):
 	  # Mouse genotype-MP annotations
 	  1002 : ('MPTerm to Mouse Genotype Annotations from MGI',
 	          'Genotype', 'MPTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
-	  # Mouse genotype-OMIM annotations
-	  1005 : ('DiseaseTerm to Mouse Genotype Annotations from MGI',
-	          'Genotype', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
-	  # Human gene-OMIM annotations
-	  1006 : ('DiseaseTerm to Human Feature Annotations from MGI',
-	          'Marker', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
-	  # Mouse allele-OMIM annotations
-	  1012 : ('DiseaseTerm to Mouse Allele Annotations from MGI',
-	          'Allele', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
+	  # Mouse genotype-DO annotations
+	  1020 : ('DiseaseTerm to Mouse Genotype Annotations from MGI',
+	          'Genotype', 'DOTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
+	  # Human gene-DO annotations
+	  1022 : ('DiseaseTerm to Human Feature Annotations from MGI',
+	          'Marker', 'DOTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Human', False),
+	  # Mouse allele-DO annotations
+	  1021 : ('DiseaseTerm to Mouse Allele Annotations from MGI',
+	          'Allele', 'DOTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', False),
 	  # Mouse marker-derived MP annotation
 	  1015 : ('MPTerm to Mouse Feature Annotations from MGI',
 	          'Marker', 'MPTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
-	  # Mouse marker-derived OMIM annotation
-	  1016 : ('DiseaseTerm to Mouse Feature Annotations from MGI',
-	          'Marker', 'OMIMTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
+	  # Mouse marker-derived DO annotation
+	  1023 : ('DiseaseTerm to Mouse Feature Annotations from MGI',
+	          'Marker', 'DOTerm','OntologyAnnotation','OntologyAnnotationEvidence','OntologyAnnotationEvidenceCode','Mouse', True),
 	}
 	self.ANNOTTYPEKEYS = self.atk2classes.keys()
 	self.ANNOTTYPEKEYS_S = COMMA.join(map(lambda x:str(x),self.ANNOTTYPEKEYS))
@@ -221,7 +221,7 @@ class AnnotationDumper(AbstractItemDumper):
 		if v in "MF":
 		    ek = r['_annotevidence_key']
 		    self.ek2props[ek] = 'specific_to(%s)' % (v == 'M' and 'male' or 'female')
-	    elif atk == 1015 or atk == 1016:
+	    elif atk == 1015 or atk == 1023:
 		if r['term'] == "_SourceAnnot_key":
 		    self.ek2props.setdefault(r['_annotevidence_key'],[]).append(int(r['value']))
 
@@ -237,8 +237,6 @@ class AnnotationDumper(AbstractItemDumper):
 	    r['dataSets'] = '<reference ref_id="%s"/>'%self.atk2dsid[atk]
 
 	    identifier = r['identifier']
-            if oclass == 'OMIMTerm' and not identifier.startswith('OMIM:'):
-		r['identifier'] = identifier = "OMIM:"+identifier
 
 	    tk = r['_term_key']
 	    # make the reference without checking (because this dumper will
@@ -273,7 +271,7 @@ class AnnotationDumper(AbstractItemDumper):
 		p = self.ek2props.get(r['_annotevidence_key'])
 		p = p and '<attribute name="annotationExtension" value="%s" />'%p or ''
 		r['annotationExtension'] = p
-	    elif r['_annottype_key'] in [1015,1016]:
+	    elif r['_annottype_key'] in [1015,1023]:
 		ps = self.ek2props.get(r['_annotevidence_key'],[])
 		refs = [ self.context.makeItemRef('OntologyAnnotation', k) for k in ps ]
 		refs2 = [ '<reference ref_id="%s"/>'%ref for ref in refs ]
