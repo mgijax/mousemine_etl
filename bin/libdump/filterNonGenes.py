@@ -22,7 +22,7 @@ import os
 import sys
 import logging
 import xml.etree.ElementTree as et
-import mgiadhoc as db
+import mgidbconnect as db
 
 
 TAB = '\t'
@@ -314,4 +314,5 @@ def main():
 	    ofd.close()
 	    os.system("mv %s %s" % (ofile,ifile))
 
+db.setConnectionFromPropertiesFile()
 main()

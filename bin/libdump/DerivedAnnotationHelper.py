@@ -240,7 +240,8 @@ def __test__():
     try:
 	import db
     except:
-	import mgiadhoc as db
+	import mgidbconnect as db
+	db.setConnectionFromPropertiesFile()
     dah = DerivedAnnotationHelper(db)
     for mk, vk, tk, arks in dah.iterAnnots('Marker'):
         print "M", mk, vk, tk, arks

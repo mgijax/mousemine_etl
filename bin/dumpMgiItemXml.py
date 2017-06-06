@@ -11,7 +11,7 @@ import getopt
 from libdump import *
 import types
 import os
-from libdump import mgiadhoc as db
+from libdump import mgidbconnect as db
 
 ##########################################
 VERSION = "0.1"
@@ -60,7 +60,6 @@ def main(argv):
     clcs = []
     defs = {}
     logfile=None
-    pfile = "~/.intermine/mousemine.properties"
     checkRefs = True
     for o,v in opts:
         if o == '--debug':
@@ -110,8 +109,8 @@ def main(argv):
     dcx.log("Starting MGI item dump...")
     dcx.log("Command line parameters = %s" % str(argv))
 
-    db.setConnectionDefaultsFromPropertiesFile(pfile)
-    dcx.log("Database connection:" + str(db.getConnectionDefaults()))
+    db.setConnectionFromPropertiesFile()
+    dcx.log("Database connection:" + str(db.getConnection()))
     total = 0
     for cls,args in clcs:
 	total += cls(dcx, *args).dump(fname=cls.__name__[:-6]+".xml")

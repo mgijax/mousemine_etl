@@ -7,7 +7,7 @@
 import sys
 import re
 import os
-from libdump import mgiadhoc as db
+from libdump import mgidbconnect as db
 from optparse import OptionParser
 
 class VersionGetter:
@@ -15,6 +15,7 @@ class VersionGetter:
 	self.fname = 'lastdump_date'
 	self.query = 'select %s from mgi_dbinfo' % self.fname
 	self.dtmplt= '%Y-%m-%d'
+        db.setConnectionFromPropertiesFile()
 	self.date = db.sql(self.query)[0][self.fname]
 	self.versionString = 'MGI update: %s' % self.date.strftime(self.dtmplt)
 
