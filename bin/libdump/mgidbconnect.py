@@ -2,7 +2,7 @@
 #
 # mgiadhoc.py
 #
-# Simple library for querying the MGI ad hoc database.
+# Simple library for querying MGI databases.
 #
 import os
 import re
@@ -12,23 +12,23 @@ import types
 import psycopg2
 import psycopg2.extras
 
-# Default connection parameters
-HOST="mgi-adhoc.jax.org"
-DATABASE="mgd"
-USER="mgd_public"
-PASSWORD="mgdpub"
+# Connection parameters
+HOST = None
+DATABASE = None
+USER = None
+PASSWORD = None
 
 #
-def getConnectionDefaults():
+def getConnection():
     return {
     'host'     : HOST,
     'database' : DATABASE,
     'user'     : USER,
-    'password' : PASSWORD 
+    'password' : PASSWORD
     }
 
 #
-def setConnectionDefaults(**cparms):
+def setConnection(**cparms):
     global HOST, DATABASE, USER, PASSWORD
     HOST     = cparms.get('host',HOST)
     DATABASE = cparms.get('database',DATABASE)
@@ -36,12 +36,15 @@ def setConnectionDefaults(**cparms):
     PASSWORD = cparms.get('password',PASSWORD)
 
 #
-def getConnectionParamsFromPropertiesFile(fname="~/.intermine/mousemine.properties", dname="mgiadhoc"):
+def getConnectionParamsFromPropertiesFile(dname=None, fname="~/.intermine/mousemine.properties"):
     try:
         fname = os.path.abspath(os.path.expanduser(fname))
         fd = open(fname,'r')
         data = fd.read()
         fd.close()
+        if dname is None:
+            dname = re.search('^db.mgi-source.datasource.sourceName=(.*)', data, re.M).group(1).strip()
+        
         return {
         'host'    : re.search('^db.%s.datasource.serverName=(.*)'%dname,   data, re.M).group(1).strip(),
         'database': re.search('^db.%s.datasource.databaseName=(.*)'%dname, data, re.M).group(1).strip(),
@@ -52,9 +55,9 @@ def getConnectionParamsFromPropertiesFile(fname="~/.intermine/mousemine.properti
         raise RuntimeError("Could not get connection data from: "+fname)
 
 #
-def setConnectionDefaultsFromPropertiesFile(fname="~/.intermine/mousemine.properties", dname="mgiadhoc"):
-    cparms = getConnectionParamsFromPropertiesFile(fname,dname)
-    setConnectionDefaults(**cparms)
+def setConnectionFromPropertiesFile(dname=None, fname="~/.intermine/mousemine.properties"):
+    cparms = getConnectionParamsFromPropertiesFile(dname, fname)
+    setConnection(**cparms)
 
 #
 def connect(host=None,database=None, user=None, password=None):

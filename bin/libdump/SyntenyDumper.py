@@ -55,7 +55,6 @@
 import sys
 import os
 import urllib
-from libdump import mgiadhoc as db
 
 from AbstractItemDumper import *
 from DataSourceDumper import DataSetDumper

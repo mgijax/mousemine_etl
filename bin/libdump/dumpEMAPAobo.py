@@ -5,7 +5,7 @@
 #
 
 import sys
-import mgiadhoc as db
+import mgidbconnect as db
 import time
 
 # retrieves all EMAPA terms with basic into
@@ -153,6 +153,6 @@ class EmapaOboDumper:
 	#
 	self.ofd.close()
 
-db.setConnectionDefaultsFromPropertiesFile()
+db.setConnectionFromPropertiesFile()
 EmapaOboDumper().main()
 
