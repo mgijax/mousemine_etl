@@ -70,15 +70,18 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	# preload all description notes for mouse markers
 	self.mk2description = {}
 	q = self.constructQuery('''
-	    select n._marker_key, n.note
-	    from MRK_Notes n, MRK_Marker m
-	    where n._marker_key = m._marker_key
-	    and m._organism_key = 1
-	    order by n._marker_key, n.sequenceNum
+            select n._object_key as _marker_key, c.note
+            from MGI_Note n, MGI_Notechunk c, MRK_Marker m
+            where n._object_key = m._marker_key
+            and n._notetype_key = 1014
+            and n._note_key = c._note_key
+            and m._organism_key = 1
+            order by n._object_key, c.sequenceNum
 	    ''')
 	for r in self.context.sql(q):
 	    mk = r['_marker_key']
-	    self.mk2description[mk] = self.mk2description.get(mk,'') + r['note']
+            note = r['note'].replace("<hr>","").replace("<B>","").replace("</B>","").replace("<BR>","")
+	    self.mk2description[mk] = self.mk2description.get(mk,'') + note 
 
         
 	# preload marker specificity notes
