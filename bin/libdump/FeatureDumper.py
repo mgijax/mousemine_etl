@@ -80,7 +80,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    ''')
 	for r in self.context.sql(q):
 	    mk = r['_marker_key']
-            note = r['note'].replace("<hr>","").replace("<B>","").replace("</B>","").replace("<BR>","")
+            note = r['note'].replace("<hr><B>Summary from NCBI RefSeq</B><BR><BR>","").replace("<hr>","")
 	    self.mk2description[mk] = self.mk2description.get(mk,'') + note 
 
         
