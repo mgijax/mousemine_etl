@@ -26,6 +26,7 @@ import sys
 class FilterDiseaseOntology:
 
     def __init__(self):
+        self.doid_header = []
         self.doid_stanzas = []
 
     def loadAndFilterDO(self):
@@ -34,27 +35,31 @@ class FilterDiseaseOntology:
             isObsolete = False
             omimIds = []
 
-            for i, line in enumerate(slines):
-                tag, val = line
-                # only interested in DOID stanzas
-                if tag == "id" and val.startswith("DOID:"):
-                    isDoidStanza = True
-                elif isDoidStanza and not isObsolete:
-                    if val.startswith("OMIM:"):
-                        # save all OMIM id numbers
-                        omimIds.append(val.replace("OMIM:", ""))
-                    if tag == "xref":
-                        #replace all "xref" tags with "alt_id"
-                        slines[i] = (tag.replace("xref", "alt_id"),val)
-                    elif tag == "is_obsolete" and val == "true":
-                        #ignore all obsolete stanzas
-                        isObsolete = True
-
-            if isDoidStanza and not isObsolete:
-                for omimId in omimIds:
-                    # add additional lines of ("alt_id", <OMIM Id (only number)>
-                    slines.append(("alt_id", omimId))
+            if stype is None:
+                #save the header
                 self.doid_stanzas.append((stype, slines))
+            else:
+                for i, line in enumerate(slines):
+                    tag, val = line
+                # only interested in DOID stanzas
+                    if tag == "id" and val.startswith("DOID:"):
+                        isDoidStanza = True
+                    elif isDoidStanza and not isObsolete:
+                        if val.startswith("OMIM:"):
+                        # save all OMIM id numbers
+                            omimIds.append(val.replace("OMIM:", ""))
+                        if tag == "xref":
+                        #replace all "xref" tags with "alt_id"
+                            slines[i] = (tag.replace("xref", "alt_id"),val)
+                        elif tag == "is_obsolete" and val == "true":
+                        #ignore all obsolete stanzas
+                            isObsolete = True
+
+                if isDoidStanza and not isObsolete:
+                    for omimId in omimIds:
+                    # add additional lines of ("alt_id", <OMIM Id (only number)>
+                        slines.append(("alt_id", omimId))
+                    self.doid_stanzas.append((stype, slines))
 
         OboParser(stanzaProc).parseFile(sys.stdin)
 
