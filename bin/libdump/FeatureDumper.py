@@ -67,8 +67,12 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    if id in self.context.idsWritten:
 		self.mk2refs.setdefault(r['_marker_key'],[]).append('<reference ref_id="%s"/>'%id)
 
-	# preload all description notes for mouse markers
+	# Preload all description notes for mouse markers. Two separate notes from MGI are concatenated
+	# into a single note in MouseMine, which goes into the description field. A given gene may have
+	# neither, either, or both.
 	self.mk2description = {}
+	#
+	# First, the gene function overview note
 	q = self.constructQuery('''
             select n._object_key as _marker_key, c.note
             from MGI_Note n, MGI_Notechunk c, MRK_Marker m
@@ -80,8 +84,24 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    ''')
 	for r in self.context.sql(q):
 	    mk = r['_marker_key']
-            note = r['note'].replace("<hr><B>Summary from NCBI RefSeq</B><BR><BR>","").replace("<hr>","")
+            note = 'FUNCTION: ' + r['note'].replace("<hr><B>Summary from NCBI RefSeq</B><BR><BR>","").replace("<hr>","")
 	    self.mk2description[mk] = self.mk2description.get(mk,'') + note 
+	#
+	# Second, the phenotype overview note
+	q = '''
+	    select n._marker_key, n.note, n.modification_date
+	    from MRK_Notes n, MRK_Marker m
+	    where n._marker_key = m._marker_key
+	    and m._organism_key = 1
+	    order by n._marker_key, n.sequenceNum
+	    '''
+	for r in self.context.sql(q):
+	    mk = r['_marker_key']
+	    date = r['modification_date'].strftime('%b %Y')
+	    note = 'PHENOTYPE: ' + r['note'] + (' [provided by MGI curators, %s]' % date)
+	    note0 = self.mk2description.get(mk,'')
+	    note0 += ' <br> ' if note0 else ''
+	    self.mk2description[mk] = note0 + note 
 
         
 	# preload marker specificity notes
