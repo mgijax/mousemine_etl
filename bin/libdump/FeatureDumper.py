@@ -43,33 +43,10 @@ class AbstractFeatureDumper(AbstractItemDumper):
       </item>
     '''
 
-    def preDump(self):
-	# preload all the NCBI EntrezGene IDs into a dict {markerkey->entrezid}
-	self.mk2entrez = {}
-	q = self.constructQuery('''
-	  SELECT accid, _object_key
-	  FROM ACC_Accession
-	  WHERE _logicaldb_key = %(ENTREZ_LDBKEY)d
-	  AND _mgitype_key = %(MARKER_TYPEKEY)d
-	  ''')
-	for r in self.context.sql(q):
-	    self.mk2entrez[r['_object_key']] = \
-	        '<attribute name="ncbiGeneNumber" value="%s" />' % r['accid']
-
-	# preload all Marker/Reference associations
-	self.mk2refs = {}
-	q = self.constructQuery('''
-	    SELECT _marker_key, _refs_key
-	    FROM MRK_Reference
-	    ''')
-	for r in self.context.sql(q):
-	    id = self.context.makeGlobalKey('Reference',r['_refs_key'])
-	    if id in self.context.idsWritten:
-		self.mk2refs.setdefault(r['_marker_key'],[]).append('<reference ref_id="%s"/>'%id)
-
+    def preloadDescriptions(self):
 	# Preload all description notes for mouse markers. Two separate notes from MGI are concatenated
 	# into a single note in MouseMine, which goes into the description field. A given gene may have
-	# neither, either, or both.
+	# neither, either, or both. Here's an example:
 	self.mk2description = {}
 	#
 	# First, the gene function overview note
@@ -87,7 +64,8 @@ class AbstractFeatureDumper(AbstractItemDumper):
             note = 'FUNCTION: ' + r['note'].replace("<hr><B>Summary from NCBI RefSeq</B><BR><BR>","").replace("<hr>","")
 	    self.mk2description[mk] = self.mk2description.get(mk,'') + note 
 	#
-	# Second, the phenotype overview note
+	# Second, the phenotype overview note. 
+	# Need to add curation date. Use modification date of the note record.
 	q = '''
 	    select n._marker_key, n.note, n.modification_date
 	    from MRK_Notes n, MRK_Marker m
@@ -97,14 +75,36 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    '''
 	for r in self.context.sql(q):
 	    mk = r['_marker_key']
-	    date = r['modification_date'].strftime('%b %Y')
+	    date = r['modification_date'].strftime('%b %Y') # e.g. "Sep 2015"
 	    note = 'PHENOTYPE: ' + r['note'] + (' [provided by MGI curators, %s]' % date)
 	    note0 = self.mk2description.get(mk,'')
-	    note0 += ' <br> ' if note0 else ''
+	    note0 += ' <br> ' if note0 else '' # add line break if there's a function note
 	    self.mk2description[mk] = note0 + note 
 
-        
-	# preload marker specificity notes
+    def preloadMarkerReferenceAssociations(self):
+	self.mk2refs = {}
+	q = self.constructQuery('''
+	    SELECT _marker_key, _refs_key
+	    FROM MRK_Reference
+	    ''')
+	for r in self.context.sql(q):
+	    id = self.context.makeGlobalKey('Reference',r['_refs_key'])
+	    if id in self.context.idsWritten:
+		self.mk2refs.setdefault(r['_marker_key'],[]).append('<reference ref_id="%s"/>'%id)
+
+    def preloadEntrezIds(self):
+	self.mk2entrez = {}
+	q = self.constructQuery('''
+	  SELECT accid, _object_key
+	  FROM ACC_Accession
+	  WHERE _logicaldb_key = %(ENTREZ_LDBKEY)d
+	  AND _mgitype_key = %(MARKER_TYPEKEY)d
+	  ''')
+	for r in self.context.sql(q):
+	    self.mk2entrez[r['_object_key']] = \
+	        '<attribute name="ncbiGeneNumber" value="%s" />' % r['accid']
+
+    def preloadStrainSpecificityNotes(self):
 	self.mk2specificityNote = {}
 	q = self.constructQuery('''
 	    SELECT m._marker_key, nc.note
@@ -117,8 +117,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	for r in self.context.sql(q):
 	    self.mk2specificityNote[r['_marker_key']] = r['note']
 
-        
-        # preload all the earliest publications 
+    def preloadEarliestPubs(self):
         self.earliest_publications = {}
         q = '''
             select distinct mr._marker_key AS _marker_key, mr._refs_key AS _refs_key, br.year, mr.jnum
@@ -142,6 +141,15 @@ class AbstractFeatureDumper(AbstractItemDumper):
                         self.earliest_publications[r['_marker_key']] = self.context.makeItemRef('Reference', r['_refs_key'])
 			found_citeable = True
             current_marker_key = r['_marker_key']         
+
+
+    def preDump(self):
+	self.preloadEntrezIds()
+	self.preloadMarkerReferenceAssociations()
+	self.preloadDescriptions()
+	self.preloadStrainSpecificityNotes()
+	self.preloadEarliestPubs()
+
 
     def getDescription(self, r):
         n = self.mk2description.get(r['_marker_key'], '')
