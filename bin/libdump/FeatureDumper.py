@@ -65,9 +65,8 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    self.mk2description[mk] = self.mk2description.get(mk,'') + note 
 	#
 	# Second, the phenotype overview note. 
-	# Need to add curation date. Use modification date of the note record.
 	q = '''
-	    select n._marker_key, n.note, n.modification_date
+	    select n._marker_key, n.note
 	    from MRK_Notes n, MRK_Marker m
 	    where n._marker_key = m._marker_key
 	    and m._organism_key = 1
@@ -75,8 +74,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
 	    '''
 	for r in self.context.sql(q):
 	    mk = r['_marker_key']
-	    date = r['modification_date'].strftime('%b %Y') # e.g. "Sep 2015"
-	    note = 'PHENOTYPE: ' + r['note'] + (' [provided by MGI curators, %s]' % date)
+	    note = 'PHENOTYPE: ' + r['note'] + (' [provided by MGI curators]')
 	    note0 = self.mk2description.get(mk,'')
 	    note0 += ' <br> ' if note0 else '' # add line break if there's a function note
 	    self.mk2description[mk] = note0 + note 
