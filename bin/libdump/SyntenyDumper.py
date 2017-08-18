@@ -117,7 +117,7 @@ SELECT distinct
     %(LIMIT_CLAUSE)s
     '''
 
-    SYN_TMPLT = '''
+    SYN_REGION_TMPLT = '''
 	<item class="SyntenicRegion" id="%(id)s" >
 	  <attribute name="symbol" value="%(symbol)s" />
 	  <attribute name="name" value="%(name)s" />
@@ -125,13 +125,13 @@ SELECT distinct
 	  <reference name="organism" ref_id="%(organism)s" />
 	  <reference name="chromosome" ref_id="%(chromosome)s" />
 	  <reference name="chromosomeLocation" ref_id="%(chromosomeLocation)s" />
-	  <reference name="partner" ref_id="%(partner)s" />
+	  <reference name="syntenyBlock" ref_id="%(syntenyBlock)s" />
 	  <attribute name="orientation" value="%(orientation)s" />
 	  <collection name="dataSets">%(dataSets)s</collection>
 	  </item>
     '''
 
-    # Note that SyntenyBlocks have coordinates, but NO strand.
+    # Note that SyntenyLocations have coordinates, but NO strand.
     LOC_TMPLT = '''
 	<item class="Location" id="%(id)s">
 	  <reference name="feature" ref_id="%(feature)s" />
@@ -142,6 +142,13 @@ SELECT distinct
 	  </item>
     '''
 
+    # Note that SyntenyBlocks have Syntentic Regions and NO publication.
+    SYN_BLOCK_TMPLT = '''
+	<item class="SyntenyBlock" id="%(id)s">
+	  <collection name="syntenicRegions">%(syntenicRegions)s</collection>
+	  <reference name="dataSet" ref_id="%(dataSet)s" />
+	  </item>
+    '''
 
     def preDump(self):
 	self.mchr2count = {}
@@ -322,19 +329,25 @@ SELECT distinct
     def writeBlockItems(self, mchr,mstart,mend,hchr,hstart,hend,name,ori):
 	(mr,ml) = self.makeSyntenicRegion(1,mchr,mstart,mend,name,ori)
 	(hr,hl) = self.makeSyntenicRegion(2,hchr,hstart,hend,name,ori)
-	mr['partner'] = hr['id']
-	hr['partner'] = mr['id']
-	self.writeItem(mr, self.SYN_TMPLT)
+        sb = self.makeSyntenyBlock(hr['id'], mr['id'])
+	mr['syntenyBlock'] = sb['id']
+	hr['syntenyBlock'] = sb['id']
+	self.writeItem(mr, self.SYN_REGION_TMPLT)
 	self.writeItem(ml, self.LOC_TMPLT)
-	self.writeItem(hr, self.SYN_TMPLT)
+	self.writeItem(hr, self.SYN_REGION_TMPLT)
 	self.writeItem(hl, self.LOC_TMPLT)
+	self.writeItem(sb, self.SYN_BLOCK_TMPLT)
+
+
+    def getDataSetId(self):
+        return DataSetDumper(self.context).dataSet(name="Inferred Synteny Blocks from MGI")
 
     def getDataSetRef(self):
-        dsid = DataSetDumper(self.context).dataSet(name="Inferred Synteny Blocks from MGI")
-        return '<reference ref_id="%s"/>'%dsid
+        dsid = self.getDataSetId()
+        return '<reference ref_id="%s" />'%dsid
 
     def makeSyntenicRegion(self, org,chr,start,end,bname,ori):
-	# creates and returns a tuple (r,l) where r = a dict suitable for use with SYN_TMPLT and 
+	# creates and returns a tuple (r,l) where r = a dict suitable for use with SYN_REGION_TMPLT and 
 	# l = a dict suitable for use with LOC_TMPLT.
 	oid = self.context.makeItemRef('Organism', org)
 	cid = self.context.makeItemRef('Chromosome', chr)
@@ -349,8 +362,8 @@ SELECT distinct
 	    'chromosome' : cid,
 	    'chromosomeLocation' : lid,
 	    'soref' : self.soref,
-	    'dataSets' : self.getDataSetRef(),
 	    'orientation' : ori,
+            'dataSets' : self.getDataSetRef(),
 	    }
 	l = {
 	    'id' : lid,
@@ -361,3 +374,15 @@ SELECT distinct
 	    }
 	return (r,l)
 
+    def makeSyntenyBlock(self, hrid, mrid):
+        # creates and returns a dict where b is suitable for use with SYN_BLOCK_TMPLT
+        bid = self.context.makeItemId('SyntenyBlock', self.mkey)
+        self.mkey += 1
+        sr_refs = '<reference ref_id="%s" />'%hrid + '<reference ref_id="%s" />'%mrid
+        dsid = self.getDataSetId()
+        b = {
+            'id' : bid,
+            'syntenicRegions' : sr_refs,
+            'dataSet' : dsid,
+            }
+        return b
