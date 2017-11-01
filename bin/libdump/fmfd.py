@@ -61,7 +61,7 @@ MINES = {
     },
     "worm" : { 
 	"name" : "WormMine",
-        "url" : "http://www.wormbase.org/tools/wormmine", 
+        "url" : "http://intermine.wormbase.org/tools/wormmine",
 	"taxon" : 6239,
 	"organism" : "C. elegans",
     }}
@@ -180,7 +180,7 @@ class FriendlyMineFeatureDumper:
 	self.gids = set()
 	genes = self.get(n)
 	igenes = []
-	# Even though we query for the SOTerms attached to the Genes, we're going to ignore them
+	# Even though we should query for the SOTerms attached to the Genes, we're going to ignore them
 	# for now and force everything to have the gene SO term. This is because of variations in how
 	# SOTerms are used and extended by different mines.
 	self.ofd.write(self.ITMPLTS["SOTerm"] % {
@@ -256,7 +256,7 @@ class FriendlyMineFeatureDumper:
 	# the mines.
 	"Chromosome" : '''<query name="" model="genomic" view="Gene.chromosomeLocation.locatedOn.id Gene.chromosomeLocation.locatedOn.primaryIdentifier Gene.chromosomeLocation.locatedOn.name Gene.chromosomeLocation.locatedOn.length Gene.organism.id" longDescription="" sortOrder="Gene.chromosomeLocation.locatedOn.primaryIdentifier asc"> <constraint path="Gene.chromosomeLocation.locatedOn" type="Chromosome"/> <constraint path="Gene.organism.taxonId" op="=" value="%d"/> </query>''',
 
-	"Gene" : '''<query name="" model="genomic" view="Gene.id Gene.primaryIdentifier Gene.symbol Gene.name Gene.organism.id Gene.chromosomeLocation.id Gene.sequenceOntologyTerm.identifier Gene.sequenceOntologyTerm.id" longDescription="" sortOrder="Gene.primaryIdentifier asc" constraintLogic="A and B"> <join path="Gene.chromosomeLocation" style="OUTER"/> <constraint path="Gene.organism.taxonId" code="A" op="=" value="%d"/> <constraint path="Gene.primaryIdentifier" code="B" op="IS NOT NULL"/> </query>''',
+	"Gene" : '''<query name="" model="genomic" view="Gene.id Gene.primaryIdentifier Gene.symbol Gene.name Gene.organism.id Gene.chromosomeLocation.id" longDescription="" sortOrder="Gene.primaryIdentifier asc" constraintLogic="A and B"> <join path="Gene.chromosomeLocation" style="OUTER"/> <constraint path="Gene.organism.taxonId" code="A" op="=" value="%d"/> <constraint path="Gene.primaryIdentifier" code="B" op="IS NOT NULL"/> </query>''',
 
 	"Location" : '''<query name="" model="genomic" view="Gene.chromosomeLocation.id Gene.chromosomeLocation.locatedOn.id Gene.chromosomeLocation.start Gene.chromosomeLocation.end Gene.chromosomeLocation.strand Gene.id" longDescription="" constraintLogic="A and B"> <constraint path="Gene.organism.taxonId" code="A" op="=" value="%d"/> <constraint path="Gene.primaryIdentifier" code="B" op="IS NOT NULL"/> </query>''',
 
