@@ -187,6 +187,7 @@ class DumperContext:
         self.annotationComments = {}
 
     # query based on PrivateRefSet.py in femover
+    #   the Reference Type Key 31576687 is 'Peer Reviewed Article' (_vocab_key = 131)
     def loadUnciteablePubs(self):
        q = '''select br._Refs_key as _refs_key
               from BIB_Refs br, ACC_Accession acc
@@ -194,14 +195,8 @@ class DumperContext:
               and acc._MGIType_key = 1
               and acc.prefixPart = 'J:'
               and acc._LogicalDB_key = 1
-              and 
-              ( br.journal ilike 'database%'
-               or    br.journal ilike 'personal%'
-               or br.journal ilike 'Genbank Submission'
-               or br.refType = 'BOOK'
-               or  br.journal ilike '%Data Submission%'
-               or ( br.journal is null and br._ReviewStatus_key = 2)
-              )'''
+              and br._referencetype_key != 31576687
+              '''
        for r in db.sql(q):
          self.unciteablePubs[r['_refs_key']] = 1;
 

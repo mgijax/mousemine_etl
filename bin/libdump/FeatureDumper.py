@@ -373,6 +373,7 @@ MCV2ClassName = {
     'Robertsonian fusion'	: ('ChromosomeStructureVariation',	'SO:1000043'),
     'rRNA gene'			: ('Gene',				'SO:0001637'),
     'scRNA gene'		: ('Gene',				'SO:0001266'),
+    'sense intronic lncRNA gene': ('Gene',                              'SO:0002184'),
     'snoRNA gene'		: ('Gene',				'SO:0001267'),
     'snRNA gene'		: ('Gene',				'SO:0001268'),
     'SRP RNA gene'		: ('Gene',				'SO:0001269'),
