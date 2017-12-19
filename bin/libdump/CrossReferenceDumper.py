@@ -16,7 +16,7 @@ class CrossReferenceDumper(AbstractItemDumper):
       <reference name="source" ref_id="%(source)s" />
       </item>
     '''
-    def __init__(self, context, mgiTypeKeys=[1,2,10,11], ldbKeys=None, notLdbKeys=[1] ):
+    def __init__(self, context, mgiTypeKeys=[1,2,10,11], ldbKeys=None, notLdbKeys=[1], emptyAccid="\'\'"):
         AbstractItemDumper.__init__(self, context)
 
 	def fmt(ks):
@@ -29,6 +29,8 @@ class CrossReferenceDumper(AbstractItemDumper):
 	    clauses.append('a._logicaldb_key in (%s)'%fmt(ldbKeys))
 	if notLdbKeys:
 	    clauses.append('a._logicaldb_key not in (%s)'%fmt(notLdbKeys))
+        if emptyAccid:
+            clauses.append('a.accid != (%s)'%emptyAccid)
 	self.whereClause = ''
 	if clauses:
 	    self.whereClause = 'WHERE %s' % (' AND '.join(clauses))
