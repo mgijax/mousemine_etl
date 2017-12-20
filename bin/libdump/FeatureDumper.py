@@ -334,6 +334,7 @@ MCV2ClassName = {
     'antisense lncRNA gene'	: ('Gene',				'SO:0001904'),
     'BAC end'			: ('Read',				'SO:0000999'),
     'BAC/YAC end'		: ('Read',				'SO:0000150'),
+    'bidirectional promoter lncRNA gene': ('Gene',			'SO:0002185'),
     'chromosomal deletion'	: ('ChromosomeStructureVariation',	'SO:1000029'),
     'chromosomal duplication'	: ('ChromosomeStructureVariation',	'SO:1000037'),
     'chromosomal inversion'	: ('ChromosomeStructureVariation',	'SO:1000030'),
@@ -374,6 +375,7 @@ MCV2ClassName = {
     'rRNA gene'			: ('Gene',				'SO:0001637'),
     'scRNA gene'		: ('Gene',				'SO:0001266'),
     'sense intronic lncRNA gene': ('Gene',                              'SO:0002184'),
+    'sense overlapping lncRNA gene': ('Gene',                           'SO:0002132'),
     'snoRNA gene'		: ('Gene',				'SO:0001267'),
     'snRNA gene'		: ('Gene',				'SO:0001268'),
     'SRP RNA gene'		: ('Gene',				'SO:0001269'),
@@ -381,6 +383,7 @@ MCV2ClassName = {
     'telomere'			: ('OtherGenomeFeature',		'SO:0000624'),
     'transgene'			: ('Transgene',				'SO:0000902'),
     'tRNA gene'			: ('Gene',				'SO:0001272'),
+    'TSS region'		: ('OtherGenomeFeature',		'SO:0001240'),
     'unclassified cytogenetic marker'	: \
     				  ('ChromosomeStructureVariation',	'SO:1000183'),
     'unclassified gene'		: ('Gene',				'SO:0000704'),

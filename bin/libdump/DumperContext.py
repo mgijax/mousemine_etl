@@ -145,6 +145,7 @@ class DumperContext:
             'DirectedRelationshipProperty' : 10023,
 	    'Protein'			: 10024,
             'Comment'                   : 10025,
+            'SyntenyBlock'              : 10026,
 	    })
 
 	# load MGI datadump timestamp from the database
