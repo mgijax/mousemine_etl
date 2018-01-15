@@ -339,7 +339,7 @@ MCV2ClassName = {
     'chromosomal duplication'	: ('ChromosomeStructureVariation',	'SO:1000037'),
     'chromosomal inversion'	: ('ChromosomeStructureVariation',	'SO:1000030'),
     'chromosomal translocation'	: ('ChromosomeStructureVariation',	'SO:1000044'),
-    'chromosomal transposition'	: ('ChromosomeStructureVariation',	'SO:1000453'),
+    'chromosomal transposition'	: ('ChromosomeStructureVariation',	'SO:0000453'),
     'complex/cluster/region'	: ('ComplexClusterRegion',		'SO:0000110'),
     'CpG island'		: ('OtherGenomeFeature',		'SO:0000307'),
     'cytogenetic marker'	: ('ChromosomeStructureVariation',	'SO:1000183'),
