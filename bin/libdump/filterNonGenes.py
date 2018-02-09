@@ -80,13 +80,16 @@ class HomologeneFilter(LineByLineFilter):
 # Panther: tab delimited file of pairs. Two genes per line, in columns 1 and 2.
 class PantherFilter(LineByLineFilter):
     def _test1(self, field):
+	# Only filtering mouse
+	if not field.startswith('MOUSE'):
+	    return True
 	# Panther mostly uses MGI ids for mouse, but some line use Ensembl id.
 	id = None
 	if field.startswith('MOUSE|MGI'):
 	    id = field.split(PIPE)[1].replace("MGI=MGI=", "MGI:")
 	elif field.startswith('MOUSE|Ensembl'):
 	    id = field.split(PIPE)[1].replace("Ensembl=","")
-	return id is None or id in self.validIds
+	return id in self.validIds
 
     def test(self, line):
 	# have to test both fields. Both must pass for the line to pass.
