@@ -21,13 +21,29 @@ class StrainDumper(AbstractItemDumper):
       <attribute name="symbol" value="%(symbol)s" />
       <attribute name="name" value="%(name)s" />
       <attribute name="strainType" value="%(straintype)s" />
+      <collection name="publications">%(publications)s</collection>
       </item>
     '''
+    def loadStrainPubs(self):
+        self.sk2pk = {}
+	q='''
+	SELECT ra._refs_key, ra._object_key as "_strain_key"
+	FROM MGI_Reference_Assoc ra
+	WHERE ra._refassoctype_key in (%s)
+	''' % ','.join([ str(x) for x in self.context.QUERYPARAMS['STRAIN_REFASSOCTYPE_KEYS']])
+	for r in self.context.sql(q):
+	    self.sk2pk.setdefault( r['_strain_key'], []).append(self.context.makeItemRef('Reference', r['_refs_key']))
+
+    def preDump(self):
+        self.loadStrainPubs()
+
     def processRecord(self, r):
-	r['id'] = self.context.makeItemId('Strain', r['_strain_key'])
+	sk = r['_strain_key']
+	r['id'] = self.context.makeItemId('Strain', sk)
 	r['organism'] = self.context.makeItemRef('Organism', 1) # mouse
 	r['name'] = self.quote(r['name'])
 	r['symbol'] = r['name']
 	r['straintype'] = self.quote(r['straintype'])
+	r['publications'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.sk2pk.get(sk,[])])
         return r
 

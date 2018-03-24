@@ -73,6 +73,9 @@ class DumperContext:
 	    # Annotation type keys
 	    'ALLELE_ATTRIBUTE_AKEY' : 1014,
 
+	    # MGI_Reference_Assoc, _refassoctype_keys
+	    'STRAIN_REFASSOCTYPE_KEYS' : [1009,1010],
+
 	    # Feature relationship category keys 
 	    'ALL_FR_CATEGORY_KEYS' : [1002,1003,1004,1001],
 	    'ALL_FR_NAME_MAP' : {
