@@ -18,7 +18,6 @@ class StrainDumper(AbstractItemDumper):
     <item class="Strain" id="%(id)s" >
       <reference name="organism" ref_id="%(organism)s" />
       <attribute name="primaryIdentifier" value="%(accid)s" />
-      <attribute name="symbol" value="%(symbol)s" />
       <attribute name="name" value="%(name)s" />
       <attribute name="strainType" value="%(straintype)s" />
       <collection name="publications">%(publications)s</collection>
@@ -42,7 +41,6 @@ class StrainDumper(AbstractItemDumper):
 	r['id'] = self.context.makeItemId('Strain', sk)
 	r['organism'] = self.context.makeItemRef('Organism', 1) # mouse
 	r['name'] = self.quote(r['name'])
-	r['symbol'] = r['name']
 	r['straintype'] = self.quote(r['straintype'])
 	r['publications'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.sk2pk.get(sk,[])])
         return r
