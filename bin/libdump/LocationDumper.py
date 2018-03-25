@@ -30,9 +30,11 @@ class LocationDumper(AbstractItemDumper):
 
 	r['markerid'] = self.context.makeItemRef('Marker', r['_marker_key'])
 	r['chromosomeid'] = self.context.makeItemRef('Chromosome', r['_chromosome_key'])
-	# Intermine note: standard is for strand to be "+1" or "-1"
-	if r['strand'] in ["+","-"]:
-	    r['strand'] += '1'
+	# Intermine note: standard is for strand to be "1" or "-1"
+	if r['strand'] == '+':
+	    r['strand'] = '1'
+	elif r['strand'] == '-':
+	    r['strand'] = '-1'
 	else:
 	    r['strand'] = '0'
 	# Sanity checks.
