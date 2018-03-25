@@ -112,7 +112,16 @@ class PublicationDumper(AbstractItemDumper):
     def processRecord(self,r):
 	attrs = []
 	rk = r['_refs_key']
-	r['id'] = self.context.makeItemId('Reference', r['_refs_key'])
+	####
+	# FIXME: temporary hack due to data error in MGI. A publication exists with two primary J#s. This causes
+	# the query to return 2 rows for that pub, which causes the following the throw a duplicate key error.
+	# For now, allow the error so we can get on with things. 
+	# TODO: once MGI data are fixed, revert to throwing an error
+	try:
+	    r['id'] = self.context.makeItemId('Reference', r['_refs_key'])
+	except DumperContext.DuplicateIdError:
+	    return None 
+	####
 	#---------------------------------------
 	r['pubMedId'] = self.rk2pmid.get(rk, None)
 	r['doi'] = self.rk2doi.get(rk, None)
