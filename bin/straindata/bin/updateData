@@ -5,22 +5,8 @@
 # Main script for building/updating the data files used by the viewer.
 #
 
-export ENSEMBLRELEASE=91
-export BASEURL=ftp://ftp.ensembl.org/pub/release-${ENSEMBLRELEASE}/gff3
-
 export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ".." && pwd )"
-export BDIR="${DIR}/bin"
-export WDIR="${DIR}/work"
-export DDIR="${DIR}/downloads"
-export GDIR="${DIR}/gff"
-#
-export LOGFILE="${WDIR}/LOG"
-#
-export STRAINS="${BDIR}/strains.tsv"
-export MAPPINGFILE="${WDIR}/mgiMapping.tsv"
-export VALIDIDFILE="${WDIR}/mgiIds.tsv"
-#
-source "${BDIR}/utils.sh"
+source "${DIR}/bin/config.sh"
 
 function download {
    strain=$1
@@ -36,8 +22,12 @@ function prepFile {
     strain=$1
     fname=$2
     gname=$3
-    gunzip -c "${fname}" | python prepMgpGffFile.py -s "${strain}" -v ${VALIDIDFILE} -m ${MAPPINGFILE} > "${gname}" 2>>${LOGFILE}
+    smpname=$4
+    logit "Converting ${fname} to ${gname}"
+    gunzip -c "${fname}" | python prepGffFile.py -s "${strain}" -v ${VALIDIDFILE} -m ${MAPPINGFILE} > "${gname}" 2>>${LOGFILE}
     checkExit
+    logit "Creating sample ${smpname} from ${gname}"
+    python makeSamples.py < ${gname} > "${smpname}" 2>>${LOGFILE}
 }
 
 function summarize {
@@ -59,7 +49,9 @@ function main {
     mkdir -p ${WDIR}; checkExit
     mkdir -p ${DDIR}; checkExit
     mkdir -p ${GDIR}; checkExit
+    mkdir -p ${SDIR}; checkExit
     #
+    #rm -f ${LOGFILE}
     touch ${LOGFILE}
     logit "=========================================="
     logit "Starting MGP GFF3 file preparation script."
@@ -80,9 +72,10 @@ function main {
 	fname=`basename ${url}`
 	fname="${DDIR}/${fname}"
 	gname="${GDIR}/${sfname}.gff3"
+	smpname="${SDIR}/${sfname}.sample.gff3"
         logit "Strain=" "${strain}"
 	download "${strain}" "${url}" "${fname}"
-	prepFile "${strain}" "${fname}" "${gname}"
+	prepFile "${strain}" "${fname}" "${gname}" "${smpname}"
     done 10<${STRAINS}
     # summarize the results
     summarize ${GDIR}/*.gff3
