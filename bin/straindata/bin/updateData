@@ -6,6 +6,9 @@
 #
 
 export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ".." && pwd )"
+export ODIR="$1"
+export LOGFILE="$2"
+
 source "${DIR}/bin/config.sh"
 
 function download {
@@ -24,21 +27,16 @@ function prepFile {
     gname=$3
     smpname=$4
     logit "Converting ${fname} to ${gname}"
-    gunzip -c "${fname}" | python prepGffFile.py -s "${strain}" -v ${VALIDIDFILE} -m ${MAPPINGFILE} > "${gname}" 2>>${LOGFILE}
+    gunzip -c "${fname}" | python ${BDIR}/prepGffFile.py -s "${strain}" -v ${VALIDIDFILE} -m ${MAPPINGFILE} > "${gname}" 2>>${LOGFILE}
     checkExit
     logit "Creating sample ${smpname} from ${gname}"
-    python makeSamples.py < ${gname} > "${smpname}" 2>>${LOGFILE}
+    python ${BDIR}/makeSamples.py < ${gname} > "${smpname}" 2>>${LOGFILE}
+    checkExit
 }
 
 function summarize {
     logit "Summarizing output files..."
     logit $*
-    logit "Distinct chromosomes..."
-    grep -v "#" $* | cut -f 1 | sort | uniq > ${WDIR}/chromosomes.txt
-    checkExit
-    logit "Distinct column 3 types..."
-    grep -v "#" $* | cut -f 3 | sort | uniq > ${WDIR}/types.txt
-    checkExit
     logit "Distinct types and biotypes (col 3 and col 9)..."
     grep -v "#" $* | grep biotype | cut -f 3,9 | sed "s/        .*biotype=\([^;]*\).*/    \1/" | sort | uniq > ${WDIR}/types_biotypes.txt
     checkExit
@@ -46,21 +44,22 @@ function summarize {
 
 function main {
     # setup
+    mkdir -p ${ODIR}; checkExit
     mkdir -p ${WDIR}; checkExit
     mkdir -p ${DDIR}; checkExit
     mkdir -p ${GDIR}; checkExit
     mkdir -p ${SDIR}; checkExit
     #
     #rm -f ${LOGFILE}
-    touch ${LOGFILE}
+    #touch ${LOGFILE}
     logit "=========================================="
     logit "Starting MGP GFF3 file preparation script."
     # generate file of valid MGI IDs
     logit "Generating valid MGI id..."
-    python getValidMgiIds.py > ${VALIDIDFILE}; checkExit
+    python ${BDIR}/getValidMgiIds.py > ${VALIDIDFILE} 2>>${LOGFILE}; checkExit
     # generate secondary-to-primary mapping file for MGI ids
     logit "Generating MGI ID mapping file..."
-    python getSecondaryIdMapping.py > ${MAPPINGFILE}; checkExit
+    python ${BDIR}/getSecondaryIdMapping.py > ${MAPPINGFILE} 2>>${LOGFILE}; checkExit
     # loop through the strains config table
     logit "Starting loop..."
     while read -u 10 p; do
