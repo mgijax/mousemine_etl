@@ -2,7 +2,7 @@
 export ENSEMBLRELEASE=91
 export BASEURL=ftp://ftp.ensembl.org/pub/release-${ENSEMBLRELEASE}/gff3
 #
-export BDIR="${DIR}/bin"
+export BDIR="${DIR}"
 if [ "${ODIR}" == "" ] ; then
     export ODIR="${DIR}/output"
     export WDIR="${ODIR}/work"

@@ -5,11 +5,10 @@
 # Main script for building/updating the data files used by the viewer.
 #
 
-export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ".." && pwd )"
+export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export ODIR="$1"
 export LOGFILE="$2"
-
-source "${DIR}/bin/config.sh"
+source "${DIR}/config.sh"
 
 function download {
    strain=$1
