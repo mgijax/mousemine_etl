@@ -4,7 +4,7 @@ MGI:2159745	AKR/J	mus_musculus_akrj	ftp://ftp.ensembl.org/pub/release-91/gff3/mu
 MGI:2159737	BALB/cJ	mus_musculus_balbcj	ftp://ftp.ensembl.org/pub/release-91/gff3/mus_musculus_balbcj/Mus_musculus_balbcj.BALB_cJ_v1.86.gff3.gz
 MGI:2159741	C3H/HeJ	mus_musculus_c3hhej	ftp://ftp.ensembl.org/pub/release-91/gff3/mus_musculus_c3hhej/Mus_musculus_c3hhej.C3H_HeJ_v1.86.gff3.gz
 MGI:3056279	C57BL/6NJ	mus_musculus_c57bl6nj	ftp://ftp.ensembl.org/pub/release-91/gff3/mus_musculus_c57bl6nj/Mus_musculus_c57bl6nj.C57BL_6NJ_v1.86.gff3.gz
-MGI:3028467	C57BL/6J	mus_musculus_c57bl6j	file:///home/jer/MGI.gff3.gz
+MGI:3028467	C57BL/6J	mus_musculus_c57bl6j	http://www.informatics.jax.org/downloads/mgigff3/MGI.gff3
 MGI:2165136	CAROLI/EiJ	mus_caroli	ftp://ftp.ensembl.org/pub/release-91/gff3/mus_caroli/Mus_caroli.CAROLI_EIJ_v1.1.90.gff3.gz
 MGI:2159793	CAST/EiJ	mus_musculus_casteij	ftp://ftp.ensembl.org/pub/release-91/gff3/mus_musculus_casteij/Mus_musculus_casteij.CAST_EiJ_v1.86.gff3.gz
 MGI:2159756	CBA/J	mus_musculus_cbaj	ftp://ftp.ensembl.org/pub/release-91/gff3/mus_musculus_cbaj/Mus_musculus_cbaj.CBA_J_v1.86.gff3.gz
