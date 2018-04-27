@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -v
 #
 # Update data
 #
@@ -20,7 +20,16 @@ function download {
    #
 }
 
-function prepFile {
+function prepFasta {
+    strain=$1
+    fsrc=$2
+    fdst=$3
+    logit "Uncompressing ${fsrc} into ${fdst}"
+    gunzip -c "${fsrc}" | python ${BDIR}/prepFastaFile.py "${strain}" > "${fdst}"
+    checkExit
+}
+
+function prepGff {
     strain=$1
     fname=$2
     gname=$3
@@ -45,14 +54,16 @@ function main {
     # setup
     mkdir -p ${ODIR}; checkExit
     mkdir -p ${WDIR}; checkExit
-    mkdir -p ${DDIR}; checkExit
+    mkdir -p ${DGDIR}; checkExit
+    mkdir -p ${DFDIR}; checkExit
     mkdir -p ${GDIR}; checkExit
     mkdir -p ${SDIR}; checkExit
+    mkdir -p ${FDIR}; checkExit
     #
     #rm -f ${LOGFILE}
     #touch ${LOGFILE}
     logit "=========================================="
-    logit "Starting MGP GFF3 file preparation script."
+    logit "Starting strain genomes GFF3 file preparation script."
     # generate file of valid MGI IDs
     logit "Generating valid MGI id..."
     python ${BDIR}/getValidMgiIds.py > ${VALIDIDFILE} 2>>${LOGFILE}; checkExit
@@ -60,20 +71,40 @@ function main {
     logit "Generating MGI ID mapping file..."
     python ${BDIR}/getSecondaryIdMapping.py > ${MAPPINGFILE} 2>>${LOGFILE}; checkExit
     # loop through the strains config table
-    logit "Starting loop..."
+    logit "Reading strains from ${STRAINS}..."
     while read -u 10 p; do
 	IFS='	' read -r -a array <<< "${p}"
-	strainid="${array[0]}"
-	strain="${array[1]}"
-	sfname="${array[2]}"
-	url="${array[3]}"
-	fname=`basename ${url}`
-	fname="${DDIR}/${fname}"
-	gname="${GDIR}/${sfname}.gff3"
-	smpname="${SDIR}/${sfname}.sample.gff3"
-        logit "Strain=" "${strain}"
-	download "${strain}" "${url}" "${fname}"
-	prepFile "${strain}" "${fname}" "${gname}" "${smpname}"
+	#
+	strainid="${array[0]}"		# MGI:2160671
+	strainname="${array[1]}"	# SPRET/EiJ
+	localname="${array[2]}"		# mus_spretus_spreteij
+	gffurl=`eval echo "${array[3]}"` # ftp://ftp.ensembl ... /Mus_spretus_spreteij.SPRET_EiJ_v1.92.gff3.gz
+	faurl=`eval echo "${array[4]}"` # ftp://ftp.ensembl ... /Mus_spretus_spreteij.SPRET_EiJ_v1.dna_rm.toplevel.fa.gz
+	#
+	#echo "strain id = ${strainid}"
+	#echo ${strainname}
+	#echo ${localname}
+	#echo ${gffurl}
+	#echo ${faurl}
+	#echo
+	#
+	gfname=`basename ${gffurl}`	# Mus_spretus_spreteij.SPRET_EiJ_v1.92.gff3.gz
+	gfname="${DGDIR}/${gfname}"		# .../downloads/gff3/Mus_spretus_spreteij.SPRET_EiJ_v1.92.gff3.gz
+	gfname2="${GDIR}/${localname}.gff3"	# .../latest/gff3/mus_spretus_spreteij.gff3
+	gfname3="${SDIR}/${sfname}.sample.gff3"	# .../gff3.samples/mus_spretus_spreteij.sample.gff3
+	#
+        logit "Strain=${strainname}, GFF"
+	download "${strainname}" "${gffurl}" "${gfname}"
+	prepGff "${strainname}" "${gfname}" "${gfname2}" "${gfname3}"
+	#
+	fafname=`basename ${faurl}`	# Mus_spretus_spreteij.SPRET_EiJ_v1.dna_rm.toplevel.fa.gz
+	fafname="${DFDIR}/${fafname}"	# .../downloads/fasta/Mus_spretus_spreteij.SPRET_EiJ_v1.dna_rm.toplevel.fa.gz
+	fafname2="${FDIR}/${localname}.fa"
+	#
+        logit "Strain=${strainname}, FASTA"
+	download "${strainname}" "${faurl}" "${fafname}"
+	prepFasta "${strainname}" "${fafname}" "${fafname2}"
+
     done 10<${STRAINS}
     # summarize the results
     summarize ${GDIR}/*.gff3

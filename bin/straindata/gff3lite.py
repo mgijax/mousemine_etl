@@ -4,7 +4,7 @@
 
 import types
 
-#
+# Character constants
 TAB	= '\t'
 NL	= '\n'
 SEMI	= ';'
@@ -12,7 +12,7 @@ EQ	= '='
 HASH	= '#'
 BANG	= '!'
 COMMA	= ','
-#
+# GFF3 field index constants
 SEQID	= 0
 SOURCE	= 1
 TYPE	= 2
@@ -56,9 +56,10 @@ def iterate(fileIn, yieldHeader=True, yieldGroups=True):
     while line.startswith(HASH):
         header.append(line[:-1])
 	line = fin.next()
+    # yield the header, if requested
     if yieldHeader:
         yield header
-    firstGroup = True
+    # main loop
     currGroup = []
     while line:
         line = line[:-1]
