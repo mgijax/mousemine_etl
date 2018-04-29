@@ -22,10 +22,11 @@ function download {
 
 function prepFasta {
     strain=$1
-    fsrc=$2
-    fdst=$3
-    logit "Uncompressing ${fsrc} into ${fdst}"
-    gunzip -c "${fsrc}" | python ${BDIR}/prepFastaFile.py "${strain}" > "${fdst}"
+    localname=$2
+    fsrc=$3
+    odir=$4
+    logit "Strain ${strain}: uncompressing ${fsrc} into ${odir}/${localname}.chromosome.*.fa"
+    gunzip -c "${fsrc}" | python ${BDIR}/prepFastaFile.py -i - -s "${strain}" -l "${localname}" -o "${odir}" 2>>${LOGFILE}
     checkExit
 }
 
@@ -103,7 +104,7 @@ function main {
 	#
         logit "Strain=${strainname}, FASTA"
 	download "${strainname}" "${faurl}" "${fafname}"
-	prepFasta "${strainname}" "${fafname}" "${fafname2}"
+	prepFasta "${strainname}" "${localname}" "${fafname}" "${FDIR}"
 
     done 10<${STRAINS}
     # summarize the results
