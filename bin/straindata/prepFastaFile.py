@@ -60,18 +60,20 @@ class FastaPrepper:
 	self.log("prepFastaFile: writing to " + ofname)
 
     #
+    # This is the core of the algorithm. Here is where we decided whether to
+    # include a sequence from the FASTA file or not, where we make any alterations
+    # to the header line, and where we set up the output file for the sequence.
     # Example header:
     # >6 dna_rm:chromosome chromosome:GRCm38:6:1:149736546:1 REF
     #
     def processHeaderLine(self, line):
-	if not "chromosome" in line:
+	bits = line.split()
+	chrom=bits[0][1:]	# strip off the '>'
+	if not "chromosome" in line or len(chrom) > 2:
 	    if self.ofd:
 	        self.ofd.close()
 		self.ofd = None
 	    return line
-	bits = line.split()
-	#
-	chrom=bits[0][1:]	# strip off the '>'
 	self.openOutput(chrom)
 	#
 	bits[0] = '>' + chrom + "|" + self.args.strainName
