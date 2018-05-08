@@ -43,14 +43,6 @@ function prepGff {
     checkExit
 }
 
-function summarize {
-    logit "Summarizing output files..."
-    logit $*
-    logit "Distinct types and biotypes (col 3 and col 9)..."
-    grep -v "#" $* | grep biotype | cut -f 3,9 | sed "s/        .*biotype=\([^;]*\).*/    \1/" | sort | uniq > ${WDIR}/types_biotypes.txt
-    checkExit
-}
-
 function main {
     # setup
     mkdir -p ${ODIR}; checkExit
@@ -107,8 +99,6 @@ function main {
 	prepFasta "${strainname}" "${localname}" "${fafname}" "${FDIR}"
 
     done 10<${STRAINS}
-    # summarize the results
-    summarize ${GDIR}/*.gff3
     logit "Done. No errors detected."
 }
 
