@@ -1,12 +1,12 @@
 #
 # prepMgpGffFile.py
 #
-#    python prepMgpGffFile.py -s STRAIN 
+#    python prepMgpGffFile.py -s STRAIN -v VALID_ID_FILE -m ID_MAP_FILE < INPUT > OUPUT
 #
-# Performs specific file preprocessing for loading the MGP strain GFF files.
+# Performs specific file preprocessing for loading the strain-specific GFF files.
 # - adds strain name to column 9
 # - adds IDs to exons and UTRs
-# - removes feature of type biological_region and chromosome
+# - removes features of type biological_region and chromosome
 # - corrects type (column 3) errors:
 #   * NMD_transcript_variant should be NMD_transcript
 #   * RNA at gene level should be ncRNA_gene
@@ -47,7 +47,14 @@ def log (s):
     sys.stderr.write(s+NL)
 
 #
-class MgpGffPrep:
+def partition(lst, f):
+    d = {}
+    for elt in lst:
+        val = f(elt)
+	d.setdefault(val,[]).append(elt)
+    return d
+#
+class GffPrep:
     #
     def __init__(self):
 	#
@@ -79,7 +86,10 @@ class MgpGffPrep:
 
     #-------------------------------------------------
     # Process MGI feature group. Have to turn a model as output by the MGI GFF3 process
-    # into a model as needed by the strain loaded.
+    # into a file as needed by the gff3 loader for mousemine.
+    # Loader expects:
+    #   - mgi_id attribute in col 9 of root features contains MGI id of canonical gene (if any)
+    #   - a valid SO type in col 3 => becomes the class of the loaded object
     #
     def processMGIFeatureGroup(self, grp):
 	#
@@ -183,7 +193,7 @@ class MgpGffPrep:
 	if f[gff3.TYPE] == 'gene' and attrs.get('biotype','') == 'protein_coding':
 	    f[gff3.TYPE] = 'protein_coding_gene'
 	#
-	# make sure exons and UTRs have IDs
+	# make sure exons, UTRs, etc have IDs
 	if 'ID' not in attrs:
 	    if f[gff3.TYPE] == 'exon' and 'exon_id' in attrs:
 		attrs['ID'] = attrs['exon_id']
@@ -288,8 +298,43 @@ class MgpGffPrep:
 	    self.fout.write(line+NL)
     #
     def processFeatureGroup(self, grp):
-	for feat in  filter(None, map(lambda f: self.processFeature(f), grp)):
+	# prep each record and remove any Nones
+	grp = filter(None, map(lambda f: self.processFeature(f), grp))
+	# partition into exons and non-exons
+	pp = partition(grp, lambda f: f[gff3.TYPE] == "exon")
+	# write out the non-exons first
+	for feat in pp.get(False,[]):
 	    self.fout.write(gff3.formatLine(feat) + NL)
+	#
+	# reduce the exons. MGP GFF3 files have the following quirk: a given exon appears once for 
+	# in which it is included. Each occurrence is on a separate line. They all have the same coordinates,
+	# and ID. The only diff is the Parent, which is the particular transcript ID for that occurrence.
+	# Official GFF3 spec sez there should be a single exon feature, with a comma separated list of 
+	# transcript IDs in the Parent field. Ie, what we get from MGP:
+	#
+	# 1  MGP  exon  10 20 . + . ID=exon1;Parent=transcript1
+	# 1  MGP  exon  10 20 . + . ID=exon1;Parent=transcript2
+	# 1  MGP  exon  10 20 . + . ID=exon1;Parent=transcript3
+	#
+	# What we want instead:
+	#
+	# 1  MGP  exon  10 20 . + . ID=exon1;Parent=transcript1,transcript2,transcript3
+	#
+	exons = {}
+	eidOrder = []
+	for feat in pp.get(True,[]):
+	    fid = feat[gff3.ATTRIBUTES]['ID']
+	    if fid not in exons:
+		exons[fid] = feat
+		eidOrder.append(fid)
+	    else:
+	        f2 = exons[fid]
+		f2[gff3.ATTRIBUTES]['Parent'] += ("," + feat[gff3.ATTRIBUTES]['Parent'])
+	#
+	for eid in eidOrder:
+	    feat = exons[eid]
+	    self.fout.write(gff3.formatLine(feat) + NL)
+	#
 	self.fout.write(gff3.GFF3SEPARATOR + NL)
     #
     def main(self):
@@ -306,6 +351,6 @@ class MgpGffPrep:
 ####
 
 if __name__ == "__main__":
-    MgpGffPrep().main()
+    GffPrep().main()
 
 ####
