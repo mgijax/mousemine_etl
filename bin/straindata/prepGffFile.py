@@ -38,10 +38,10 @@ class IdGenerator:
     def __init__(self):
         self.counts = {}
 
-    def __call__(self, tp):
-        val = self.counts.setdefault(tp, 1)
-	self.counts[tp] += 1
-	return '%s_%d' % (tp, val)
+    def __call__(self, prefix):
+        val = self.counts.setdefault(prefix, 1)
+	self.counts[prefix] += 1
+	return '%s_%d' % (prefix, val)
 #
 def log (s):
     sys.stderr.write(s+NL)
@@ -198,7 +198,10 @@ class GffPrep:
 	    if f[gff3.TYPE] == 'exon' and 'exon_id' in attrs:
 		attrs['ID'] = attrs['exon_id']
 	    else:
-		attrs['ID'] = self.idGen(f[gff3.TYPE])
+		tp = f[gff3.TYPE].split('_')[-1]  # use an abbreviated type
+		strain = self.args.strain.replace('/', '_') # prepend strain name
+		prefix = "%s_%s" % (strain,tp)
+		attrs['ID'] = self.idGen(prefix)
 	else:
 	    # strip leading prefix from ID
 	    attrs['ID'] = self.stripPrefix(attrs['ID'])
