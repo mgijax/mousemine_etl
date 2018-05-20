@@ -2,7 +2,6 @@
 export ENSEMBL_GFFURL=ftp://ftp.ensembl.org/pub/current_gff3
 export ENSEMBL_FASTAURL=ftp://ftp.ensembl.org/pub/current_fasta
 export ENS_VER=92
-#export ENS_DNA_OBJ="chromosome.6"
 export ENS_DNA_OBJ="toplevel"
 
 export MGI_GFFURL=http://www.informatics.jax.org/downloads/mgigff3
