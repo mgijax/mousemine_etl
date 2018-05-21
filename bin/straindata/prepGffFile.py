@@ -26,8 +26,6 @@ EXCLUDE_TYPES = [
   "biological_region",
   "supercontig",
   "chromosome",
-  "match",
-  "match_part",
   ]
 
 #
@@ -97,46 +95,43 @@ class GffPrep:
 	mgiid = None
 	newid = None
 	source = None
-	# loop thru the feature in the groups
+	# loop thru the features in the group
 	for i,f in enumerate(grp):
 	    #print ">>>", f
+	    #
+	    # if type is in exclude list, skip it
+	    if f[gff3.TYPE] in EXCLUDE_TYPES:
+	        continue
+	    #
 	    attrs = f[gff3.ATTRIBUTES]
 	    newattrs = {}
 	    fid = attrs['ID']
 	    if i==0 :
 		# grp[0] is the top level feature
-		if f[gff3.TYPE] in EXCLUDE_TYPES:
-		    return
 	        mgiid = fid
 		newattrs['mgi_id'] = mgiid
-		# find the dbxref to use as ID
-		newid = self.chooseId(f)
-		if newid is None: 
-		    continue
-		source = newid.split(':',1)[0]
-		newid = newid.split(':',1)[1]
+		newid = mgiid.replace('MGI:', 'MGI_C57BL6J_')
 		self.idMapping[mgiid] = newid
 		newattrs['ID'] = newid
-		f[gff3.SOURCE] = source
+		f[gff3.SOURCE] = 'MGI'
 		f[gff3.TYPE] = attrs['so_term_name']
-	    elif f[gff3.SOURCE] == source:
+	    else:
 		tp = f[gff3.TYPE]
 		p = attrs['Parent']
 		pid = newattrs['Parent'] = self.idMapping.get(p,p)
 		if tp == 'exon':
 		    newattrs['ID'] = attrs.get('exon_id', fid.replace(mgiid, pid))
 		elif tp == 'CDS':
-		    newattrs['ID'] = attrs['protein_id']
+		    newattrs['ID'] = attrs.get('protein_id', fid)
 		elif 'transcript_id' in attrs:
 		    tid = attrs['transcript_id']
 		    self.idMapping[fid] = tid
 		    newattrs['ID'] = tid
-	    else:
-	        continue
-	    #
-	    # if type is in exclude list, skip it
-	    if f[gff3.TYPE] in EXCLUDE_TYPES:
-	        continue
+		elif fid:
+		    newattrs['ID'] = fid
+		else:
+		    newattrs['ID'] = self.makeId(f)
+
 	    # add strain to every feature's col 9
 	    newattrs['strain'] = self.args.strain
 	    # append strain to chromosome
@@ -164,6 +159,13 @@ class GffPrep:
 	    ident = dbxrs.get(p, None)
 	    if ident: return p+':'+ident
 	return None
+
+    #-------------------------------------------------
+    def makeId(self, f):
+	tp = f[gff3.TYPE].split('_')[-1]  # use an abbreviated type
+	strain = self.args.strain.replace('/', '') # prepend strain name
+	prefix = "%s_%s" % (strain,tp)
+	return self.idGen(prefix)
 
     #-------------------------------------------------
     # Do all the munging needed for one GFF feature. 
@@ -198,10 +200,7 @@ class GffPrep:
 	    if f[gff3.TYPE] == 'exon' and 'exon_id' in attrs:
 		attrs['ID'] = attrs['exon_id']
 	    else:
-		tp = f[gff3.TYPE].split('_')[-1]  # use an abbreviated type
-		strain = self.args.strain.replace('/', '_') # prepend strain name
-		prefix = "%s_%s" % (strain,tp)
-		attrs['ID'] = self.idGen(prefix)
+		attrs['ID'] = self.makeId(f)
 	else:
 	    # strip leading prefix from ID
 	    attrs['ID'] = self.stripPrefix(attrs['ID'])
