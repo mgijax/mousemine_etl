@@ -1,10 +1,11 @@
 #
-# prepMgpGffFile.py
+# prepGffFile.py
 #
 #    python prepMgpGffFile.py -s STRAIN -v VALID_ID_FILE -m ID_MAP_FILE < INPUT > OUPUT
 #
 # Performs specific file preprocessing for loading the strain-specific GFF files.
-# - adds strain name to column 9
+# - appends strain to the chromosome id in col 1. E.g. "5" becomes "5|C3H/HeJ"
+# - adds strain name to column 9.
 # - adds IDs to exons and UTRs
 # - removes features of type biological_region and chromosome
 # - corrects type (column 3) errors:
@@ -69,6 +70,39 @@ class GffPrep:
 	self.args.isMGI = (self.args.strain == 'C57BL/6J')
 
     #-------------------------------------------------
+    #
+    def parseArgs(self):
+        self.parser = argparse.ArgumentParser(description='Prepare one GFF3 file from MGP.')
+	self.parser.add_argument(
+	    '-s',
+	    '--strain',
+	    metavar='strain',
+	    help='Strain name')
+	#self.parser.add_argument('-x', '--exclude', metavar='sotype', default=[], action='append', help='Col 3 types to exclude.')
+	self.parser.add_argument(
+	    '-v',
+	    '--validFile',
+	    dest="validfile",
+	    metavar='FILE', 
+	    default=None,
+	    help='File of valid MGI primary ids. Default=no id file. All encountered MGI ids considered valid.')
+	self.parser.add_argument(
+	    '-m',
+	    '--mappingFile',
+	    dest="mappingfile",
+	    metavar='FILE', 
+	    default=None,
+	    help='File of MGI primary and secondary ids. Two columns, tab delimited. Columns=primaryId, secondaryId. Default=no mapping file')
+
+	return self.parser.parse_args()
+
+    #-------------------------------------------------
+    # Given an input string (mgiid),
+    # (1) if it is a valid MGI feature id, returns it. 
+    # (2) else, if it is a valid former/secondary MGI feature id, returns the current id
+    # (3) else, returns None
+    # Cases 2 and 3 are logged.
+    #
     def processMgiId(self, mgiid):
 	v = None
 	if mgiid in self.validIds:
@@ -83,84 +117,7 @@ class GffPrep:
 	return v
 
     #-------------------------------------------------
-    # Process MGI feature group. Have to turn a model as output by the MGI GFF3 process
-    # into a file as needed by the gff3 loader for mousemine.
-    # Loader expects:
-    #   - mgi_id attribute in col 9 of root features contains MGI id of canonical gene (if any)
-    #   - a valid SO type in col 3 => becomes the class of the loaded object
-    #
-    def processMGIFeatureGroup(self, grp):
-	#
-	newgrp = []
-	mgiid = None
-	newid = None
-	source = None
-	# loop thru the features in the group
-	for i,f in enumerate(grp):
-	    #print ">>>", f
-	    #
-	    # if type is in exclude list, skip it
-	    if f[gff3.TYPE] in EXCLUDE_TYPES:
-	        continue
-	    #
-	    attrs = f[gff3.ATTRIBUTES]
-	    newattrs = {}
-	    fid = attrs['ID']
-	    if i==0 :
-		# grp[0] is the top level feature
-	        mgiid = fid
-		newattrs['mgi_id'] = mgiid
-		newid = mgiid.replace('MGI:', 'MGI_C57BL6J_')
-		self.idMapping[mgiid] = newid
-		newattrs['ID'] = newid
-		f[gff3.SOURCE] = 'MGI'
-		f[gff3.TYPE] = attrs['so_term_name']
-	    else:
-		tp = f[gff3.TYPE]
-		p = attrs['Parent']
-		pid = newattrs['Parent'] = self.idMapping.get(p,p)
-		if tp == 'exon':
-		    newattrs['ID'] = attrs.get('exon_id', fid.replace(mgiid, pid))
-		elif tp == 'CDS':
-		    newattrs['ID'] = attrs.get('protein_id', fid)
-		elif 'transcript_id' in attrs:
-		    tid = attrs['transcript_id']
-		    self.idMapping[fid] = tid
-		    newattrs['ID'] = tid
-		elif fid:
-		    newattrs['ID'] = fid
-		else:
-		    newattrs['ID'] = self.makeId(f)
-
-	    # add strain to every feature's col 9
-	    newattrs['strain'] = self.args.strain
-	    # append strain to chromosome
-	    f[gff3.SEQID] = "%s|%s" % (f[gff3.SEQID], self.args.strain)
-	    #
-	    f[gff3.ATTRIBUTES] = newattrs
-	    newgrp.append(f)
-	#
-	for f in newgrp:
-	    self.fout.write(gff3.formatLine(f) + NL)
-	if len(newgrp) > 0:
-	    self.fout.write(gff3.GFF3SEPARATOR + NL)
-
-    #-------------------------------------------------
-    def chooseId(self, f):
-        dbxrs = {}
-	dbxr = f[gff3.ATTRIBUTES].get('Dbxref',None)
-	if dbxr is None:
-	    return None
-	for dbx in dbxr.split(','):
-	    prefix,ident = dbx.strip().split(":",1)
-	    dbxrs[prefix] = ident
-	pref = ['ENSEMBL','miRBase','NCBI_Gene']
-	for p in pref:
-	    ident = dbxrs.get(p, None)
-	    if ident: return p+':'+ident
-	return None
-
-    #-------------------------------------------------
+    # Makes up an ID for a feature
     def makeId(self, f):
 	tp = f[gff3.TYPE].split('_')[-1]  # use an abbreviated type
 	strain = self.args.strain.replace('/', '') # prepend strain name
@@ -168,15 +125,14 @@ class GffPrep:
 	return self.idGen(prefix)
 
     #-------------------------------------------------
-    # Do all the munging needed for one GFF feature. 
-    # This is the heart of the file preparation step.
+    # Do all the munging needed for one MGP GFF feature. 
     # FIXME: totally hard coded at this point. Configify!
     # Args:
     #    f - the feature
     # Returns:
     #    f, suitably munged, or None.
     #    None indicates that f should be omitted from the output.
-    def processFeature(self, f):
+    def processMGPFeature(self, f):
 	attrs = f[gff3.ATTRIBUTES]
 	ident = attrs.get("ID", None)
 	# if type is in exclude list, skip it
@@ -262,32 +218,6 @@ class GffPrep:
 	    return pts[1]
         return s
 
-    #-------------------------------------------------
-    #
-    def parseArgs(self):
-        self.parser = argparse.ArgumentParser(description='Prepare one GFF3 file from MGP.')
-	self.parser.add_argument(
-	    '-s',
-	    '--strain',
-	    metavar='strain',
-	    help='Strain name')
-	#self.parser.add_argument('-x', '--exclude', metavar='sotype', default=[], action='append', help='Col 3 types to exclude.')
-	self.parser.add_argument(
-	    '-v',
-	    '--validFile',
-	    dest="validfile",
-	    metavar='FILE', 
-	    default=None,
-	    help='File of valid MGI primary ids. Default=no id file. All encountered MGI ids considered valid.')
-	self.parser.add_argument(
-	    '-m',
-	    '--mappingFile',
-	    dest="mappingfile",
-	    metavar='FILE', 
-	    default=None,
-	    help='File of MGI primary and secondary ids. Two columns, tab delimited. Columns=primaryId, secondaryId. Default=no mapping file')
-
-	return self.parser.parse_args()
     #
     def processHeader(self, header):
 	#print '>>>', header
@@ -299,9 +229,9 @@ class GffPrep:
 		self.gffHeaderData[parts[0]] = parts[1]
 	    self.fout.write(line+NL)
     #
-    def processFeatureGroup(self, grp):
+    def processMGPFeatureGroup(self, grp):
 	# prep each record and remove any Nones
-	grp = filter(None, map(lambda f: self.processFeature(f), grp))
+	grp = filter(None, map(lambda f: self.processMGPFeature(f), grp))
 	# partition into exons and non-exons
 	pp = partition(grp, lambda f: f[gff3.TYPE] == "exon")
 	# write out the non-exons first
@@ -338,6 +268,64 @@ class GffPrep:
 	    self.fout.write(gff3.formatLine(feat) + NL)
 	#
 	self.fout.write(gff3.GFF3SEPARATOR + NL)
+
+    #-------------------------------------------------
+    # Process MGI feature group. Have to turn a model as output by the MGI GFF3 process
+    # into a model as needed by the gff3 loader for mousemine.
+    #
+    # Loader expects:
+    #   - mgi_id attribute in col 9 of root features contains MGI id of canonical gene (if any)
+    #   - a valid SO type in col 3 => becomes the class of the loaded object
+    #
+    def processMGIFeatureGroup(self, grp):
+	#
+	newgrp = []
+	mgiid = None
+	newid = None
+	source = None
+	# loop thru the features in the group
+	for i,f in enumerate(grp):
+	    # if type is in exclude list, skip it
+	    if f[gff3.TYPE] in EXCLUDE_TYPES:
+	        continue
+	    #
+	    attrs = f[gff3.ATTRIBUTES]
+	    newattrs = {}
+	    if i==0 :
+		# grp[0] is the top level feature, e.g. the gene. 
+		mgiid = newattrs['mgi_id'] = attrs['curie']
+		newattrs['ID'] = attrs['ID']
+		self.idMapping[attrs['ID']] = newattrs['ID']
+		f[gff3.TYPE] = attrs['so_term_name']
+	    else:
+		# grp[1] and beyond are the gene's transcripts, exons, etc
+		tp = f[gff3.TYPE]
+		p = attrs['Parent']
+		pid = newattrs['Parent'] = self.idMapping.get(p,p)
+		if tp == 'exon':
+		    newattrs['ID'] = attrs.get('exon_id', attrs['ID'].replace(mgiid, pid))
+		elif tp == 'CDS':
+		    newattrs['ID'] = attrs.get('protein_id', attrs['ID'])
+		elif 'transcript_id' in attrs:
+		    tid = attrs['transcript_id']
+		    self.idMapping[attrs['ID']] = tid
+		    newattrs['ID'] = tid
+		else:
+		    newattrs['ID'] = attrs['ID']
+
+	    # add strain to every feature's col 9
+	    newattrs['strain'] = self.args.strain
+	    # append strain to chromosome
+	    f[gff3.SEQID] = "%s|%s" % (f[gff3.SEQID], self.args.strain)
+	    #
+	    f[gff3.ATTRIBUTES] = newattrs
+	    newgrp.append(f)
+	#
+	for f in newgrp:
+	    self.fout.write(gff3.formatLine(f) + NL)
+	if len(newgrp) > 0:
+	    self.fout.write(gff3.GFF3SEPARATOR + NL)
+
     #
     def main(self):
 	self.loadIdFiles()
@@ -348,7 +336,7 @@ class GffPrep:
 	    if self.args.isMGI:
 		self.processMGIFeatureGroup(grp)
 	    else:
-		self.processFeatureGroup(grp)
+		self.processMGPFeatureGroup(grp)
 
 ####
 
