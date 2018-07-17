@@ -63,7 +63,6 @@ class GffPrep:
 	self.fout= sys.stdout
 	self.gffHeaderData = {}
 	self.chromosomeData = {}
-	self.validIds = set()
 	self.idMapping = {}
 	#
 	self.args = self.parseArgs()
@@ -80,13 +79,6 @@ class GffPrep:
 	    help='Strain name')
 	#self.parser.add_argument('-x', '--exclude', metavar='sotype', default=[], action='append', help='Col 3 types to exclude.')
 	self.parser.add_argument(
-	    '-v',
-	    '--validFile',
-	    dest="validfile",
-	    metavar='FILE', 
-	    default=None,
-	    help='File of valid MGI primary ids. Default=no id file. All encountered MGI ids considered valid.')
-	self.parser.add_argument(
 	    '-m',
 	    '--mappingFile',
 	    dest="mappingfile",
@@ -95,26 +87,6 @@ class GffPrep:
 	    help='File of MGI primary and secondary ids. Two columns, tab delimited. Columns=primaryId, secondaryId. Default=no mapping file')
 
 	return self.parser.parse_args()
-
-    #-------------------------------------------------
-    # Given an input string (mgiid),
-    # (1) if it is a valid MGI feature id, returns it. 
-    # (2) else, if it is a valid former/secondary MGI feature id, returns the current id
-    # (3) else, returns None
-    # Cases 2 and 3 are logged.
-    #
-    def processMgiId(self, mgiid):
-	v = None
-	if mgiid in self.validIds:
-	    v = mgiid
-        else:
-	    v = self.idMapping.get(mgiid, None)
-	if v != mgiid:
-	    if v is None:
-		log("Removed invalid id: " + mgiid)
-	    else:
-		log("Mapped id %s to %s." % (mgiid,v))
-	return v
 
     #-------------------------------------------------
     # Makes up an ID for a feature
@@ -167,6 +139,14 @@ class GffPrep:
 	attrs['strain'] = self.args.strain
 	# append strain to chromosome
 	f[gff3.SEQID] = "%s|%s" % (f[gff3.SEQID], self.args.strain)
+	# map project_parent_gene to MGI id, if available
+	ppg = attrs.get('projection_parent_gene',None)
+	if ppg:
+	    ppg = ppg.split('.')[0]
+	    mgiid = self.idMapping.get(ppg, '')
+	    if mgiid:
+	        attrs['mgi_id'] = mgiid
+	'''
 	# extract MGI id if it exists
 	match = MGI_RE.search(attrs.get('description',''))
 	if match:
@@ -175,6 +155,7 @@ class GffPrep:
 	    mgiid = self.processMgiId(match.group(0))
 	    if mgiid:
 		attrs['mgi_id'] = mgiid
+	'''
 	# Avoid setting the symbol attribute in loaded features...
 	n = attrs.pop('Name', None)
 	if n:
@@ -199,10 +180,6 @@ class GffPrep:
 
     #-------------------------------------------------
     def loadIdFiles (self) :
-        if self.args.validfile:
-	    self.validIds = set(self.getFileLines(self.args.validfile))
-	    log("Loaded %d valid ids" % len(self.validIds))
-
 	if self.args.mappingfile:
 	    idpairs = map(lambda line: line.strip().split(TAB), self.getFileLines(self.args.mappingfile))
 	    self.idMapping = dict(idpairs) 

@@ -262,8 +262,9 @@ class AlleleMutationDumper(AbstractItemDumper):
 
 class AlleleSynonymDumper(AbstractItemDumper):
     QTMPLT = '''
-    SELECT l._allele_key, l.label, l.labeltype
+    SELECT l._allele_key, l.label
     FROM ALL_Label l
+    WHERE labeltypename = 'synonym'
     %(LIMIT_CLAUSE)s
     '''
     ITMPLT = '''
