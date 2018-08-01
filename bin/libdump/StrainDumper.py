@@ -1,5 +1,11 @@
 from AbstractItemDumper import *
 
+###
+# Temporary hack. For reasons too involved to go into, the name of Mus pahari in MGI,
+# which is currently 'Mus pahari/EiJ', needs to be 'PAHARI/EiJ'.
+# 
+YUCKY_REMAP = { 'MGI:2160743' : 'PAHARI/EiJ' }
+###
 
 class StrainDumper(AbstractItemDumper):
     QTMPLT='''
@@ -57,6 +63,7 @@ class StrainDumper(AbstractItemDumper):
 	sk = r['_strain_key']
 	r['id'] = self.context.makeItemId('Strain', sk)
 	r['organism'] = self.context.makeItemRef('Organism', 1) # mouse
+	r['name'] = YUCKY_REMAP.get(r['accid'],r['name'])
 	r['name'] = self.quote(r['name'])
 	r['attributeString'] = ', '.join(self.sk2typestring.get(sk,[]))
 	if r['attributeString'] == '':
