@@ -112,8 +112,19 @@ class PublicationDumper(AbstractItemDumper):
     def processRecord(self,r):
 	attrs = []
 	rk = r['_refs_key']
-	r['id'] = self.context.makeItemId('Reference', r['_refs_key'])
-	#---------------------------------------
+	##########
+	# Another temporary hack while we wait for MGI to fix a data problem.
+	# Every ref should have exactly 1 preferred J#. Data error: there's a
+	# reference with 2, which causes the query to return the same ref twice,
+	# which causes a duplicate key error. So for now, swallow the error and
+	# skip the record. 
+	try:
+	    r['id'] = self.context.makeItemId('Reference', r['_refs_key'])
+	except:
+	    self.context.log("Failed to create ID for reference. Skipped: " + str(r))
+	    return None
+	# end of hack
+	##########
 	r['pubMedId'] = self.rk2pmid.get(rk, None)
 	r['doi'] = self.rk2doi.get(rk, None)
 
