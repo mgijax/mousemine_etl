@@ -111,6 +111,10 @@ class GffPrep:
 	if f[gff3.TYPE] in EXCLUDE_TYPES:
 	    return None
 	# correct specific errors found in use of SO terms
+	#
+	if f[gff3.TYPE] == 'gene_segment':
+	    f[gff3.TYPE] = 'transcript'
+	    log("Converted: gene_segment: " + ident)
 	# NMD_transcript_variant -> NMD_transcript
 	if f[gff3.TYPE] == 'NMD_transcript_variant':
 	    f[gff3.TYPE] = 'NMD_transcript'
@@ -279,6 +283,11 @@ class GffPrep:
 		tp = f[gff3.TYPE]
 		p = attrs['Parent']
 		pid = newattrs['Parent'] = self.idMapping.get(p,p)
+		#
+		if tp == 'gene_segment':
+		    tp = f[gff3.TYPE] = 'transcript'
+		    log("Converted: gene_segment: " + str(f))
+		#
 		if tp == 'exon':
 		    newattrs['ID'] = attrs.get('exon_id', attrs['ID'].replace(mgiid, pid))
 		elif tp == 'CDS':
