@@ -57,11 +57,23 @@ class AlleleDumper(AbstractItemDumper):
       %(earliestPublication)s
       <reference name="strainOfOrigin" ref_id="%(strainid)s" />
       <collection name="mutations">%(mutations)s</collection>
+      <collection name="carriedBy">%(carriedBy)s</collection>
       <attribute name="isRecombinase" value="%(isRecombinase)s" />
       %(attributeString)s %(projectcollection)s %(description)s %(molecularNote)s %(drivenBy)s %(inducedWith)s 
       %(featureRef)s
       </item>
     '''
+
+    def loadAllele2StrainMap(self):
+	self.ak2sk = {}
+        q = '''
+	SELECT pm._strain_key, pm._allele_key
+	FROM PRB_Strain_Marker pm
+	WHERE pm._allele_key is not null
+	'''
+	for r in self.context.sql(q):
+	    iref = self.context.makeItemRef('Strain', r['_strain_key'])
+	    self.ak2sk.setdefault(r['_allele_key'],[]).append(iref)
 
     def loadAllele2MutationMap(self):
 	self.ak2mk = {}
@@ -149,6 +161,7 @@ class AlleleDumper(AbstractItemDumper):
     def preDump(self):
 	AlleleMutationDumper(self.context).dump()
 	AlleleAttributeDumper(self.context).dump()
+	self.loadAllele2StrainMap()
 	self.loadAllele2MutationMap()
 	self.loadAllele2AttributeMap()
 	self.loadNotes()
@@ -174,6 +187,7 @@ class AlleleDumper(AbstractItemDumper):
 	r['dataSets'] = '<reference ref_id="%s"/>'%dsid
 	r['mutations'] = ''.join(['<reference ref_id="%s" />'%x for x in self.ak2mk.get(ak,[])])
         r['publications'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.pub_refs.get(ak,[])])
+        r['carriedBy'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.ak2sk.get(ak,[])])
 
         ep = self.earliest_publications.get(ak)
         if  ep is None:
@@ -248,8 +262,9 @@ class AlleleMutationDumper(AbstractItemDumper):
 
 class AlleleSynonymDumper(AbstractItemDumper):
     QTMPLT = '''
-    SELECT l._allele_key, l.label, l.labeltype
+    SELECT l._allele_key, l.label
     FROM ALL_Label l
+    WHERE labeltypename = 'synonym'
     %(LIMIT_CLAUSE)s
     '''
     ITMPLT = '''

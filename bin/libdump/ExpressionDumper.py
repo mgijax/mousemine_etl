@@ -8,7 +8,7 @@ class ExpressionDumper(AbstractItemDumper):
     # The assay structure is a dict of dict.
     def loadAssay(self):
         q = self.constructQuery('''
-            SELECT a._assay_key, a._marker_key, a._refs_key, acc.accid, at.assaytype
+            SELECT a._assay_key, a._marker_key, a._refs_key, acc.accid, at.assaytype, a.creation_date
             FROM gxd_assay a
               JOIN acc_accession acc 
                 ON a._assay_key = acc._object_key 
@@ -27,6 +27,7 @@ class ExpressionDumper(AbstractItemDumper):
             self.assay[ak]['publication'] = self.context.makeItemRef('Reference', r['_refs_key'])
             self.assay[ak]['assayid'] = r['accid']
             self.assay[ak]['assaytype'] = r['assaytype']
+            self.assay[ak]['annotationdate'] = str(r['creation_date']).split()[0]
 
         return
 
@@ -101,6 +102,7 @@ class ExpressionDumper(AbstractItemDumper):
                   %(image_wv)s
                   %(detected_wv)s
                   %(note_wv)s
+                  <attribute name="annotationDate" value="%(annotationdate)s" />
                  </item>
                  '''
 

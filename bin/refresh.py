@@ -119,7 +119,12 @@ def getOpts():
     	"-s", "--source", dest="sources",
 	metavar="SOURCE",
     	default=[], action="append",
-	help="Name of a source (repeatable).")
+	help="Name of a source to refresh (repeatable). Default = refresh all sources")
+    op.add_option(
+    	"-x", "--exclude", dest="xsources",
+	metavar="SOURCE",
+    	default=[], action="append",
+	help="Name of a source to EXCLUDE from refreshing (repeatable). Default = don't exclude any sources")
     return op.parse_args()
     
 def main():
@@ -145,8 +150,10 @@ def main():
     cfd.close()
 
     # if user specified certain sources, filter for just those
+    # if user specified sources to exclude, filter those out
     if len(opts.sources) > 0:
 	orderedSources = filter(lambda x:x in opts.sources, orderedSources)
+    orderedSources = filter(lambda x:x not in opts.xsources, orderedSources)
 
     # refresh each source 
     lfn = None

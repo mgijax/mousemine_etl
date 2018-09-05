@@ -66,12 +66,17 @@ class DumperContext:
 	    'ALLELE_MUTATION_VKEY' : 36,
 	    'ALLELE_COLLECTION_VKEY' : 92,
 	    'ALLELE_ATTRIBUTE_VKEY' : 93,
+	    'STRAIN_ATTRIBUTE_VKEY' : 27,
 
 	    # VOC_Term keys
 	    'HYBRID_HOMOL_KEY' : 13764519,
 
 	    # Annotation type keys
 	    'ALLELE_ATTRIBUTE_AKEY' : 1014,
+	    'STRAIN_ATTRIBUTE_AKEY' : 1009,
+
+	    # MGI_Reference_Assoc, _refassoctype_keys
+	    'STRAIN_REFASSOCTYPE_KEYS' : [1009,1010],
 
 	    # Feature relationship category keys 
 	    'ALL_FR_CATEGORY_KEYS' : [1002,1003,1004,1001],
@@ -146,6 +151,7 @@ class DumperContext:
 	    'Protein'			: 10024,
             'Comment'                   : 10025,
             'SyntenyBlock'              : 10026,
+            'StrainAttribute'           : 10027,
 	    })
 
 	# load MGI datadump timestamp from the database
