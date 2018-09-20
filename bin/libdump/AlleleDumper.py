@@ -112,13 +112,25 @@ class AlleleDumper(AbstractItemDumper):
 	        ak2notes[k] = n['note']
 	return ak2notes
 
+    def _loadDrivers(self):
+        q = '''
+	select r._object_key_1, m.symbol
+	from mgi_relationship r, mrk_marker m
+	where r._category_key = 1006
+	and r._object_key_2 = m._marker_key
+	'''
+	ix = {}
+	for r in self.context.sql(q):
+	    ix[r['_object_key_1']] = r['symbol']
+	return ix
+
     def loadNotes(self):
 	i_re = re.compile(r'([Ii]nduc(ed|ibl[ey]) +(by|with) +|-induc(ed|ible)|\. *$)')
 	def parseInducibleNote(n):
 	    return self.quote(i_re.sub('',n))
         self.ak2generalnotes = self._loadNotes( 1020, self.quote )
 	self.ak2molecularnotes = self._loadNotes( 1021, self.quote )
-	self.ak2drivernotes = self._loadNotes( 1034, self.quote )
+	self.ak2drivernotes = self._loadDrivers()
 	self.ak2induciblenotes = self._loadNotes( 1032, parseInducibleNote )
 
     def loadAllelePublications(self):
