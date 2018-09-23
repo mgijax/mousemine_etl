@@ -6,9 +6,12 @@ class OrganismDumper(AbstractItemDumper):
     QTMPLT = []
     ITMPLT = '''
     <item class="Organism" id="%(id)s">
-       <attribute name="taxonId" value="%(accid)s" />
+       <attribute name="taxonId" value="%(taxon)s" />
        </item>
     '''
     def preDump(self):
         for r in self.context.QUERYPARAMS['ORGANISMS'].values():
-	    self.writeItem({'id':r[0], 'accid':r[2]})
+	    oid = self.context.makeItemId('Organism', r[0])
+	    #self.context.log(str(r))
+	    #self.context.log(oid)
+	    self.writeItem({'id':oid, 'taxon':r[2]})

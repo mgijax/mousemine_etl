@@ -50,11 +50,11 @@ class DumperContext:
 	    # MGI does not represent pahari, caroli, or spretus as organisms per se,
 	    # so they are hard-coded here.
 	    'ORGANISMS' : {
-		10090: ['20_1', 'Mus musculus',10090],
-		9606 : ['20_2', 'Homo sapiens', 9606],
-		10093: ['20_3', 'Mus pahari',  10093],
-		10089: ['20_4', 'Mus caroli',  10089],
-		10096: ['20_5', 'Mus spretus', 10096],
+		10090: [1, 'Mus musculus',10090],
+		10093: [2, 'Mus pahari',  10093],
+		10089: [3, 'Mus caroli',  10089],
+		10096: [4, 'Mus spretus', 10096],
+		9606 : [5, 'Homo sapiens', 9606],
 	    },
 	    # Hard code the mapping from strain name to taxon
 	    # Add as many as desired (eg, MGI has lots of variations on spretus!)
@@ -260,8 +260,9 @@ class DumperContext:
 
     # Given a type name and an integer key unique within that 
     # type, creates a globally unique string key of the form
-    # "n_m", where n is the type's integer key and
-    # m is the input key. 
+    # "n_m", where:
+    #     n is the type, mapped to an integer key
+    #     m is local key, mapped to a 0-based sequence within the type.
     # Args:
     #  itemType (string) The ID space in which to generate the key. Determines the "n" part.
     #  localKey (integer) If provided, also creates a mapping from localKey (which is generally
@@ -274,6 +275,7 @@ class DumperContext:
     #   An identifier string of the form "n_m"
     #
     def makeGlobalKey(self, itemType, localkey=None, exists=None):
+	# 
 	n = self.TYPE_KEYS[itemType] if type(itemType) is types.StringType else itemType
 	kmap = self.KEY_MAP.setdefault(n, {})
 	m = self.NEXT_ID.setdefault(n, 1)

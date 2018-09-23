@@ -55,7 +55,8 @@ class StrainDumper(AbstractItemDumper):
     def getOrganismRefForStrain(self, s):
 	taxon = self.context.QUERYPARAMS['STRAIN_ORGANISM'].get(s, 10090)
 	org   = self.context.QUERYPARAMS['ORGANISMS'][taxon]
-        return org[0]
+	ref   = self.context.makeItemRef('Organism', org[0])
+        return ref
 
     def processRecord(self, r):
 	sk = r['_strain_key']
