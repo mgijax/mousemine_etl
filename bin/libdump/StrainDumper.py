@@ -52,10 +52,15 @@ class StrainDumper(AbstractItemDumper):
         self.loadStrainPubs()
 	self.loadStrainAttrs()
 
+    def getOrganismRefForStrain(self, s):
+	taxon = self.context.QUERYPARAMS['STRAIN_ORGANISM'].get(s, 10090)
+	org   = self.context.QUERYPARAMS['ORGANISMS'][taxon]
+        return org[0]
+
     def processRecord(self, r):
 	sk = r['_strain_key']
 	r['id'] = self.context.makeItemId('Strain', sk)
-	r['organism'] = self.context.makeItemRef('Organism', 1) # mouse
+	r['organism'] = self.getOrganismRefForStrain(r['name'])
 	r['name'] = self.quote(r['name'])
 	r['attributeString'] = ', '.join(self.sk2typestring.get(sk,[]))
 	if r['attributeString'] == '':

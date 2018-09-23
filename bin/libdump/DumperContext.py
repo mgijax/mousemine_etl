@@ -45,6 +45,27 @@ class DumperContext:
 	    'ORGANISM_TYPEKEY'   : 20,
 	    'CHROMOSOME_TYPEKEY' : 27,
 
+	    #######################
+	    # These are the Organisms we are dumping data for from MGI.
+	    # MGI does not represent pahari, caroli, or spretus as organisms per se,
+	    # so they are hard-coded here.
+	    'ORGANISMS' : {
+		10090: ['20_1', 'Mus musculus',10090],
+		9606 : ['20_2', 'Homo sapiens', 9606],
+		10093: ['20_3', 'Mus pahari',  10093],
+		10089: ['20_4', 'Mus caroli',  10089],
+		10096: ['20_5', 'Mus spretus', 10096],
+	    },
+	    # Hard code the mapping from strain name to taxon
+	    # Add as many as desired (eg, MGI has lots of variations on spretus!)
+	    # but these are the ones we HAVE to have.
+	    'STRAIN_ORGANISM' : {
+	        'PAHARI/EiJ' : 10093,
+		'CAROLI/EiJ' : 10089,
+		'SPRET/EiJ'  : 10096,
+	    },
+	    #######################
+
 	    # MRK_Types (marker type) keys
 	    'GENE_MRKTYPEKEY'	: 1,
 
@@ -118,6 +139,7 @@ class DumperContext:
 
 	    #
 	    'MGI_HYBRID_HOMOLOGY_KEY' : 13764519,
+
 	    }
 
 	# Keys from ACC_MGIType.
