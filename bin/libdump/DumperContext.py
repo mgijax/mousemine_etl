@@ -45,6 +45,29 @@ class DumperContext:
 	    'ORGANISM_TYPEKEY'   : 20,
 	    'CHROMOSOME_TYPEKEY' : 27,
 
+	    #######################
+	    # These are the Organisms we are dumping data for from MGI.
+	    # MGI does not represent pahari, caroli, or spretus as organisms per se,
+	    # so they are hard-coded here.
+	    'ORGANISMS' : {
+		# NB: It is important that musculus and human have keys 1 and 2 respectively
+		# to match keys in MGI.
+		10090: [1, 'Mus musculus',10090],
+		9606 : [2, 'Homo sapiens', 9606],
+		# For anything else, the keys can be whatever.
+		10093: [3, 'Mus pahari',  10093],
+		10089: [4, 'Mus caroli',  10089],
+		10096: [5, 'Mus spretus', 10096],
+	    },
+	    # Hard code the mapping from strain name to taxon
+	    # Add as many as desired. These are the ones we need for release.
+	    'STRAIN_ORGANISM' : {
+	        'PAHARI/EiJ' : 10093,
+		'CAROLI/EiJ' : 10089,
+		'SPRET/EiJ'  : 10096,
+	    },
+	    #######################
+
 	    # MRK_Types (marker type) keys
 	    'GENE_MRKTYPEKEY'	: 1,
 
@@ -118,6 +141,7 @@ class DumperContext:
 
 	    #
 	    'MGI_HYBRID_HOMOLOGY_KEY' : 13764519,
+
 	    }
 
 	# Keys from ACC_MGIType.
@@ -238,8 +262,9 @@ class DumperContext:
 
     # Given a type name and an integer key unique within that 
     # type, creates a globally unique string key of the form
-    # "n_m", where n is the type's integer key and
-    # m is the input key. 
+    # "n_m", where:
+    #     n is the type, mapped to an integer key
+    #     m is local key, mapped to a 0-based sequence within the type.
     # Args:
     #  itemType (string) The ID space in which to generate the key. Determines the "n" part.
     #  localKey (integer) If provided, also creates a mapping from localKey (which is generally
@@ -252,6 +277,7 @@ class DumperContext:
     #   An identifier string of the form "n_m"
     #
     def makeGlobalKey(self, itemType, localkey=None, exists=None):
+	# 
 	n = self.TYPE_KEYS[itemType] if type(itemType) is types.StringType else itemType
 	kmap = self.KEY_MAP.setdefault(n, {})
 	m = self.NEXT_ID.setdefault(n, 1)
