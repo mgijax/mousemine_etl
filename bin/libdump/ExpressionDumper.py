@@ -303,6 +303,7 @@ class ExpressionDumper(AbstractItemDumper):
             AND a.private = 0
             AND a.preferred = 1
             AND a._logicaldb_key = 169
+	    AND t._term_key in (select _term_key from voc_term_emapa)
             ''')
 
         referenced_emapaids = set()
