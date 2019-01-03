@@ -5,6 +5,8 @@
 #
 # Performs specific file preprocessing for loading the strain-specific GFF files.
 # - appends strain to the chromosome id in col 1. E.g. "5" becomes "5|C3H/HeJ"
+#   This is needed for proper merging behavior during the build. A postprocess reverts the
+#   chromosome identifiers to not having the appended strain.
 # - adds strain name to column 9.
 # - adds IDs to exons and UTRs
 # - removes features of type biological_region and chromosome
@@ -251,6 +253,16 @@ class GffPrep:
 	self.fout.write(gff3.GFF3SEPARATOR + NL)
 
     #-------------------------------------------------
+    def getCol3Type (self, soterm) :
+      if soterm in ['protein_coding_gene', 'pseudogene', 'ncRNA_gene', 'polymorphic_pseudogene', 'heritable_phenotypic_marker']:
+        return soterm
+      if 'gene_segment' in soterm:
+        return soterm
+      if 'RNA' in soterm or soterm == 'ribozyme_gene':
+        return 'ncRNA_gene'
+      return 'gene'
+
+    #-------------------------------------------------
     # Process MGI feature group. Have to turn a model as output by the MGI GFF3 process
     # into a model as needed by the gff3 loader for mousemine.
     #
@@ -277,7 +289,7 @@ class GffPrep:
 		mgiid = newattrs['mgi_id'] = attrs['curie']
 		newattrs['ID'] = attrs['ID']
 		self.idMapping[attrs['ID']] = newattrs['ID']
-		f[gff3.TYPE] = attrs['so_term_name']
+		f[gff3.TYPE] = self.getCol3Type(attrs['so_term_name'])
 	    else:
 		# grp[1] and beyond are the gene's transcripts, exons, etc
 		tp = f[gff3.TYPE]
