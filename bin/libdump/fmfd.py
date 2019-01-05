@@ -193,17 +193,21 @@ class FriendlyMineFeatureDumper:
 	    if g[5]:
 	        cloc = '<reference name="chromosomeLocation" ref_id="%s" />'%self.mkRef("Location", g[5])
 	    self.gids.add(g[0])
-	    self.ofd.write(self.ITMPLTS[n] % {
-		"imid" : g[0],
-		"id" : self.mkRef(n, g[0]),
-		"primaryIdentifier" : g[1],
-		"symbol" : g[2],
-		"name" : self.mkAttr("name", g[3]),
-		"organism" : self.mkRef("Organism", g[4]),
-		"chromosomeLocation" : cloc,
-		"sequenceOntologyTerm" : self.mkRef("SOTerm", 1),
-		"dataSet" : self.dataSetId,
-	        })
+	    try:
+		self.ofd.write(self.ITMPLTS[n] % {
+		    "imid" : g[0],
+		    "id" : self.mkRef(n, g[0]),
+		    "primaryIdentifier" : g[1],
+		    "symbol" : g[2],
+		    "name" : self.mkAttr("name", g[3]),
+		    "organism" : self.mkRef("Organism", g[4]),
+		    "chromosomeLocation" : cloc,
+		    "sequenceOntologyTerm" : self.mkRef("SOTerm", 1),
+		    "dataSet" : self.dataSetId,
+		    })
+	    except:
+		logging.info("Caught error while formatting record. Skipped.")
+	        continue
 
     def dumpLocations(self):
         n = "Location"
