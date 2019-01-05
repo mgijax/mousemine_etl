@@ -19,6 +19,8 @@ import sys
 import argparse
 import re
 import gff3lite as gff3
+import string
+
 #
 TAB = '\t'
 NL = '\n'
@@ -152,16 +154,6 @@ class GffPrep:
 	    mgiid = self.idMapping.get(ppg, '')
 	    if mgiid:
 	        attrs['mgi_id'] = mgiid
-	'''
-	# extract MGI id if it exists
-	match = MGI_RE.search(attrs.get('description',''))
-	if match:
-	    # Replace description attribute with mgi_id.
-	    attrs.pop('description',None)
-	    mgiid = self.processMgiId(match.group(0))
-	    if mgiid:
-		attrs['mgi_id'] = mgiid
-	'''
 	# Avoid setting the symbol attribute in loaded features...
 	n = attrs.pop('Name', None)
 	if n:
@@ -253,22 +245,8 @@ class GffPrep:
 	self.fout.write(gff3.GFF3SEPARATOR + NL)
 
     #-------------------------------------------------
-    def getCol3Type (self, soterm) :
-      if soterm in ['protein_coding_gene', 'pseudogene', 'ncRNA_gene', 'polymorphic_pseudogene', 'heritable_phenotypic_marker']:
-        return soterm
-      if 'gene_segment' in soterm:
-        return soterm
-      if 'RNA' in soterm or soterm == 'ribozyme_gene':
-        return 'ncRNA_gene'
-      return 'gene'
-
-    #-------------------------------------------------
     # Process MGI feature group. Have to turn a model as output by the MGI GFF3 process
     # into a model as needed by the gff3 loader for mousemine.
-    #
-    # Loader expects:
-    #   - mgi_id attribute in col 9 of root features contains MGI id of canonical gene (if any)
-    #   - a valid SO type in col 3 => becomes the class of the loaded object
     #
     def processMGIFeatureGroup(self, grp):
 	#
@@ -285,11 +263,13 @@ class GffPrep:
 	    attrs = f[gff3.ATTRIBUTES]
 	    newattrs = {}
 	    if i==0 :
-		# grp[0] is the top level feature, e.g. the gene. 
+		# Top level feature, e.g. a gene. 
+		# Get MGI id from "curie" attribute
 		mgiid = newattrs['mgi_id'] = attrs['curie']
 		newattrs['ID'] = attrs['ID']
 		self.idMapping[attrs['ID']] = newattrs['ID']
-		f[gff3.TYPE] = self.getCol3Type(attrs['so_term_name'])
+		# put the higher level SO term in col 3 and the more specific SO term in col 9
+		f[gff3.TYPE] = attrs['so_term_name']
 	    else:
 		# grp[1] and beyond are the gene's transcripts, exons, etc
 		tp = f[gff3.TYPE]
