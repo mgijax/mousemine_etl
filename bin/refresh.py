@@ -116,6 +116,10 @@ class MyConfigParser(ConfigParser):
 def getOpts():
     op = OptionParser()
     op.add_option(
+    	"-l", "--list", dest="listSources",
+    	default=False, action="store_true",
+	help="Print list of known sources and exit.")
+    op.add_option(
     	"-s", "--source", dest="sources",
 	metavar="SOURCE",
     	default=[], action="append",
@@ -125,6 +129,10 @@ def getOpts():
 	metavar="SOURCE",
     	default=[], action="append",
 	help="Name of a source to EXCLUDE from refreshing (repeatable). Default = don't exclude any sources")
+    op.add_option(
+    	"-o", "--outputdir", dest="odir",
+	metavar="PATH",
+	help="Output directory.")
     return op.parse_args()
     
 def main():
@@ -133,9 +141,19 @@ def main():
     timestamp = time.strftime(STRF,time.localtime(time.time()))
     basedir = os.path.abspath(os.path.join(mydir, '..'))
     configFile =  os.path.join(mydir,'config.cfg') 
-
-    cp = MyConfigParser({"BASEDIR":basedir,"TIMESTAMP":timestamp})
+    odirbase = opts.odir if opts.odir else os.path.join(basedir, 'output')
+    cp = MyConfigParser({"BASEDIR":basedir,"TIMESTAMP":timestamp,"ODIRBASE":odirbase})
     cp.read(configFile)
+
+    if opts.listSources:
+        snames = cp.sections()
+        snames.sort()
+        for n in snames:
+            print n
+        sys.exit(0)
+
+    if not os.path.exists(odirbase):
+        os.makedirs(odirbase)
 
     # Refresh sources in the order given in the file
     # Standard config lib does not support ordered sequence of sections.
