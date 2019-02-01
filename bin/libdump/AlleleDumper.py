@@ -54,6 +54,7 @@ class AlleleDumper(AbstractItemDumper):
       <attribute name="inheritanceMode" value="%(inheritancemode)s" />
       <attribute name="glTransmission" value="%(gltransmission)s" />
       <collection name="publications">%(publications)s</collection>
+      <collection name="publications2">%(publications2)s</collection>
       %(earliestPublication)s
       <reference name="strainOfOrigin" ref_id="%(strainid)s" />
       <collection name="mutations">%(mutations)s</collection>
@@ -134,14 +135,24 @@ class AlleleDumper(AbstractItemDumper):
 	self.ak2induciblenotes = self._loadNotes( 1032, parseInducibleNote )
 
     def loadAllelePublications(self):
+	# map from allele key to set of publication refs
         self.pub_refs = {}
+	# map from allele key to list of (type, pubref) pairs
+	self.pub_refs2 = {}
         q = '''
-            SELECT distinct _refs_key, _object_key
-            FROM MGI_Reference_Assoc
-            WHERE _mgitype_key = 11
-            '''
+	SELECT ra._refs_key, ra._object_key, rat.assoctype
+	FROM MGI_Reference_Assoc ra, MGI_RefAssocType rat 
+	WHERE ra._mgitype_key = 11
+	AND ra._refassoctype_key = rat._refassoctype_key
+	'''
         for r in self.context.sql(q):
-            self.pub_refs.setdefault(r['_object_key'], []).append(self.context.makeItemRef('Reference', r['_refs_key']))
+	    okey = r['_object_key']
+	    if okey not in self.pub_refs:
+	      self.pub_refs[okey] = set()
+	      self.pub_refs2[okey] = []
+	    pr = self.context.makeItemRef('Reference', r['_refs_key'])
+            self.pub_refs[okey].add(pr)
+	    self.pub_refs2[okey].append((r['assoctype'], pr))
 
     def loadEarliestPublications(self):
        self.earliest_publications = {}
@@ -173,11 +184,14 @@ class AlleleDumper(AbstractItemDumper):
     def preDump(self):
 	AlleleMutationDumper(self.context).dump()
 	AlleleAttributeDumper(self.context).dump()
+	self.apd = AllelePublicationDumper(self.context)
+	self.apd.dump(fname="AllelePublications.xml")
+	self.context.openOutput(fname="Allele.xml")
 	self.loadAllele2StrainMap()
 	self.loadAllele2MutationMap()
 	self.loadAllele2AttributeMap()
 	self.loadNotes()
-        self.loadAllelePublications()
+        # self.loadAllelePublications()
         self.loadEarliestPublications()
 
 
@@ -198,7 +212,8 @@ class AlleleDumper(AbstractItemDumper):
         dsid = DataSetDumper(self.context).dataSet(name="Mouse Allele Catalog from MGI")
 	r['dataSets'] = '<reference ref_id="%s"/>'%dsid
 	r['mutations'] = ''.join(['<reference ref_id="%s" />'%x for x in self.ak2mk.get(ak,[])])
-        r['publications'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.pub_refs.get(ak,[])])
+        r['publications'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.apd.ak2pubrefs.get(ak,[])])
+        r['publications2'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.apd.ak2apk.get(ak,[])])
         r['carriedBy'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.ak2sk.get(ak,[])])
 
         ep = self.earliest_publications.get(ak)
@@ -251,6 +266,9 @@ class AlleleAttributeDumper(AbstractItemDumper):
 	<attribute name="name" value="%(term)s" />
 	</item>
     '''
+    def preDump(self):
+        self.suppressNA = False
+
     def processRecord(self, r):
         r['id'] = self.context.makeGlobalKey('AlleleAttribute', r['_term_key'])
         return r
@@ -269,6 +287,32 @@ class AlleleMutationDumper(AbstractItemDumper):
     '''
     def processRecord(self, r):
         r['id'] = self.context.makeGlobalKey('AlleleMolecularMutation', r['_term_key'])
+        return r
+
+class AllelePublicationDumper(AbstractItemDumper):
+    QTMPLT = '''
+    SELECT ra._assoc_key, ra._refs_key, ra._object_key, rat.assoctype
+    FROM MGI_Reference_Assoc ra, MGI_RefAssocType rat 
+    WHERE ra._mgitype_key = 11
+    AND ra._refassoctype_key = rat._refassoctype_key
+    '''
+    ITMPLT = '''
+    <item class="AllelePublication" id="%(id)s" >
+        <attribute name="type" value="%(type)s"/>
+        <reference name="publication" ref_id="%(publication)s" />
+        </item>
+    '''
+    def preDump (self):
+        self.ak2apk = {} # _allele_key -> [ AllelePublication references ]
+	self.ak2pubrefs = {} # _allele_key -> [ Publication references ]
+
+    def processRecord(self, r):
+        r['id'] = self.context.makeGlobalKey('AllelePublication', r['_assoc_key'])
+        r['type'] = r['assoctype']
+	r['publication'] = self.context.makeItemRef('Reference', r['_refs_key'])
+	ak = r['_object_key']
+	self.ak2apk.setdefault(ak, []).append(r['id'])
+	self.ak2pubrefs.setdefault(ak, set()).add(r['publication'])
         return r
 
 
