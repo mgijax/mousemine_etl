@@ -267,6 +267,8 @@ class AlleleAttributeDumper(AbstractItemDumper):
 	</item>
     '''
     def preDump(self):
+	# There is a term where the name is 'Not applicable'. Don't want to
+	# to mask that.
         self.suppressNA = False
 
     def processRecord(self, r):
