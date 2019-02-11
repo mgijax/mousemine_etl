@@ -176,6 +176,7 @@ class DumperContext:
             'Comment'                   : 10025,
             'SyntenyBlock'              : 10026,
             'StrainAttribute'           : 10027,
+	    'AllelePublication'         : 10028
 	    })
 
 	# load MGI datadump timestamp from the database
