@@ -254,7 +254,14 @@ class GffPrep:
 	mgiid = None
 	newid = None
 	source = None
-	# loop thru the features in the group
+	# loop thru the features in the group.
+	#
+	# The MGI GFF file represents a shared exon (ie an exon shared by multiple transcripts) as a
+	# separate exon line for each transcript; they have different IDs but the same exon_id in col 9.
+	# For the MouseMine load, we need a single exon with multiple Parent ids. The following index keeps track
+	# of the first occurrence of each exon_id.
+	eid2index = {}
+	#
 	for i,f in enumerate(grp):
 	    # if type is in exclude list, skip it
 	    if f[gff3.TYPE] in EXCLUDE_TYPES:
@@ -281,7 +288,14 @@ class GffPrep:
 		    log("Converted: gene_segment: " + str(f))
 		#
 		if tp == 'exon':
-		    newattrs['ID'] = attrs.get('exon_id', attrs['ID'].replace(mgiid, pid))
+		    eid = attrs.get('exon_id', attrs['ID'].replace(mgiid, pid))
+		    eindex = eid2index.get(eid, -1)
+		    if eindex >= 0:
+		      prev = newgrp[eindex]
+		      newgrp[eindex] = None
+		      newattrs['Parent'] += "," + prev[gff3.ATTRIBUTES]['Parent']
+		    newattrs['ID'] = eid
+		    eid2index[eid] = len(newgrp)
 		elif tp == 'CDS':
 		    newattrs['ID'] = attrs.get('protein_id', attrs['ID'])
 		elif 'transcript_id' in attrs:
@@ -298,6 +312,8 @@ class GffPrep:
 	    #
 	    f[gff3.ATTRIBUTES] = newattrs
 	    newgrp.append(f)
+	#
+	newgrp = filter(lambda x: x, newgrp)
 	#
 	for f in newgrp:
 	    self.fout.write(gff3.formatLine(f) + NL)
