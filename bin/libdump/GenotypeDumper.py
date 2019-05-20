@@ -133,6 +133,8 @@ class GenotypeAllelePairDumper(AbstractItemDumper):
           ALL_Allele a2 ON p._allele_key_2 = a2._allele_key
       INNER JOIN
           VOC_Term t ON p._pairstate_key = t._term_key
+      INNER JOIN
+          MRK_Marker m ON p._marker_key = m._marker_key AND m._marker_status_key != 2
     ORDER BY p._genotype_key, p.sequencenum
     %(LIMIT_CLAUSE)s
     '''
