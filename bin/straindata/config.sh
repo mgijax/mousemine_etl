@@ -1,7 +1,7 @@
 
 export ENSEMBL_GFFURL=ftp://ftp.ensembl.org/pub/current_gff3
 export ENSEMBL_FASTAURL=ftp://ftp.ensembl.org/pub/current_fasta
-export ENS_VER=96
+export ENS_VER=97
 export ENS_DNA="dna" # dna, dna_sm, or dna_rm
 export ENS_DNA_OBJ="toplevel"
 export ENS_GFF3="ftp://ftp.ensembl.org/pub/release-${ENS_VER}/gff3"
