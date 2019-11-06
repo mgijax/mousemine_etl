@@ -1,4 +1,4 @@
-from AbstractItemDumper import *
+from .AbstractItemDumper import *
 
 
 class LocationDumper(AbstractItemDumper):
@@ -24,24 +24,24 @@ class LocationDumper(AbstractItemDumper):
     '''
 
     def processRecord(self, r):
-	# Feature dumper generates refs before this dumper runs.
-	# The id mapping already exists, so use makeGlobalKey here.
-	r['id'] = self.context.makeGlobalKey('Location', r['_marker_key'])
+        # Feature dumper generates refs before this dumper runs.
+        # The id mapping already exists, so use makeGlobalKey here.
+        r['id'] = self.context.makeGlobalKey('Location', r['_marker_key'])
 
-	r['markerid'] = self.context.makeItemRef('Marker', r['_marker_key'])
-	r['chromosomeid'] = self.context.makeItemRef('Chromosome', r['_chromosome_key'])
-	# Intermine note: standard is for strand to be "1" or "-1"
-	if r['strand'] == '+':
-	    r['strand'] = '1'
-	elif r['strand'] == '-':
-	    r['strand'] = '-1'
-	else:
-	    r['strand'] = '0'
-	# Sanity checks.
-	if r['startcoordinate'] > r['endcoordinate']:
-	    self.context.log('\nLocation: start > end:\n%s\n'%str(r))
-	    r['startcoordinate'], r['endcoordinate'] = r['endcoordinate'], r['startcoordinate']
-	if r['startcoordinate'] == 0:
-	    self.context.log('\nLocation: start == 0:\n%s\n'%str(r))
-	    r['startcoordinate'] = 1
+        r['markerid'] = self.context.makeItemRef('Marker', r['_marker_key'])
+        r['chromosomeid'] = self.context.makeItemRef('Chromosome', r['_chromosome_key'])
+        # Intermine note: standard is for strand to be "1" or "-1"
+        if r['strand'] == '+':
+            r['strand'] = '1'
+        elif r['strand'] == '-':
+            r['strand'] = '-1'
+        else:
+            r['strand'] = '0'
+        # Sanity checks.
+        if r['startcoordinate'] > r['endcoordinate']:
+            self.context.log('\nLocation: start > end:\n%s\n'%str(r))
+            r['startcoordinate'], r['endcoordinate'] = r['endcoordinate'], r['startcoordinate']
+        if r['startcoordinate'] == 0:
+            self.context.log('\nLocation: start == 0:\n%s\n'%str(r))
+            r['startcoordinate'] = 1
         return r

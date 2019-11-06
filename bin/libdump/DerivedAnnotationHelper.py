@@ -7,19 +7,19 @@ and phenotypes/diseases. (Also, between alleles and phenotypes/diseases.)
 
 To use:
 1. instantiate a DerivedAnnotationHelper instance, pass it an object with an sql method:
-	import db
-	from DerivedAnnotationHelper import DerivedAnnotationHelper
-	dah = DerivedAnnotationHelper(db)
+        import db
+        from DerivedAnnotationHelper import DerivedAnnotationHelper
+        dah = DerivedAnnotationHelper(db)
 
 2. iterate over the derived annotation info. Each result gives the essential data (i.e.,
 database keys) for creating one derived annotation:
-	for mk, vk, tk, arks in dah.iterAnnots('Marker'):
-	    # mk = marker key
-	    # vk = vocab key
-	    # tk = term key
-	    # arks = object:
-	    #	refs = set of bib refs keys
-	    #   ann
+        for mk, vk, tk, arks in dah.iterAnnots('Marker'):
+            # mk = marker key
+            # vk = vocab key
+            # tk = term key
+            # arks = object:
+            #   refs = set of bib refs keys
+            #   ann
 
 The Situation: in MGI, genes are connected to alleles, alleles are connected to genotypes,
 and genotypes are annotated to MP and DO terms. HOWEVER, just because there is a path from 
@@ -78,175 +78,175 @@ allele = MGI:3803301 Tnnt2<tm2Mmto>, disease = DOID:0110426 Cardiomyopathy, Dila
 class DerivedAnnotationHelper:
 
     def __init__(self, context):
-	self.context = context
-	self.g2m = {}
-	self.g2a = {}
-	#   { type -> { key -> { vocabkey -> { termkey -> [{refskeys},{annotkeys}] }}}}
-	self.k2annots = {}
-	self._loadGenotypeIndexes()
-	self._loadGenotypeAnnotations()
-	self._loadAlleleAnnotations()
+        self.context = context
+        self.g2m = {}
+        self.g2a = {}
+        #   { type -> { key -> { vocabkey -> { termkey -> [{refskeys},{annotkeys}] }}}}
+        self.k2annots = {}
+        self._loadGenotypeIndexes()
+        self._loadGenotypeAnnotations()
+        self._loadAlleleAnnotations()
 
     def __addkeys__(self, type, k, vk, tk, rk,ak):
         vti = self.k2annots.setdefault(type,{}).setdefault(k,{}).setdefault(vk,{})
-	ti = vti.get(tk,None)
-	if not ti:
-	    ti = {'refs':set(),'annots':set(),'existing':None}
-	    vti[tk] = ti
-	ti['refs'].add(rk)
-	ti['annots'].add(ak)
+        ti = vti.get(tk,None)
+        if not ti:
+            ti = {'refs':set(),'annots':set(),'existing':None}
+            vti[tk] = ti
+        ti['refs'].add(rk)
+        ti['annots'].add(ak)
 
     # The main entry point. Iterates over results. Specify "Allele" or "Marker".
     # Yields a sequence of tuples (of database keys)
     # from which to generate inferred/derived gene-MP/DO annotations
     # Each yielded tuple has these members:
-    #	0: _marker_key or _allele_key
-    #	1: _vocab_key
-    #	2: _term_key
-    #	3: list of objects of form: 
-    #	   { refs: set of ref keys, 
-    #	     annots: set of annot keys, 
-    #	     existing: annot key or None
-    #	   }
+    #   0: _marker_key or _allele_key
+    #   1: _vocab_key
+    #   2: _term_key
+    #   3: list of objects of form: 
+    #      { refs: set of ref keys, 
+    #        annots: set of annot keys, 
+    #        existing: annot key or None
+    #      }
     #
     def iterAnnots(self, which):
-	for k, kdata  in self.k2annots[which].iteritems():
-	    for vk, tdata in kdata.iteritems():
-		for tk, arks in tdata.iteritems():
-		    yield (k, vk, tk, arks)
+        for k, kdata  in self.k2annots[which].items():
+            for vk, tdata in kdata.items():
+                for tk, arks in tdata.items():
+                    yield (k, vk, tk, arks)
 
     ###############################################
     def _loadGenotypeIndexes(self):
-	# Step 1. Get all geno+allele+marker key combos, where the allele qualifies.
-	# Create 2 indexes: one from genotype to single marker, and another from genotype 
-	# to alleles.
-	# 
+        # Step 1. Get all geno+allele+marker key combos, where the allele qualifies.
+        # Create 2 indexes: one from genotype to single marker, and another from genotype 
+        # to alleles.
+        # 
 
-	q1 = '''
-	SELECT
-	    g._genotype_key, a._allele_key, a._marker_key, m.symbol
-	FROM
-	    GXD_Genotype g,
-	    GXD_AlleleGenotype ag,
-	    ALL_Allele a,
-	    MRK_Marker m
-	WHERE
-		g._genotype_key = ag._genotype_key
-	    AND ag._allele_key = a._allele_key
-	    AND a._marker_key = m._marker_key
-	    AND a.isWildType = 0                /* not wild type */
-	    AND a._marker_key != 37270          /* not Gt(ROSA)26Sor */
-	    AND a._allele_type_key != 847129    /* not transgenic reporter */
-	    AND NOT (g.isConditional = 1        /* not recombinase (cond'l genotypes only) */
-		AND a._allele_key IN (
-		     SELECT _object_key         /* recombinase == has a driver note */
-		     FROM MGI_Note
-		     WHERE _notetype_key = 1034))
-	    '''
+        q1 = '''
+        SELECT
+            g._genotype_key, a._allele_key, a._marker_key, m.symbol
+        FROM
+            GXD_Genotype g,
+            GXD_AlleleGenotype ag,
+            ALL_Allele a,
+            MRK_Marker m
+        WHERE
+                g._genotype_key = ag._genotype_key
+            AND ag._allele_key = a._allele_key
+            AND a._marker_key = m._marker_key
+            AND a.isWildType = 0                /* not wild type */
+            AND a._marker_key != 37270          /* not Gt(ROSA)26Sor */
+            AND a._allele_type_key != 847129    /* not transgenic reporter */
+            AND NOT (g.isConditional = 1        /* not recombinase (cond'l genotypes only) */
+                AND a._allele_key IN (
+                     SELECT _object_key         /* recombinase == has a driver note */
+                     FROM MGI_Note
+                     WHERE _notetype_key = 1034))
+            '''
 
-	def p1(r):
-	    gk = r['_genotype_key']
-	    # genotype-to-marker
-	    if not self.g2m.has_key(gk):
-		# first marker seen for this geno
-		self.g2m[gk] = r['_marker_key']
-	    elif self.g2m[gk] != r['_marker_key']:
-		# oops, multiples not allowed. NO marker for you!!
-		self.g2m[gk] = None
-	    # genotype-to-alleles
-	    self.g2a.setdefault(gk, []).append(r['_allele_key'])
+        def p1(r):
+            gk = r['_genotype_key']
+            # genotype-to-marker
+            if gk not in self.g2m:
+                # first marker seen for this geno
+                self.g2m[gk] = r['_marker_key']
+            elif self.g2m[gk] != r['_marker_key']:
+                # oops, multiples not allowed. NO marker for you!!
+                self.g2m[gk] = None
+            # genotype-to-alleles
+            self.g2a.setdefault(gk, []).append(r['_allele_key'])
 
-	self.context.sql(q1,p1)
+        self.context.sql(q1,p1)
 
     ###############################################
     def _loadGenotypeAnnotations(self):
-	# Step 2. Select existing (base) pheno and disease annotations. Use geno key to
-	# map to a gene (or not). Create an index mapping gene keys to dictionaries, 
-	# which map term keys to lists of refs keys:
-	#	{ markerkey -> { vocabkey -> { termkey -> { refkey } } } }
-	# Do the same for alleles. The second index has the form:
-	#	{ allelekey -> { vocabkey -> { termkey -> { refkey } } } }
-	#
-	q2 = '''
-	    SELECT
-		va._object_key, vt._term_key, vt._vocab_key, ve._refs_key, va._annot_key
-	    FROM
-		VOC_Annot va,
-		VOC_Evidence ve,
-		VOC_Term vt
-	    WHERE
-		va._annottype_key in (1002,1020)	/* MP-Geno, DO-Geno */
-		AND va._annot_key = ve._annot_key
-		AND va._term_key = vt._term_key
-		AND va._qualifier_key not in (2181424, 1614157) /* not "Normal" or "NOT" */
-	    '''
+        # Step 2. Select existing (base) pheno and disease annotations. Use geno key to
+        # map to a gene (or not). Create an index mapping gene keys to dictionaries, 
+        # which map term keys to lists of refs keys:
+        #       { markerkey -> { vocabkey -> { termkey -> { refkey } } } }
+        # Do the same for alleles. The second index has the form:
+        #       { allelekey -> { vocabkey -> { termkey -> { refkey } } } }
+        #
+        q2 = '''
+            SELECT
+                va._object_key, vt._term_key, vt._vocab_key, ve._refs_key, va._annot_key
+            FROM
+                VOC_Annot va,
+                VOC_Evidence ve,
+                VOC_Term vt
+            WHERE
+                va._annottype_key in (1002,1020)        /* MP-Geno, DO-Geno */
+                AND va._annot_key = ve._annot_key
+                AND va._term_key = vt._term_key
+                AND va._qualifier_key not in (2181424, 1614157) /* not "Normal" or "NOT" */
+            '''
 
-	def p2(r):
-	    gk = r['_object_key']
-	    tk = r['_term_key']
-	    vk = r['_vocab_key']
-	    rk = r['_refs_key']
-	    nk = r['_annot_key']
-	    mk = self.g2m.get(gk, None)
-	    if mk:
-		self.__addkeys__('Marker',mk,vk,tk,rk,nk)
-	    for ak in self.g2a.get(gk,[]):
-		self.__addkeys__('Allele',ak,vk,tk,rk,nk)
-	self.context.sql(q2,p2)
+        def p2(r):
+            gk = r['_object_key']
+            tk = r['_term_key']
+            vk = r['_vocab_key']
+            rk = r['_refs_key']
+            nk = r['_annot_key']
+            mk = self.g2m.get(gk, None)
+            if mk:
+                self.__addkeys__('Marker',mk,vk,tk,rk,nk)
+            for ak in self.g2a.get(gk,[]):
+                self.__addkeys__('Allele',ak,vk,tk,rk,nk)
+        self.context.sql(q2,p2)
 
     ###############################################
     def _loadAlleleAnnotations(self):
-	# Step 3. Fold in the direct allele-disease annotations. Only do this for markers. (No need to 
-	# propagate these annotations to Alleles - they're already there.)
-	q3 = '''
-	    SELECT
-		ve._refs_key, a._allele_key, a._marker_key, vt._term_key, vt._vocab_key, va._annot_key
-	    FROM
-		VOC_Annot va,
-		VOC_Evidence ve,
-		VOC_Term vt,
-		ALL_Allele a
-	    WHERE
-		va._annottype_key = 1021
-		AND va._annot_key = ve._annot_key
-		AND va._term_key = vt._term_key
-		AND va._object_key = a._allele_key
-	    '''
+        # Step 3. Fold in the direct allele-disease annotations. Only do this for markers. (No need to 
+        # propagate these annotations to Alleles - they're already there.)
+        q3 = '''
+            SELECT
+                ve._refs_key, a._allele_key, a._marker_key, vt._term_key, vt._vocab_key, va._annot_key
+            FROM
+                VOC_Annot va,
+                VOC_Evidence ve,
+                VOC_Term vt,
+                ALL_Allele a
+            WHERE
+                va._annottype_key = 1021
+                AND va._annot_key = ve._annot_key
+                AND va._term_key = vt._term_key
+                AND va._object_key = a._allele_key
+            '''
 
-	def p3(r):
-	    alk = r['_allele_key']
-	    mk = r['_marker_key']
-	    tk = r['_term_key']
-	    vk = r['_vocab_key']
-	    rk = r['_refs_key']
-	    ak = r['_annot_key']
-	    if mk:
-		self.__addkeys__('Marker',mk,vk,tk,rk,ak)
-	    #
-	    # Special handling. Here we have a real/direct annotation to an allele.
-	    # If we have previously registered a derived annotation for this same allele
-	    # and term, need to mark it. That will allow the dumper code to avoid
-	    # creating a duplicate annotation object. 
-	    da = self.k2annots['Allele'].get(alk,{}).get(vk,{}).get(tk,None)
-	    if da:
-		da['existing'] = ak
+        def p3(r):
+            alk = r['_allele_key']
+            mk = r['_marker_key']
+            tk = r['_term_key']
+            vk = r['_vocab_key']
+            rk = r['_refs_key']
+            ak = r['_annot_key']
+            if mk:
+                self.__addkeys__('Marker',mk,vk,tk,rk,ak)
+            #
+            # Special handling. Here we have a real/direct annotation to an allele.
+            # If we have previously registered a derived annotation for this same allele
+            # and term, need to mark it. That will allow the dumper code to avoid
+            # creating a duplicate annotation object. 
+            da = self.k2annots['Allele'].get(alk,{}).get(vk,{}).get(tk,None)
+            if da:
+                da['existing'] = ak
 
-	self.context.sql(q3,p3)
+        self.context.sql(q3,p3)
 
 
 ####
 
 def __test__():
     try:
-	import db
+        import db
     except:
-	import mgidbconnect as db
-	db.setConnectionFromPropertiesFile()
+        from . import mgidbconnect as db
+        db.setConnectionFromPropertiesFile()
     dah = DerivedAnnotationHelper(db)
     for mk, vk, tk, arks in dah.iterAnnots('Marker'):
-        print "M", mk, vk, tk, arks
+        print("M", mk, vk, tk, arks)
     for ak, vk, tk, arks in dah.iterAnnots('Allele'):
-        print "A", ak, vk, tk, arks
+        print("A", ak, vk, tk, arks)
 
 if __name__== "__main__":
     __test__()

@@ -1,4 +1,4 @@
-from AbstractItemDumper import *
+from .AbstractItemDumper import *
 
 
 class TemplateDumper(AbstractItemDumper):
@@ -7,7 +7,7 @@ class TemplateDumper(AbstractItemDumper):
     FROM
     WHERE
     %(LIMIT_CLAUSE)s
-	'''
+        '''
     ITMPLT = '''
     <item class="" id="%(id)s">
       <attribute name="" value="" />
@@ -19,11 +19,11 @@ class TemplateDumper(AbstractItemDumper):
     '''
 
     def preDump(self):
-	return True
+        return True
 
     def processRecord(self, r):
-	return r
-	
+        return r
+        
     def postDump(self):
-	pass
+        pass
 

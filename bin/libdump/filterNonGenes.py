@@ -6,7 +6,7 @@
 # Extended to also filter BioGrid and IntAct files.
 #
 # USAGE:
-#	$ python filterNonGenes.py -t [homologene|panther|biogrid|intact] < INPUT > OUTPUT
+#       $ python filterNonGenes.py -t [homologene|panther|biogrid|intact] < INPUT > OUTPUT
 #
 # Why:
 # 
@@ -22,7 +22,7 @@ import os
 import sys
 import logging
 import xml.etree.ElementTree as et
-import mgidbconnect as db
+from . import mgidbconnect as db
 
 
 TAB = '\t'
@@ -33,14 +33,14 @@ suppressed = set()
 def cacheGeneIds():
     geneIds = set()
     query = '''
-	SELECT aa.accid
-	FROM ACC_Accession aa, MRK_MCV_Cache mm
-	WHERE  aa._mgitype_key = 2
-	AND aa.private = 0
-	AND aa._object_key = mm._marker_key
-	AND mm.term = 'gene'
-	AND aa._logicaldb_key in (1,13,59,60,85,131,132,133,134)
-	''' 
+        SELECT aa.accid
+        FROM ACC_Accession aa, MRK_MCV_Cache mm
+        WHERE  aa._mgitype_key = 2
+        AND aa.private = 0
+        AND aa._object_key = mm._marker_key
+        AND mm.term = 'gene'
+        AND aa._logicaldb_key in (1,13,59,60,85,131,132,133,134)
+        ''' 
     db.sql(query, lambda r: geneIds.add(r['accid']))
     return geneIds
 
@@ -50,9 +50,9 @@ def cacheGeneIds():
 # 
 class Filter:
     def __init__(self, ifd, ofd, validIds):
-	self.ifd = ifd
-	self.ofd = ofd
-	self.validIds = validIds
+        self.ifd = ifd
+        self.ofd = ofd
+        self.validIds = validIds
 
 #
 # Abstract superclass for simple, line-oriented formats (e.g. tsv).
@@ -61,40 +61,40 @@ class Filter:
 #
 class LineByLineFilter(Filter):
     def go(self):
-	for line in self.ifd:
-	    if self.test(line):
-		self.ofd.write(line)
+        for line in self.ifd:
+            if self.test(line):
+                self.ofd.write(line)
 
 # Homologene: tab delimited file, one line per gene, 
 class HomologeneFilter(LineByLineFilter):
     def test(self, line):
-	fields = line.split(TAB)
-	if fields[1] == '10090':
-	    # write mouse line only if it has a valid id
-	    id = fields[2]
-	    return id in self.validIds
-	else:
-	    # Write out non mouse lines
-	    return True
+        fields = line.split(TAB)
+        if fields[1] == '10090':
+            # write mouse line only if it has a valid id
+            id = fields[2]
+            return id in self.validIds
+        else:
+            # Write out non mouse lines
+            return True
 
 # Panther: tab delimited file of pairs. Two genes per line, in columns 1 and 2.
 class PantherFilter(LineByLineFilter):
     def _test1(self, field):
-	# Only filtering mouse
-	if not field.startswith('MOUSE'):
-	    return True
-	# Panther mostly uses MGI ids for mouse, but some line use Ensembl id.
-	id = None
-	if field.startswith('MOUSE|MGI'):
-	    id = field.split(PIPE)[1].replace("MGI=MGI=", "MGI:")
-	elif field.startswith('MOUSE|Ensembl'):
-	    id = field.split(PIPE)[1].replace("Ensembl=","")
-	return id in self.validIds
+        # Only filtering mouse
+        if not field.startswith('MOUSE'):
+            return True
+        # Panther mostly uses MGI ids for mouse, but some line use Ensembl id.
+        id = None
+        if field.startswith('MOUSE|MGI'):
+            id = field.split(PIPE)[1].replace("MGI=MGI=", "MGI:")
+        elif field.startswith('MOUSE|Ensembl'):
+            id = field.split(PIPE)[1].replace("Ensembl=","")
+        return id in self.validIds
 
     def test(self, line):
-	# have to test both fields. Both must pass for the line to pass.
-	fields = line.split(TAB)
-	return self._test1(fields[0]) and self._test1(fields[1])
+        # have to test both fields. Both must pass for the line to pass.
+        fields = line.split(TAB)
+        return self._test1(fields[0]) and self._test1(fields[1])
 
 
 #
@@ -109,12 +109,12 @@ class PantherFilter(LineByLineFilter):
 #        ...
 #      experimentList
 #        * experimentDescription id=
-#	     ...
+#            ...
 #      interactorList
 #        * interactor id=
 #            xref
 #              * secondaryRef db= id=
-#	     organism ncbiTaxId=
+#            organism ncbiTaxId=
 #            ...
 #      interactionList
 #         *interaction
@@ -136,132 +136,132 @@ class PantherFilter(LineByLineFilter):
 
 class BioGridFilter(Filter):
     def __init__(self, ifd, ofd, validIds):
-	self.ifd = ifd
-	self.ofd = ofd
+        self.ifd = ifd
+        self.ofd = ofd
 
-	self.HEAD = '<?xml version="1.0" encoding="UTF-8"?>\n'
-	self.TAIL = ''
+        self.HEAD = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        self.TAIL = ''
 
-	self.validIds = validIds
-	self.removedInteractors = set()
+        self.validIds = validIds
+        self.removedInteractors = set()
 
     def formatAttrib(self, attrib):
-	attrib = self.reformatXmlNs(attrib)
-	return " ".join(['%s="%s"'%(k,v) for k,v in attrib.items()])
+        attrib = self.reformatXmlNs(attrib)
+        return " ".join(['%s="%s"'%(k,v) for k,v in list(attrib.items())])
 
     def reformatXmlNs(self, attrib):
-	xmlxsiurl='http://www.w3.org/2001/XMLSchema-instance'
-	xmlxsipname = "{%s}schemaLocation"%xmlxsiurl
-	xmlxsival = attrib.pop(xmlxsipname,None)
-	if xmlxsival is None:
-	    return attrib
-	attrib['xmlns'] = xmlxsival.split()[0]
-	attrib['xmlns:xsi'] = xmlxsiurl
-	attrib['xsi:schemaLocation'] = xmlxsival
-	return attrib
+        xmlxsiurl='http://www.w3.org/2001/XMLSchema-instance'
+        xmlxsipname = "{%s}schemaLocation"%xmlxsiurl
+        xmlxsival = attrib.pop(xmlxsipname,None)
+        if xmlxsival is None:
+            return attrib
+        attrib['xmlns'] = xmlxsival.split()[0]
+        attrib['xmlns:xsi'] = xmlxsiurl
+        attrib['xsi:schemaLocation'] = xmlxsival
+        return attrib
 
     def printTagStart(self, tag, elt):
-	self.ofd.write('<'+tag+' ' + self.formatAttrib(elt.attrib) + '>\n')
+        self.ofd.write('<'+tag+' ' + self.formatAttrib(elt.attrib) + '>\n')
 
     def printTagEnd(self, tag):
-	self.ofd.write('</'+tag+'>\n')
+        self.ofd.write('</'+tag+'>\n')
 
     def filterInteractor(self, elt):
-	o = elt.find("organism")
-	if o is None:
-	    # Chemicals.
-	    return True
-	if o.attrib["ncbiTaxId"] != "10090":
-	    # don't filter non-mouse
-	    return False
-	# allow mouse only if we can verify that it is a gene
-	for sr in elt.findall('.//primaryRef')+elt.findall('.//secondaryRef'):
-	    if sr.attrib['db'] == "mgd/mgi":
-	        mgiid = 'MGI:' + sr.attrib['id']
-		if mgiid in self.validIds:
-		    return False
-		else:
-		    self.removedInteractors.add(elt.attrib['id'])
-		    return True
-	    elif sr.attrib['db'][0:7] in ("ensembl","uniprot") and sr.attrib['id'] in self.validIds:
-	        return False
-	self.removedInteractors.add(elt.attrib['id'])
-	return True
+        o = elt.find("organism")
+        if o is None:
+            # Chemicals.
+            return True
+        if o.attrib["ncbiTaxId"] != "10090":
+            # don't filter non-mouse
+            return False
+        # allow mouse only if we can verify that it is a gene
+        for sr in elt.findall('.//primaryRef')+elt.findall('.//secondaryRef'):
+            if sr.attrib['db'] == "mgd/mgi":
+                mgiid = 'MGI:' + sr.attrib['id']
+                if mgiid in self.validIds:
+                    return False
+                else:
+                    self.removedInteractors.add(elt.attrib['id'])
+                    return True
+            elif sr.attrib['db'][0:7] in ("ensembl","uniprot") and sr.attrib['id'] in self.validIds:
+                return False
+        self.removedInteractors.add(elt.attrib['id'])
+        return True
 
     def filterInteraction(self, elt):
-	# filter the interaction if any participant was filtered.
+        # filter the interaction if any participant was filtered.
         for ir in elt.findall('.//interactorRef'):
-	    if ir.text in self.removedInteractors:
-	        return True
-	return False
-	    
+            if ir.text in self.removedInteractors:
+                return True
+        return False
+            
     ### 
 
     def defaultContainer(self, evt, tag, elt):
-	if evt == "start":
-	    self.printTagStart(tag, elt)
-	elif evt == "end":
-	    self.printTagEnd(tag)
+        if evt == "start":
+            self.printTagStart(tag, elt)
+        elif evt == "end":
+            self.printTagEnd(tag)
 
     def defaultItem(self, evt, tag, elt):
         if evt == "end":
-	    self.ofd.write(et.tostring(elt))
-	    self.ofd.write("\n")
-	    elt.clear()
-	    self.stack[-2].remove(elt)
+            self.ofd.write(et.tostring(elt))
+            self.ofd.write("\n")
+            elt.clear()
+            self.stack[-2].remove(elt)
 
 
     ###
 
     def entrySet(self, evt, tag, elt):
-	self.defaultContainer(evt,tag,elt)
+        self.defaultContainer(evt,tag,elt)
 
     def entry(self, evt, tag, elt):
-	self.defaultContainer(evt,tag,elt)
+        self.defaultContainer(evt,tag,elt)
 
     def source(self, evt, tag, elt):
-	self.defaultItem(evt, tag, elt)
+        self.defaultItem(evt, tag, elt)
 
     def experimentList(self, evt, tag, elt):
-	if self.stack[-2].shortTag == "entry":
-	    self.defaultContainer(evt,tag,elt)
+        if self.stack[-2].shortTag == "entry":
+            self.defaultContainer(evt,tag,elt)
 
     def experimentDescription(self, evt, tag, elt):
-	self.defaultItem(evt, tag, elt)
+        self.defaultItem(evt, tag, elt)
 
     def interactorList(self, evt, tag, elt):
-	self.defaultContainer(evt,tag,elt)
+        self.defaultContainer(evt,tag,elt)
 
     def interactor(self, evt, tag, elt):
-	if evt == "end" and not self.filterInteractor(elt):
-	    self.defaultItem(evt, tag, elt)
+        if evt == "end" and not self.filterInteractor(elt):
+            self.defaultItem(evt, tag, elt)
 
     def interactionList(self, evt, tag, elt):
-	self.defaultContainer(evt,tag,elt)
+        self.defaultContainer(evt,tag,elt)
 
     def interaction(self, evt, tag, elt):
-	if evt == "end" and not self.filterInteraction(elt):
-	    self.defaultItem(evt, tag, elt)
+        if evt == "end" and not self.filterInteraction(elt):
+            self.defaultItem(evt, tag, elt)
 
     ###
 
     def go(self):
-	self.ofd.write(self.HEAD)
-	self.stack = []
-	for evt, elt in et.iterparse(self.ifd,events=("start","end")):
-	    tag = elt.tag.split("}")[-1]
-	    if evt == "start":
-		elt.shortTag = tag
-	        self.stack.append(elt)
-	    elif evt == "end":
-	        elt.tag = tag
-	    m = getattr(self,tag,None)
-	    if m:
-	        m(evt,tag,elt)
-	    if evt == "end":
-	        self.stack.pop()
+        self.ofd.write(self.HEAD)
+        self.stack = []
+        for evt, elt in et.iterparse(self.ifd,events=("start","end")):
+            tag = elt.tag.split("}")[-1]
+            if evt == "start":
+                elt.shortTag = tag
+                self.stack.append(elt)
+            elif evt == "end":
+                elt.tag = tag
+            m = getattr(self,tag,None)
+            if m:
+                m(evt,tag,elt)
+            if evt == "end":
+                self.stack.pop()
 
-	self.ofd.write(self.TAIL)
+        self.ofd.write(self.TAIL)
 
 
 def getFilterClass(ftype):
@@ -302,20 +302,20 @@ def main():
     if opts.output == "-":
         ofd = sys.stdout
     elif opts.output:
-	ofd = open(opts.output, 'w')
+        ofd = open(opts.output, 'w')
     for ifile in ifiles:
         if ifile == "-":
-	    ifd = sys.stdin
-	else:
-	    ifd = open(ifile, 'r')
-	    if opts.inplace:
-	        ofile = ifile + ".tmp"
-		ofd = open(ofile, 'w')
-	filter = getFilterClass(opts.filetype)(ifd, ofd, geneIds)
-	filter.go()
-	if opts.inplace:
-	    ofd.close()
-	    os.system("mv %s %s" % (ofile,ifile))
+            ifd = sys.stdin
+        else:
+            ifd = open(ifile, 'r')
+            if opts.inplace:
+                ofile = ifile + ".tmp"
+                ofd = open(ofile, 'w')
+        filter = getFilterClass(opts.filetype)(ifd, ofd, geneIds)
+        filter.go()
+        if opts.inplace:
+            ofd.close()
+            os.system("mv %s %s" % (ofile,ifile))
 
 db.setConnectionFromPropertiesFile()
 main()

@@ -1,135 +1,135 @@
-from common import *
-from DumperContext import DumperContext
+from .common import *
+from .DumperContext import DumperContext
 import re
 
 class AbstractItemDumper:
     SUPER_RE = re.compile(r'<([^>]+)>')
     NA_RE = re.compile(r'<attribute\s+name=".*"\s+value="Not Applicable"\s+/>', re.M|re.I)
-    BAD_XML_CHARS_RE = re.compile(u'[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
+    BAD_XML_CHARS_RE = re.compile('[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
 
     def __init__(self, context):
-	self.context = context
-	self.dumpArgs = None
-	self.writeCount = 0
-	self.dotEvery = 1000
-	self.dotsPerLine = 50
-	self.suppressNA = True
+        self.context = context
+        self.dumpArgs = None
+        self.writeCount = 0
+        self.dotEvery = 1000
+        self.dotsPerLine = 50
+        self.suppressNA = True
 
     def superscript(self, s):
         return self.SUPER_RE.sub(r'<sup>\1</sup>', s)
 
     def quoteLT(self, s):
-	"""
-	Quotes the "<" characters in a string.
-	"""
+        """
+        Quotes the "<" characters in a string.
+        """
         return None if s is None else str(s).replace('<', '&lt;')
         
     def quote(self, s):
         """
-	Quotes a string, s, so that it is safe to use as a value for an xml attribute.
-	"""
-	if s is None:
-	    return None
+        Quotes a string, s, so that it is safe to use as a value for an xml attribute.
+        """
+        if s is None:
+            return None
         else:
             scrubbed = self.BAD_XML_CHARS_RE.sub('', str(s))
-	return scrubbed.replace('&', '&amp;').replace('<', '&lt;').replace('"', '&quot;')
+        return scrubbed.replace('&', '&amp;').replace('<', '&lt;').replace('"', '&quot;')
 
     def makeRefsFromKeys(self, keys, typename):
-	refs = []
-	for k in keys:
-	    ref = self.context.makeItemRef(typename, k)
-	    refs.append('<reference ref_id="%s" />'%ref)
-	return refs
-	    
+        refs = []
+        for k in keys:
+            ref = self.context.makeItemRef(typename, k)
+            refs.append('<reference ref_id="%s" />'%ref)
+        return refs
+            
     def makeReference(self, r, key, name, typename):
-	r[name] = ''
+        r[name] = ''
         if r[key]:
-	    r[name] = '<reference name="%s" ref_id="%s" />' % (name, self.context.makeItemRef(typename,r[key]))
-	return r[name]
+            r[name] = '<reference name="%s" ref_id="%s" />' % (name, self.context.makeItemRef(typename,r[key]))
+        return r[name]
 
     def getWriteCount(self):
         return self.writeCount
 
     def getClassName(self):
         cn = self.__class__.__name__
-	if cn.endswith("Dumper"):
-	    cn = cn[:-6]
-	return cn
+        if cn.endswith("Dumper"):
+            cn = cn[:-6]
+        return cn
 
     def getDefaultFileName(self):
         return self.getClassName() + '.xml'
 
     def constructQuery(self, qtmplt=None, params=None):
-	if qtmplt is None:
-	    qtmplt = self.QTMPLT
-	if params is None:
-	    params = self.context.QUERYPARAMS
+        if qtmplt is None:
+            qtmplt = self.QTMPLT
+        if params is None:
+            params = self.context.QUERYPARAMS
         return qtmplt % params
 
     def writeItem(self, r, tmplt=None, i=None):
-	if tmplt is None:
-	    tmplt=self.ITMPLT
-	if type(tmplt) is types.StringType:
-	     s = tmplt % r
-	else:
-	    s = tmplt[i] % r
-	if self.filter(r, s) is not False:
-	    if self.suppressNA:
-		s = self.NA_RE.sub('',s)
-	    self.context.writeOutput(r['id'],s)
-	    self.writeCount += 1
-	    if self.dotEvery > 0 and self.writeCount % self.dotEvery == 0:
-	        self.context.log('.',timestamp=False,newline=False)
-		if (self.writeCount % (self.dotEvery*self.dotsPerLine) == 0):
-		    self.context.log(' %d'% self.writeCount,timestamp=False,newline=True)
+        if tmplt is None:
+            tmplt=self.ITMPLT
+        if type(tmplt) is str:
+             s = tmplt % r
+        else:
+            s = tmplt[i] % r
+        if self.filter(r, s) is not False:
+            if self.suppressNA:
+                s = self.NA_RE.sub('',s)
+            self.context.writeOutput(r['id'],s)
+            self.writeCount += 1
+            if self.dotEvery > 0 and self.writeCount % self.dotEvery == 0:
+                self.context.log('.',timestamp=False,newline=False)
+                if (self.writeCount % (self.dotEvery*self.dotsPerLine) == 0):
+                    self.context.log(' %d'% self.writeCount,timestamp=False,newline=True)
 
     def _processRecord(self, r, qIndex=None):
-	try:
-	    self.recordCount += 1
-	    if qIndex is None:
-		rr = self.processRecord(r)
-	    else:
-		rr = self.processRecord(r, qIndex)
-	except DumperContext.DanglingReferenceError, e:
-	    # Dangling reference errors (DREs) are tolerated here.
-	    # They occur for one of two reasons: either there really is a DR in 
-	    # the database, or the referenced object was filtered out by an upstream 
-	    # dumper (e.g., withdrawn markers). In either case, we'll simply 
-	    # suppress the current object.
-	    # 
-	    self.context.log('DRE detected. Skipping record...\n' + str(r) + '\n')
-	    return
-	else:
-	    if rr is not None:
-		self.writeItem(rr, None, qIndex)
+        try:
+            self.recordCount += 1
+            if qIndex is None:
+                rr = self.processRecord(r)
+            else:
+                rr = self.processRecord(r, qIndex)
+        except DumperContext.DanglingReferenceError as e:
+            # Dangling reference errors (DREs) are tolerated here.
+            # They occur for one of two reasons: either there really is a DR in 
+            # the database, or the referenced object was filtered out by an upstream 
+            # dumper (e.g., withdrawn markers). In either case, we'll simply 
+            # suppress the current object.
+            # 
+            self.context.log('DRE detected. Skipping record...\n' + str(r) + '\n')
+            return
+        else:
+            if rr is not None:
+                self.writeItem(rr, None, qIndex)
 
     def mainDump(self):
-	if type(self.QTMPLT) is types.StringType:
-	    self.recordCount = 0
-	    q = self.constructQuery()
-	    if len(q.strip()) > 0:
-		self.context.sql(q, self._processRecord)
-	else:
-	    for i,qt in enumerate(self.QTMPLT):
-		self.recordCount = 0
-		q = self.constructQuery(qt)
-		if len(q.strip()) > 0:
-		    self.context.sql(q, self._processRecord, args={'qIndex':i})
+        if type(self.QTMPLT) is str:
+            self.recordCount = 0
+            q = self.constructQuery()
+            if len(q.strip()) > 0:
+                self.context.sql(q, self._processRecord)
+        else:
+            for i,qt in enumerate(self.QTMPLT):
+                self.recordCount = 0
+                q = self.constructQuery(qt)
+                if len(q.strip()) > 0:
+                    self.context.sql(q, self._processRecord, args={'qIndex':i})
 
     def dump(self, **kwargs):
-	self.context.log('%s: Starting dump. args=%s' %(self.__class__.__name__, str(kwargs)))
-	self.dumpArgs = kwargs
-	self.fname = kwargs.get('fname',None)
-	self.writeCount = 0
-	if self.fname:
-	    self.context.openOutput(self.fname)
-	if self.preDump() == False:
-	    return
-	self.mainDump()
-	self.postDump()
-	self.context.log('', timestamp=False)
-	self.context.log('%s: Finished dump. Total items written: %d' % (self.__class__.__name__, self.writeCount))
-	return self.writeCount
+        self.context.log('%s: Starting dump. args=%s' %(self.__class__.__name__, str(kwargs)))
+        self.dumpArgs = kwargs
+        self.fname = kwargs.get('fname',None)
+        self.writeCount = 0
+        if self.fname:
+            self.context.openOutput(self.fname)
+        if self.preDump() == False:
+            return
+        self.mainDump()
+        self.postDump()
+        self.context.log('', timestamp=False)
+        self.context.log('%s: Finished dump. Total items written: %d' % (self.__class__.__name__, self.writeCount))
+        return self.writeCount
 
     #==========================================================================
 
@@ -173,12 +173,12 @@ class AbstractItemDumper:
     # OVERRIDE ME. Return False to cancel the dump.
     #
     def preDump(self):
-    	pass
+        pass
 
     # OVERRIDE ME. Perform any dump postprocessing.
     #
     def postDump(self):
-    	pass
+        pass
 
     # Called just before outputting an item.
     # Return False to cancel outputting that item.

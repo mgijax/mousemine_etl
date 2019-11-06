@@ -1,6 +1,6 @@
-from AbstractItemDumper import *
+from .AbstractItemDumper import *
 from collections import defaultdict 
-from OboParser import OboParser
+from .OboParser import OboParser
 
 class ExpressionDumper(AbstractItemDumper):
 
@@ -35,8 +35,8 @@ class ExpressionDumper(AbstractItemDumper):
     # Assay's can only have one probe / antibody
     def loadProbe(self, assay_key, accid):
         if 'probe' in self.assay[assay_key]:
-            print("Error - Expression Dumper: AssayKey: ", assay_key, " has two probes: ", 
-                  self.assay[assay_key]['probe'], " and " , accid)
+            print(("Error - Expression Dumper: AssayKey: ", assay_key, " has two probes: ", 
+                  self.assay[assay_key]['probe'], " and " , accid))
         else:
             self.assay[assay_key]['probe'] = accid
         return
@@ -108,7 +108,7 @@ class ExpressionDumper(AbstractItemDumper):
 
         if r['_assay_key'] in self.assay:
             r['id'] = self.context.makeItemId('Expression')
-            for k, v in self.assay[r['_assay_key']].items():
+            for k, v in list(self.assay[r['_assay_key']].items()):
                 r[k] = v
 
             for att in attributeList:
@@ -168,7 +168,7 @@ class ExpressionDumper(AbstractItemDumper):
     #  2,4,5,6,7,8 ==> Present, Present trumps Not Specified, Not Specified trumps Absent, Not Specified replaces Ambiguous
     def aggregateGelBands(self, gelbandsInLane):
         lane2strength = {}
-        for (lane, strengths) in gelbandsInLane.items():
+        for (lane, strengths) in list(gelbandsInLane.items()):
             agg = None
             if (max(strengths) > 3) or (2 in strengths):
                 agg = 'Present'
@@ -180,7 +180,7 @@ class ExpressionDumper(AbstractItemDumper):
             if agg is not None:
                 lane2strength[lane] = agg
             else:
-                print("ERROR: aggregateGelBands - Lane: ", lane, " has no gel bands.") 
+                print(("ERROR: aggregateGelBands - Lane: ", lane, " has no gel bands.")) 
 
         return lane2strength
 
@@ -247,7 +247,7 @@ class ExpressionDumper(AbstractItemDumper):
         elif strengthLowerCase in ["ambiguous", "not specified", "not applicable"]:
             return None
         else:
-            print("Error - Expression Dumper:strengthToDetected: ", strength, " not found.")
+            print(("Error - Expression Dumper:strengthToDetected: ", strength, " not found."))
             return None
 
 
@@ -303,7 +303,7 @@ class ExpressionDumper(AbstractItemDumper):
             AND a.private = 0
             AND a.preferred = 1
             AND a._logicaldb_key = 169
-	    AND t._term_key in (select _term_key from voc_term_emapa)
+            AND t._term_key in (select _term_key from voc_term_emapa)
             ''')
 
         referenced_emapaids = set()

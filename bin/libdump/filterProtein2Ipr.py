@@ -6,7 +6,7 @@
 # This filter takes a single command line argument, which is the file of IDs to filter for,
 # It then reads the protein2ipr data from stdin and writes to stadout only those lines where
 # the protein is listed in the file. E.g.:
-#	% zcat protein2ipr.dat.gz | python filterProtein2Ipr.py idFile.dat > filteredData.dat
+#       % zcat protein2ipr.dat.gz | python filterProtein2Ipr.py idFile.dat > filteredData.dat
 #
 # Why:
 # The file containing interpro-to-protein domain data is over 3 GB compressed.
@@ -22,7 +22,7 @@ def readIdFile(fname):
     idset = set()
     fd = open(fname, 'r')
     for line in fd:
-	idset.add(line.strip())
+        idset.add(line.strip())
     fd.close()
     return idset
 
@@ -30,7 +30,7 @@ def main(idfile):
     idset = readIdFile(idfile)
     for line in sys.stdin:
         id,rest = line.split('\t', 1)
-	if id in idset:
-	    sys.stdout.write(line)
+        if id in idset:
+            sys.stdout.write(line)
 
 main(sys.argv[1])

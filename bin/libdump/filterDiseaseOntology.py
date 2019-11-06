@@ -19,7 +19,7 @@
 #
 
 
-from OboParser import OboParser, formatStanza
+from .OboParser import OboParser, formatStanza
 import os
 import sys
 

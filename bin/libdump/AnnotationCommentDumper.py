@@ -1,4 +1,4 @@
-from AbstractItemDumper import *
+from .AbstractItemDumper import *
 from libdump import NoteUtils
 
 

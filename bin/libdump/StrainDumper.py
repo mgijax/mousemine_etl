@@ -1,4 +1,4 @@
-from AbstractItemDumper import *
+from .AbstractItemDumper import *
 
 class StrainDumper(AbstractItemDumper):
     QTMPLT='''
@@ -25,49 +25,49 @@ class StrainDumper(AbstractItemDumper):
     '''
     def loadStrainPubs(self):
         self.sk2pk = {}
-	q='''
-	SELECT ra._refs_key, ra._object_key as "_strain_key"
-	FROM MGI_Reference_Assoc ra
-	WHERE ra._refassoctype_key in (%s)
-	''' % ','.join([ str(x) for x in self.context.QUERYPARAMS['STRAIN_REFASSOCTYPE_KEYS']])
-	for r in self.context.sql(q):
-	    self.sk2pk.setdefault( r['_strain_key'], []).append(self.context.makeItemRef('Reference', r['_refs_key']))
+        q='''
+        SELECT ra._refs_key, ra._object_key as "_strain_key"
+        FROM MGI_Reference_Assoc ra
+        WHERE ra._refassoctype_key in (%s)
+        ''' % ','.join([ str(x) for x in self.context.QUERYPARAMS['STRAIN_REFASSOCTYPE_KEYS']])
+        for r in self.context.sql(q):
+            self.sk2pk.setdefault( r['_strain_key'], []).append(self.context.makeItemRef('Reference', r['_refs_key']))
 
     def loadStrainAttrs(self):
         self.sk2attrs = {}
-	self.sk2typestring = {}
-	q = '''
-	SELECT va._object_key as _strain_key, va._term_key, vt.term
-	FROM VOC_Annot va, VOC_Term vt
-	WHERE va._annottype_key = %(STRAIN_ATTRIBUTE_AKEY)s
-	AND va._term_key = vt._term_key
-	''' % self.context.QUERYPARAMS
-	for r in self.context.sql(q):
-	    iref = self.context.makeItemRef('StrainAttribute', r['_term_key'])
-	    self.sk2attrs.setdefault(r['_strain_key'],[]).append(iref)
-	    self.sk2typestring.setdefault(r['_strain_key'],[]).append(r['term'])
+        self.sk2typestring = {}
+        q = '''
+        SELECT va._object_key as _strain_key, va._term_key, vt.term
+        FROM VOC_Annot va, VOC_Term vt
+        WHERE va._annottype_key = %(STRAIN_ATTRIBUTE_AKEY)s
+        AND va._term_key = vt._term_key
+        ''' % self.context.QUERYPARAMS
+        for r in self.context.sql(q):
+            iref = self.context.makeItemRef('StrainAttribute', r['_term_key'])
+            self.sk2attrs.setdefault(r['_strain_key'],[]).append(iref)
+            self.sk2typestring.setdefault(r['_strain_key'],[]).append(r['term'])
 
     def preDump(self):
-	StrainAttributeDumper(self.context).dump()
+        StrainAttributeDumper(self.context).dump()
         self.loadStrainPubs()
-	self.loadStrainAttrs()
+        self.loadStrainAttrs()
 
     def getOrganismRefForStrain(self, s):
-	taxon = self.context.QUERYPARAMS['STRAIN_ORGANISM'].get(s, 10090)
-	org   = self.context.QUERYPARAMS['ORGANISMS'][taxon]
-	ref   = self.context.makeItemRef('Organism', org[0])
+        taxon = self.context.QUERYPARAMS['STRAIN_ORGANISM'].get(s, 10090)
+        org   = self.context.QUERYPARAMS['ORGANISMS'][taxon]
+        ref   = self.context.makeItemRef('Organism', org[0])
         return ref
 
     def processRecord(self, r):
-	sk = r['_strain_key']
-	r['id'] = self.context.makeItemId('Strain', sk)
-	r['organism'] = self.getOrganismRefForStrain(r['name'])
-	r['name'] = self.quote(r['name'])
-	r['attributeString'] = ', '.join(self.sk2typestring.get(sk,[]))
-	if r['attributeString'] == '':
-	    r['attributeString'] = 'Not specified'
-	r['publications'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.sk2pk.get(sk,[])])
-	r['attributes'] = ''.join(['<reference ref_id="%s" />'%x for x in self.sk2attrs.get(sk,[])])
+        sk = r['_strain_key']
+        r['id'] = self.context.makeItemId('Strain', sk)
+        r['organism'] = self.getOrganismRefForStrain(r['name'])
+        r['name'] = self.quote(r['name'])
+        r['attributeString'] = ', '.join(self.sk2typestring.get(sk,[]))
+        if r['attributeString'] == '':
+            r['attributeString'] = 'Not specified'
+        r['publications'] = ''.join(['<reference ref_id="%s"/>'%x for x in self.sk2pk.get(sk,[])])
+        r['attributes'] = ''.join(['<reference ref_id="%s" />'%x for x in self.sk2attrs.get(sk,[])])
         return r
 
 class StrainAttributeDumper(AbstractItemDumper):
@@ -79,8 +79,8 @@ class StrainAttributeDumper(AbstractItemDumper):
     '''
     ITMPLT = '''
     <item class="StrainAttribute" id="%(id)s" >
-	<attribute name="name" value="%(term)s" />
-	</item>
+        <attribute name="name" value="%(term)s" />
+        </item>
     '''
     def processRecord(self, r):
         r['id'] = self.context.makeGlobalKey('StrainAttribute', r['_term_key'])

@@ -1,5 +1,5 @@
 
-from AbstractItemDumper import *
+from .AbstractItemDumper import *
 
 
 class CrossReferenceDumper(AbstractItemDumper):
@@ -19,31 +19,31 @@ class CrossReferenceDumper(AbstractItemDumper):
     def __init__(self, context, mgiTypeKeys=[1,2,10,11], ldbKeys=None, notLdbKeys=[1], emptyAccid="\'\'"):
         AbstractItemDumper.__init__(self, context)
 
-	def fmt(ks):
-	    return ",".join(map(str,ks))
+        def fmt(ks):
+            return ",".join(map(str,ks))
 
-	clauses = []
-	if mgiTypeKeys :
-	    clauses.append('a._mgitype_key in (%s)'%fmt(mgiTypeKeys))
-	if ldbKeys:
-	    clauses.append('a._logicaldb_key in (%s)'%fmt(ldbKeys))
-	if notLdbKeys:
-	    clauses.append('a._logicaldb_key not in (%s)'%fmt(notLdbKeys))
+        clauses = []
+        if mgiTypeKeys :
+            clauses.append('a._mgitype_key in (%s)'%fmt(mgiTypeKeys))
+        if ldbKeys:
+            clauses.append('a._logicaldb_key in (%s)'%fmt(ldbKeys))
+        if notLdbKeys:
+            clauses.append('a._logicaldb_key not in (%s)'%fmt(notLdbKeys))
         if emptyAccid:
             clauses.append('a.accid != (%s)'%emptyAccid)
-	self.whereClause = ''
-	if clauses:
-	    self.whereClause = 'WHERE %s' % (' AND '.join(clauses))
+        self.whereClause = ''
+        if clauses:
+            self.whereClause = 'WHERE %s' % (' AND '.join(clauses))
         
     def preDump(self):
         self.context.QUERYPARAMS['WHERECLAUSE'] = self.whereClause
 
     def processRecord(self, r):
-	try:
-	    r['subject'] = self.context.makeItemRef(r['_mgitype_key'], r['_object_key'])
-	except:
-	    return None;
-	r['identifier'] = self.quote(r['accid'])
-	r['source'] = self.context.makeItemRef('DataSource', r['_logicaldb_key'])
-	r['id'] = self.context.makeItemId('CrossReference', r['_accession_key'])
-	return r
+        try:
+            r['subject'] = self.context.makeItemRef(r['_mgitype_key'], r['_object_key'])
+        except:
+            return None;
+        r['identifier'] = self.quote(r['accid'])
+        r['source'] = self.context.makeItemRef('DataSource', r['_logicaldb_key'])
+        r['id'] = self.context.makeItemId('CrossReference', r['_accession_key'])
+        return r

@@ -9,21 +9,21 @@ import os
 import types
 
 ##########################################
-TAB	= '\t'
-NL	= '\n'
-COMMA	= ','
-SP	= ' '
-EMPTY	= ''
-DQUOTE	= '"'
-SQUOTE	= "'"
-UNDER	= "_"
+TAB     = '\t'
+NL      = '\n'
+COMMA   = ','
+SP      = ' '
+EMPTY   = ''
+DQUOTE  = '"'
+SQUOTE  = "'"
+UNDER   = "_"
 
 
 ##########################################
 # NCBI Taxon Ids
 TAXAIDS = [
-    10090, 	# mouse
-    9606, 	# human
+    10090,      # mouse
+    9606,       # human
     ]
 
 

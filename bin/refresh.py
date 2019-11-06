@@ -8,7 +8,7 @@
 # Every time a source is refreshed, a new subdirectory is created to hold the results.
 # The new directory's name is a timestamp, which is determined by when the refresher was
 # started. For example:
-#	2014.01.29.14.33.47/
+#       2014.01.29.14.33.47/
 # would be the directory name for a refresh run that started at 2:33:47 in the 
 # afternoon on 29 January, 2014.
 # If the refresher is updating multiple sources, each source will have a subdirectory 
@@ -29,7 +29,7 @@ import os
 import sys
 import time
 import re
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 import logging
 from optparse import OptionParser
 
@@ -41,98 +41,98 @@ class SourceRefresher:
     up results of old runs.
     """
     def __init__(self, sn, cp):
-	self.name = sn
-	self.odir = cp.get(sn,'ODIR')
-	self.pdir = os.path.dirname(self.odir)
-	self.dname = os.path.basename(self.odir)
-	self.latest = os.path.join(self.pdir, "latest")
-	self.cmd = cp.get(sn,'__PRE__') + cp.get(sn,'cmd') + cp.get(sn,'__POST__')
+        self.name = sn
+        self.odir = cp.get(sn,'ODIR')
+        self.pdir = os.path.dirname(self.odir)
+        self.dname = os.path.basename(self.odir)
+        self.latest = os.path.join(self.pdir, "latest")
+        self.cmd = cp.get(sn,'__PRE__') + cp.get(sn,'cmd') + cp.get(sn,'__POST__')
         self.required = cp.get(sn,'required').strip() == 'True'
-	self.success = None
+        self.success = None
 
     def cleanup(self):
-	try:
-	    latest=os.readlink(self.latest)
-	except:
-	    latest=None
+        try:
+            latest=os.readlink(self.latest)
+        except:
+            latest=None
 
-	logging.info("Latest="+str(latest))
-	for fn in os.listdir(self.pdir):
-	    if fn == self.dname or fn == latest \
-	    or not re.match(r"\d\d\d\d\.\d\d\.\d\d\.\d\d\.\d\d\.\d\d", fn):
-	        continue
-	    ffn = os.path.join(self.pdir,fn)
-	    cmd = "rm -fr %s"%ffn
-	    logging.info("Removing directory: " + cmd)
-	    os.system(cmd)
+        logging.info("Latest="+str(latest))
+        for fn in os.listdir(self.pdir):
+            if fn == self.dname or fn == latest \
+            or not re.match(r"\d\d\d\d\.\d\d\.\d\d\.\d\d\.\d\d\.\d\d", fn):
+                continue
+            ffn = os.path.join(self.pdir,fn)
+            cmd = "rm -fr %s"%ffn
+            logging.info("Removing directory: " + cmd)
+            os.system(cmd)
 
     def refresh(self):
         if self.required:
             logging.info("Updating %s is required."%self.name)
         else:
             logging.info("Can use cached data for %s."%self.name);
-	logging.info("%s: starting ..."%self.name)
-	logging.info("%s: running command: %s"%(self.name,self.cmd))
-	os.makedirs(self.odir)
+        logging.info("%s: starting ..."%self.name)
+        logging.info("%s: running command: %s"%(self.name,self.cmd))
+        os.makedirs(self.odir)
 
-	# OK, here we go...
-	status = os.system(self.cmd)
+        # OK, here we go...
+        status = os.system(self.cmd)
 
-	if status == 0:
-	    # re-link 'latest' to point to new directory
-	    c2 = "cd %s; rm -f latest; ln -s %s latest" % (self.pdir,self.dname)
-	    logging.info("%s: running command: %s"%(self.name,c2))
-	    try:
-		os.system(c2)
-	    except:
-		# failed at the last minute. dang!
-		self.success = False
-		logging.info("%s: relinking failed!"%self.name)
-	    else:
-		# yahoo!
-		self.success = True
-		logging.info("%s: success!"%self.name)
-	else:
-	    # cmd failed
-	    self.success=False
+        if status == 0:
+            # re-link 'latest' to point to new directory
+            c2 = "cd %s; rm -f latest; ln -s %s latest" % (self.pdir,self.dname)
+            logging.info("%s: running command: %s"%(self.name,c2))
+            try:
+                os.system(c2)
+            except:
+                # failed at the last minute. dang!
+                self.success = False
+                logging.info("%s: relinking failed!"%self.name)
+            else:
+                # yahoo!
+                self.success = True
+                logging.info("%s: success!"%self.name)
+        else:
+            # cmd failed
+            self.success=False
             if self.required:
                 logging.info("Unacceptable failure, exiting.")
                 sys.exit(1)
             else:
                 logging.info("Failure of this source is acceptable dump will continue.");
-	    logging.info("%s: command failed!"%self.name)
-	self.cleanup()
+            logging.info("%s: command failed!"%self.name)
+        self.cleanup()
 
 class MyConfigParser(ConfigParser):
-    def get(self, sn, n, *args):
-        val = ConfigParser.get(self, sn, n, *args)
-	try:
-	    PCT=ConfigParser.get(self, sn, 'PCT')
-	except:
-	    return val
-	else:
-	    return val.replace(PCT,'%')
+    def get(self, sn, n, *args, **kwargs):
+        val = ConfigParser.get(self, sn, n, *args, **kwargs)
+        try:
+            PCT=ConfigParser.get(self, sn, 'PCT')
+        except:
+            return val
+        else:
+            return val.replace(PCT,'%')
 
 def getOpts():
     op = OptionParser()
     op.add_option(
-    	"-l", "--list", dest="listSources",
-    	default=False, action="store_true",
-	help="Print list of known sources and exit.")
+        "-l", "--list", dest="listSources",
+        default=False, action="store_true",
+        help="Print list of known sources and exit.")
     op.add_option(
-    	"-s", "--source", dest="sources",
-	metavar="SOURCE",
-    	default=[], action="append",
-	help="Name of a source to refresh (repeatable). Default = refresh all sources")
+        "-s", "--source", dest="sources",
+        metavar="SOURCE",
+        default=[], action="append",
+        help="Name of a source to refresh (repeatable). Default = refresh all sources")
     op.add_option(
-    	"-x", "--exclude", dest="xsources",
-	metavar="SOURCE",
-    	default=[], action="append",
-	help="Name of a source to EXCLUDE from refreshing (repeatable). Default = don't exclude any sources")
+        "-x", "--exclude", dest="xsources",
+        metavar="SOURCE",
+        default=[], action="append",
+        help="Name of a source to EXCLUDE from refreshing (repeatable). Default = don't exclude any sources")
     op.add_option(
-    	"-o", "--outputdir", dest="odir",
-	metavar="PATH",
-	help="Output directory.")
+        "-o", "--outputdir", dest="odir",
+        metavar="PATH",
+        help="Output directory.")
     return op.parse_args()
     
 def main():
@@ -149,7 +149,7 @@ def main():
         snames = cp.sections()
         snames.sort()
         for n in snames:
-            print n
+            print(n)
         sys.exit(0)
 
     if not os.path.exists(odirbase):
@@ -163,40 +163,40 @@ def main():
     rex = re.compile(r"^\[(.*)\]") # match .cfg section headings
     for l in cfd:
         m = rex.match(l)
-	if m and m.group(1) != "DEFAULT":
-	    orderedSources.append( m.group(1))
+        if m and m.group(1) != "DEFAULT":
+            orderedSources.append( m.group(1))
     cfd.close()
 
     # if user specified certain sources, filter for just those
     # if user specified sources to exclude, filter those out
     if len(opts.sources) > 0:
-	orderedSources = filter(lambda x:x in opts.sources, orderedSources)
-    orderedSources = filter(lambda x:x not in opts.xsources, orderedSources)
+        orderedSources = [x for x in orderedSources if x in opts.sources]
+    orderedSources = [x for x in orderedSources if x not in opts.xsources]
 
     # refresh each source 
     lfn = None
     success = True
     for sn in orderedSources:
         if not cp.has_section(sn):
-	    logging.error("Unknown source name: %s"%sn)
-	    continue
-	if lfn is None:
-	    # init logger first time through
-	    lfn = cp.get(sn,'LOGFILE')
-	    logging.basicConfig(
-		level=logging.DEBUG,
-		format='%(asctime)s %(levelname)s %(message)s',
-		filename=lfn,
-		filemode='w')
-	    logging.info("STARTING SOURCE ETL REFRESH " +40*"-")
-	# refresh the source
-	sr = SourceRefresher(sn, cp)
-	sr.refresh()
-	# accumulate success
-	success = success and sr.success
+            logging.error("Unknown source name: %s"%sn)
+            continue
+        if lfn is None:
+            # init logger first time through
+            lfn = cp.get(sn,'LOGFILE')
+            logging.basicConfig(
+                level=logging.DEBUG,
+                format='%(asctime)s %(levelname)s %(message)s',
+                filename=lfn,
+                filemode='w')
+            logging.info("STARTING SOURCE ETL REFRESH " +40*"-")
+        # refresh the source
+        sr = SourceRefresher(sn, cp)
+        sr.refresh()
+        # accumulate success
+        success = success and sr.success
     # All done.
     if success:
-	logging.info("Refresh succeeded!")
+        logging.info("Refresh succeeded!")
     else:
         logging.info("Refresh failed!")
     logging.info("END OF REFRESH " +40*"-")

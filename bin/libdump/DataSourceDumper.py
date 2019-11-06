@@ -1,5 +1,5 @@
 
-from AbstractItemDumper import *
+from .AbstractItemDumper import *
 
 class DataSourceDumper(AbstractItemDumper):
     QTMPLT = '''
@@ -21,61 +21,61 @@ class DataSourceDumper(AbstractItemDumper):
 
     def preDump(self):
         self.context.dataSourceByName = {}
-	q = '''
-	SELECT _logicaldb_key
-	FROM ACC_ActualDB
-	GROUP BY _logicaldb_key
-	HAVING count(*) > 1
-	'''
-	self.multActual = set()
-	for r in self.context.sql(q):
-	    self.multActual.add(r['_logicaldb_key'])
+        q = '''
+        SELECT _logicaldb_key
+        FROM ACC_ActualDB
+        GROUP BY _logicaldb_key
+        HAVING count(*) > 1
+        '''
+        self.multActual = set()
+        for r in self.context.sql(q):
+            self.multActual.add(r['_logicaldb_key'])
 
 
     def processRecord(self, r):
-	try:
-	    r['id'] = self.context.makeItemId('DataSource', r['_logicaldb_key'])
-	except:
-	    return None
-	if r['_logicaldb_key'] in self.multActual:
-	    r['name'] = r['aname']
-	if r['name'] == "MGI":
-	    r['url'] = 'http://www.informatics.jax.org/accession/@@@@'
-	if r['url'] is None:
-	    r['url'] = ''
-	else:
-	    r['url'] = '<attribute name="url" value="%s" />' % self.quote(r['url'])
+        try:
+            r['id'] = self.context.makeItemId('DataSource', r['_logicaldb_key'])
+        except:
+            return None
+        if r['_logicaldb_key'] in self.multActual:
+            r['name'] = r['aname']
+        if r['name'] == "MGI":
+            r['url'] = 'http://www.informatics.jax.org/accession/@@@@'
+        if r['url'] is None:
+            r['url'] = ''
+        else:
+            r['url'] = '<attribute name="url" value="%s" />' % self.quote(r['url'])
         r['url'] = r['url'].replace('@@@@','&lt;&lt;attributeValue&gt;&gt;')
-	self.context.dataSourceByName[r['name']] = r['id']
-	r['name'] = self.quote(r['name'])
-	r['description'] = self.quote(r['description'])
-	if r['_logicaldb_key'] == self.context.QUERYPARAMS['MGI_LDBKEY']:
-	    r['description'] += \
-	      ' [%(public_version)s %(lastdump_date_f)s]' % self.context.mgi_dbinfo
-	return r
+        self.context.dataSourceByName[r['name']] = r['id']
+        r['name'] = self.quote(r['name'])
+        r['description'] = self.quote(r['description'])
+        if r['_logicaldb_key'] == self.context.QUERYPARAMS['MGI_LDBKEY']:
+            r['description'] += \
+              ' [%(public_version)s %(lastdump_date_f)s]' % self.context.mgi_dbinfo
+        return r
 
 class DataSetDumper(AbstractItemDumper):
     ITMPLT = '''
     <item class="DataSet" id="%(id)s">
-	<attribute name="name" value="%(name)s" />
-	<reference name="dataSource" ref_id="%(dataSource)s" />
-	</item>
+        <attribute name="name" value="%(name)s" />
+        <reference name="dataSource" ref_id="%(dataSource)s" />
+        </item>
     '''
     def dataSet(self, **rec):
-	if not hasattr(self.context, 'dataSetByName'):
-	    self.context.dataSetByName = {}
-	n = rec['name']
-	id = self.context.dataSetByName.get(n, None)
-	if id:
-	    return id
+        if not hasattr(self.context, 'dataSetByName'):
+            self.context.dataSetByName = {}
+        n = rec['name']
+        id = self.context.dataSetByName.get(n, None)
+        if id:
+            return id
         id = self.context.makeItemId('DataSet')
-	rec['id'] = id
-	if not rec.has_key('dataSource'):
-	    # if not specified, assume source is MGI
-	    rec['dataSource'] = self.context.makeItemRef('DataSource',1)
-	self.writeItem(rec)
-	self.context.dataSetByName[n] = id
-	return id
+        rec['id'] = id
+        if 'dataSource' not in rec:
+            # if not specified, assume source is MGI
+            rec['dataSource'] = self.context.makeItemRef('DataSource',1)
+        self.writeItem(rec)
+        self.context.dataSetByName[n] = id
+        return id
 
 
 

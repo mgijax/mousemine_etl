@@ -1,4 +1,4 @@
-from AbstractItemDumper import *
+from .AbstractItemDumper import *
 
 class OrganismDumper(AbstractItemDumper):
     # This dumper used to query the MGI_Organism, 
@@ -10,8 +10,8 @@ class OrganismDumper(AbstractItemDumper):
        </item>
     '''
     def preDump(self):
-        for r in self.context.QUERYPARAMS['ORGANISMS'].values():
-	    oid = self.context.makeItemId('Organism', r[0])
-	    #self.context.log(str(r))
-	    #self.context.log(oid)
-	    self.writeItem({'id':oid, 'taxon':r[2]})
+        for r in list(self.context.QUERYPARAMS['ORGANISMS'].values()):
+            oid = self.context.makeItemId('Organism', r[0])
+            #self.context.log(str(r))
+            #self.context.log(oid)
+            self.writeItem({'id':oid, 'taxon':r[2]})

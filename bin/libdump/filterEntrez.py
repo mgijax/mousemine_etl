@@ -2,7 +2,7 @@
 # filterEntrez.py
 #
 # USAGE:
-#	$ python filterEntrez.py < INPUT > OUTPUT
+#       $ python filterEntrez.py < INPUT > OUTPUT
 # where INPUT is the gene file downloaded from NCBI and OUTPUT is the corrected file.
 #
 # WHY we need it:
@@ -38,7 +38,7 @@ import os
 import sys
 import logging
 import xml.etree.ElementTree as et
-import mgidbconnect as db
+from . import mgidbconnect as db
 
 
 TAB = '\t'

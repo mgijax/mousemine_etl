@@ -5,7 +5,7 @@
 #
 
 import sys
-import mgidbconnect as db
+from . import mgidbconnect as db
 import time
 
 # retrieves all EMAPA terms with basic into
@@ -45,18 +45,18 @@ QSYNONYMS = '''
 # retrieves all edges in the EMAPA dag
 QEDGES = '''
     SELECT ct._term_key, 
-	ct.term as child, 
-	l.label,
-	pt.term as parent,
-	pa.accid as pid
+        ct.term as child, 
+        l.label,
+        pt.term as parent,
+        pa.accid as pid
     FROM voc_term pt, 
-	dag_node pn, 
-	dag_dag d, 
-	voc_term ct, 
-	dag_node cn, 
-	dag_edge e, 
-	dag_label l,
-	acc_accession pa
+        dag_node pn, 
+        dag_dag d, 
+        voc_term ct, 
+        dag_node cn, 
+        dag_edge e, 
+        dag_label l,
+        acc_accession pa
     WHERE pt._vocab_key = 90
     AND d._mgitype_key = 13
     AND pt._term_key = pn._object_key
@@ -118,40 +118,40 @@ class EmapaOboDumper:
         self.ofd = sys.stdout
 
     def main(self):
-	self.ofd.write(IHDR)
-	#
-	tid2parents = {}
-	for e in db.sql(QEDGES):
-	    l = e['label']
-	    if l == "is-a":
-		rel = "is_a: %(pid)s ! %(parent)s\n" % e
-	    else:
-		rel = "relationship: part_of %(pid)s ! %(parent)s\n" % e
-	    tid2parents.setdefault(e['_term_key'],[]).append( rel )
-	#
-	tid2synonyms = {}
-	for s in db.sql(QSYNONYMS):
-	    syn = 'synonym: "%(synonym)s" RELATED []\n' % s
-	    tid2synonyms.setdefault(s['_term_key'],[]).append( syn )
-	    
-	#
-	tid2altids = {}
-	for a in db.sql(QALTIDS):
-	    aid = 'alt_id: %(id)s\n' % a
-	    tid2altids.setdefault(a['_term_key'],[]).append(aid)
+        self.ofd.write(IHDR)
+        #
+        tid2parents = {}
+        for e in db.sql(QEDGES):
+            l = e['label']
+            if l == "is-a":
+                rel = "is_a: %(pid)s ! %(parent)s\n" % e
+            else:
+                rel = "relationship: part_of %(pid)s ! %(parent)s\n" % e
+            tid2parents.setdefault(e['_term_key'],[]).append( rel )
+        #
+        tid2synonyms = {}
+        for s in db.sql(QSYNONYMS):
+            syn = 'synonym: "%(synonym)s" RELATED []\n' % s
+            tid2synonyms.setdefault(s['_term_key'],[]).append( syn )
+            
+        #
+        tid2altids = {}
+        for a in db.sql(QALTIDS):
+            aid = 'alt_id: %(id)s\n' % a
+            tid2altids.setdefault(a['_term_key'],[]).append(aid)
 
-	#
+        #
         for r in db.sql(QTERMS):
-	    r['relationships'] = ''.join(tid2parents.get(r['_term_key'],[]))
-	    r['synonyms'] = ''.join(tid2synonyms.get(r['_term_key'],[]))
-	    r['altids'] = ''.join(tid2altids.get(r['_term_key'],[]))
-	    self.ofd.write( ITERM % r )
+            r['relationships'] = ''.join(tid2parents.get(r['_term_key'],[]))
+            r['synonyms'] = ''.join(tid2synonyms.get(r['_term_key'],[]))
+            r['altids'] = ''.join(tid2altids.get(r['_term_key'],[]))
+            self.ofd.write( ITERM % r )
 
-	#
-	self.ofd.write(ITAIL)
+        #
+        self.ofd.write(ITAIL)
 
-	#
-	self.ofd.close()
+        #
+        self.ofd.close()
 
 db.setConnectionFromPropertiesFile()
 EmapaOboDumper().main()

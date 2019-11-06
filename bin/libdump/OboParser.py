@@ -52,62 +52,62 @@ NL="\n"
 class OboParser(object):
     def __init__(self, stanzaProcessor):
         self.fd = None
-	self.stanzacount = None
-	self.stanza = None
-	self.stanzaProcessor = stanzaProcessor
+        self.stanzacount = None
+        self.stanza = None
+        self.stanzaProcessor = stanzaProcessor
 
     def __clearStanza__(self):
-	self.stanza = { TYPE : None, LINES : [] }
+        self.stanza = { TYPE : None, LINES : [] }
 
     def parseFile(self, file):
-	if type(file) is types.StringType:
-	    self.fd = open(file, 'r')
-	else:
-	    self.fd = file
-	self.__go__()
-	if type(file) is types.StringType:
-	    self.fd.close()
+        if type(file) is str:
+            self.fd = open(file, 'r')
+        else:
+            self.fd = file
+        self.__go__()
+        if type(file) is str:
+            self.fd.close()
 
     def __finishStanza__(self):
-	if len(self.stanza[LINES]) > 0:
-	    self.stanzacount += 1
-	    self.stanzaProcessor(self.stanza[TYPE],self.stanza[LINES])
-	    self.__clearStanza__()
+        if len(self.stanza[LINES]) > 0:
+            self.stanzacount += 1
+            self.stanzaProcessor(self.stanza[TYPE],self.stanza[LINES])
+            self.__clearStanza__()
 
     def __parseLine__(self, line):
-	if line.startswith("["):
-	    j = line.find("]",1)
-	    return (TYPE, line[1:j])
-	else:
-	    j = line.find(":")
-	    return (line[0:j], line[j+1:].strip())
+        if line.startswith("["):
+            j = line.find("]",1)
+            return (TYPE, line[1:j])
+        else:
+            j = line.find(":")
+            return (line[0:j], line[j+1:].strip())
 
     def __addToStanza__(self, line):
-	k,v = self.__parseLine__(line)
-	if k==TYPE:
-	    self.stanza[TYPE] = v
-	else:
-	    self.stanza[LINES].append( (k,v) )
+        k,v = self.__parseLine__(line)
+        if k==TYPE:
+            self.stanza[TYPE] = v
+        else:
+            self.stanza[LINES].append( (k,v) )
         
     def __go__(self):
-	self.__clearStanza__()
-	self.stanzacount = 0
-	for line in self.fd:
-	    if line.startswith(COMMENTCHAR):
-	        continue
-	    elif len(line) == 1:
-		self.__finishStanza__()
-	    else:
-	        self.__addToStanza__(line)
-	self.__finishStanza__()
+        self.__clearStanza__()
+        self.stanzacount = 0
+        for line in self.fd:
+            if line.startswith(COMMENTCHAR):
+                continue
+            elif len(line) == 1:
+                self.__finishStanza__()
+            else:
+                self.__addToStanza__(line)
+        self.__finishStanza__()
 
 def formatStanza(stype, slines):
     t = stype and "[%s]\n"%stype or ""
-    s = NL.join(map(lambda x: "%s: %s"%(x[0],x[1]), slines))+NL
+    s = NL.join(["%s: %s"%(x[0],x[1]) for x in slines])+NL
     r = t+s
     return r
 
 if __name__ == "__main__":
     def p(s,l):
-        print formatStanza(s,l)
+        print(formatStanza(s,l))
     OboParser(p).parseFile(sys.stdin)
