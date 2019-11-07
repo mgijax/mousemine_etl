@@ -6,20 +6,23 @@
 #
 
 import sys
-import urllib
+from urllib.parse import quote_plus
+from urllib.request import urlopen
 
 q = '''<query 
     model="genomic"
     view="SequenceFeature.crossReferences.identifier SequenceFeature.primaryIdentifier SequenceFeature.symbol"
     sortOrder="SequenceFeature.primaryIdentifier ASC"
     >
-	<constraint path="SequenceFeature.crossReferences.source.name" op="=" value="Ensembl Gene Model" code="A" />
+        <constraint path="SequenceFeature.crossReferences.source.name" op="=" value="Ensembl Gene Model" code="A" />
     </query>'''
 
-url = 'http://www.mousemine.org/mousemine/service/query/results?query=' + urllib.quote_plus(q);
-fd = urllib.urlopen(url)
+url = 'http://www.mousemine.org/mousemine/service/query/results?query=' + quote_plus(q);
+fd = urlopen(url)
 sys.stdout.write("ensembl\tmgi\n")
 for line in fd:
-    toks = line[:-1].split('\t')
+    line = line.decode('utf-8')
+    toks = line[:-1]
+    toks = toks.split('\t')
     toks[0] = toks[0].split('.')[0]
     sys.stdout.write('%s\t%s\n' % (toks[0], toks[1]))

@@ -8,7 +8,7 @@ import gff3lite as gff3
 N = 1000
 
 giter = gff3.iterate(sys.stdin)
-header = giter.next()
+header = next(giter)
 for l in header:
     sys.stdout.write(l + '\n')
 count = 0

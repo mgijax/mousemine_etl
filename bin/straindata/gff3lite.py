@@ -5,22 +5,22 @@
 import types
 
 # Character constants
-TAB	= '\t'
-NL	= '\n'
-SEMI	= ';'
-EQ	= '='
-HASH	= '#'
-BANG	= '!'
-COMMA	= ','
+TAB     = '\t'
+NL      = '\n'
+SEMI    = ';'
+EQ      = '='
+HASH    = '#'
+BANG    = '!'
+COMMA   = ','
 # GFF3 field index constants
-SEQID	= 0
-SOURCE	= 1
-TYPE	= 2
-START	= 3
-END	= 4
-SCORE	= 5
-STRAND	= 6
-PHASE	= 7
+SEQID   = 0
+SOURCE  = 1
+TYPE    = 2
+START   = 3
+END     = 4
+SCORE   = 5
+STRAND  = 6
+PHASE   = 7
 ATTRIBUTES = 8
 #
 GFF3HEADER = "##gff-version 3"
@@ -36,7 +36,7 @@ def parseLine(line):
     return f
 #
 def formatCol9(attrs):
-    s = SEMI.join(['%s=%s'%(k,v) for (k,v) in attrs.items()])
+    s = SEMI.join(['%s=%s'%(k,v) for (k,v) in list(attrs.items())])
     return s
 #
 def formatLine(f):
@@ -46,16 +46,16 @@ def formatLine(f):
 
 def iterate(fileIn, yieldHeader=True, yieldGroups=True):
     # open file
-    if type(fileIn) is types.StringType:
+    if type(fileIn) is bytes:
         fin = open(fileIn, 'r')
     else:
         fin = fileIn
     # collect header lines
     header = []
-    line = fin.next()
+    line = next(fin)
     while line.startswith(HASH):
         header.append(line[:-1])
-	line = fin.next()
+        line = next(fin)
     # yield the header, if requested
     if yieldHeader:
         yield header
@@ -63,15 +63,18 @@ def iterate(fileIn, yieldHeader=True, yieldGroups=True):
     currGroup = []
     while line:
         line = line[:-1]
-	if line == GFF3SEPARATOR:
-	    if len(currGroup) > 0:
-		if yieldGroups:
-		    yield currGroup
-		else:
-		    for f in currGroup:
-		        yield f
-		currGroup = []
-	else:
-	    currGroup.append(parseLine(line))
-	line = fin.next()
+        if line == GFF3SEPARATOR:
+            if len(currGroup) > 0:
+                if yieldGroups:
+                    yield currGroup
+                else:
+                    for f in currGroup:
+                        yield f
+                currGroup = []
+        else:
+            currGroup.append(parseLine(line))
+        try:
+          line = next(fin)
+        except StopIteration:
+          line = None
     fin.close()
