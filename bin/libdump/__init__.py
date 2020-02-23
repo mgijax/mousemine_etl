@@ -11,6 +11,7 @@ from .FeatureDumper      import FeatureDumper, MouseFeatureDumper, NonMouseFeatu
 from .GenotypeDumper     import GenotypeDumper
 from .HomologyDumper     import HomologyDumper
 from .LocationDumper     import LocationDumper
+from .OboParser          import OboParser
 from .OrganismDumper     import OrganismDumper
 from .ProteinDumper      import ProteinDumper
 from .PublicationDumper  import PublicationDumper

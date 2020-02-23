@@ -5,7 +5,7 @@
 #
 
 import sys
-from . import mgidbconnect as db
+import mgidbconnect as db
 import time
 
 # retrieves all EMAPA terms with basic into

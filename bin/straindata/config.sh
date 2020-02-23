@@ -1,4 +1,5 @@
 
+export PYTHON="python3"
 export ENSEMBL_GFFURL=ftp://ftp.ensembl.org/pub/current_gff3
 export ENSEMBL_FASTAURL=ftp://ftp.ensembl.org/pub/current_fasta
 export ENS_VER=98

@@ -22,7 +22,7 @@ import os
 import sys
 import logging
 import xml.etree.ElementTree as et
-from . import mgidbconnect as db
+import mgidbconnect as db
 
 
 TAB = '\t'
@@ -205,7 +205,7 @@ class BioGridFilter(Filter):
 
     def defaultItem(self, evt, tag, elt):
         if evt == "end":
-            self.ofd.write(et.tostring(elt))
+            self.ofd.write(et.tostring(elt).decode('utf-8'))
             self.ofd.write("\n")
             elt.clear()
             self.stack[-2].remove(elt)
@@ -223,7 +223,7 @@ class BioGridFilter(Filter):
         self.defaultItem(evt, tag, elt)
 
     def experimentList(self, evt, tag, elt):
-        if self.stack[-2].shortTag == "entry":
+        if self.stack[-2].attrib['shortTag'] == "entry":
             self.defaultContainer(evt,tag,elt)
 
     def experimentDescription(self, evt, tag, elt):
@@ -251,7 +251,7 @@ class BioGridFilter(Filter):
         for evt, elt in et.iterparse(self.ifd,events=("start","end")):
             tag = elt.tag.split("}")[-1]
             if evt == "start":
-                elt.shortTag = tag
+                elt.attrib['shortTag'] = tag
                 self.stack.append(elt)
             elif evt == "end":
                 elt.tag = tag

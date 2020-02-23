@@ -26,7 +26,7 @@ function prepFasta {
     fsrc=$3
     odir=$4
     logit "Strain ${strain}: uncompressing ${fsrc} into ${odir}/${localname}.chromosome.*.fa"
-    gunzip -c "${fsrc}" | python ${BDIR}/prepFastaFile.py -i - -s "${strain}" -l "${localname}" -o "${odir}" 2>>${LOGFILE}
+    gunzip -c "${fsrc}" | ${PYTHON} ${BDIR}/prepFastaFile.py -i - -s "${strain}" -l "${localname}" -o "${odir}" 2>>${LOGFILE}
     checkExit
 }
 
@@ -36,10 +36,10 @@ function prepGff {
     gname=$3
     smpname=$4
     logit "Converting ${fname} to ${gname}"
-    gunzip -c "${fname}" | python ${BDIR}/prepGffFile.py -s "${strain}" -m ${MAPPINGFILE} > "${gname}" 2>>${LOGFILE}
+    gunzip -c "${fname}" | ${PYTHON} ${BDIR}/prepGffFile.py -s "${strain}" -m ${MAPPINGFILE} > "${gname}" 2>>${LOGFILE}
     checkExit
     logit "Creating sample ${smpname} from ${gname}"
-    python ${BDIR}/makeSamples.py < ${gname} > "${smpname}" 2>>${LOGFILE}
+    ${PYTHON} ${BDIR}/makeSamples.py < ${gname} > "${smpname}" 2>>${LOGFILE}
     checkExit
 }
 
@@ -59,7 +59,7 @@ function main {
     logit "Starting strain genomes GFF3 file preparation script."
     #
     logit "Generating ENSEMBL to MGI id mapping file..."
-    python ${BDIR}/getEnsemblMgiMapping.py > ${MAPPINGFILE} 2>>${LOGFILE}; checkExit
+    ${PYTHON} ${BDIR}/getEnsemblMgiMapping.py > ${MAPPINGFILE} 2>>${LOGFILE}; checkExit
     # loop through the strains config table
     logit "Reading strains from ${STRAINS}..."
     while read -u 10 p; do
