@@ -31,6 +31,7 @@ EXCLUDE_TYPES = [
   "biological_region",
   "supercontig",
   "chromosome",
+  "scaffold"
   ]
 
 #

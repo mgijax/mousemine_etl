@@ -218,7 +218,7 @@ class ExpressionDumper(AbstractItemDumper):
             AND gl._gelcontrol_key = 1
             '''
 
-        for r in self.context.sql(q):
+        for r in self.context.sqliter(q):
             if r['_gellane_key'] in gl2strength:
                 r['strength'] = gl2strength[r['_gellane_key']]
                 r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
@@ -270,7 +270,7 @@ class ExpressionDumper(AbstractItemDumper):
             '''
 
 
-        for r in self.context.sql(q):
+        for r in self.context.sqliter(q):
             r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
                 
             isDetected = self.strengthToBoolean(r['strength'])
