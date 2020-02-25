@@ -39,7 +39,7 @@ class VersionChecker:
             if(line.startswith(self.pname)):
                 if line != self.currentProperty:
                     self.needsUpdate = True
-                    print line, self.currentProperty
+                    print(line, self.currentProperty)
         fd.close()
 
     def main(self):
@@ -50,8 +50,8 @@ class VersionChecker:
             if fname_re.search(fname) and not fname.endswith("~"):
                 self.doSubst(dir, fname)
             if(self.needsUpdate):
-                print fname, "\n\nRUN_ETL_UPDATE=Update-ETL"
+                print(fname, "\n\nRUN_ETL_UPDATE=Update-ETL")
                 sys.exit(0)
-        print "ETL data is up to date."
+        print("ETL data is up to date.")
 
 VersionChecker().main()

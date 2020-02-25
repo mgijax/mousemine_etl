@@ -60,7 +60,7 @@ def process( ifd ):
                 # This is an id. First make sure it's not a duplicate. 
                 if id in idx:
                     errors = True
-                    print "Duplicate reference: id=%s file=%s line=%d" %(id, val[0], val[1])
+                    print("Duplicate reference: id=%s file=%s line=%d" %(id, val[0], val[1]))
                 else:
                     # New id. Record it. Also, if there's a pending xref, remove it
                     idx[id] = val
@@ -72,10 +72,10 @@ def checkRefs( ):
     log("Checking xrefs\n")
     errors = len(refidx) > 0
     # Sort the items by filename and line number for printing.
-    items = refidx.items()
+    items = list(refidx.items())
     items.sort(None, lambda i:(i[1][0],i[1][1]))
     for (refid, val) in items:
-        print "Dangling reference: id=%s file=%s line=%d" %(refid, val[0], val[1])
+        print("Dangling reference: id=%s file=%s line=%d" %(refid, val[0], val[1]))
 
 def main():
     # assemble list of files to read
