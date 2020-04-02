@@ -71,6 +71,23 @@ QEDGES = '''
     AND pa._mgitype_key = 13
     '''
 
+# retrieves xrefs to the MP for all EMAPA terms
+QXREFS = '''
+    SELECT
+        a.accid,
+        emapa._term_key
+    FROM
+        MGI_Relationship r,
+        VOC_Term mp,
+        VOC_Term emapa,
+        ACC_Accession a
+    WHERE
+        r._category_key = 1007
+        AND r._object_key_1 = mp._term_key
+        AND r._object_key_2 = emapa._term_key
+        AND mp._term_key = a._object_key
+        AND a._mgitype_key = 13
+    '''
 # E.g.: 07:02:2014 16:28
 DATE = time.strftime("%d:%m:%Y %H:%M", time.localtime(time.time()))
 
@@ -87,7 +104,7 @@ name: %(name)s
 namespace: emapa
 starts_at: %(startstage)s
 ends_at: %(endstage)s
-%(altids)s%(synonyms)s%(relationships)s
+%(altids)s%(synonyms)s%(relationships)s%(mpids)s
 '''
 
 NL = "\n"
@@ -141,10 +158,16 @@ class EmapaOboDumper:
             tid2altids.setdefault(a['_term_key'],[]).append(aid)
 
         #
+        tid2xrefs = {}
+        for xr in db.sql(QXREFS):
+            mpid = 'xref: %(accid)s\n' % xr
+            tid2xrefs.setdefault(xr['_term_key'], []).append(mpid)
+        #
         for r in db.sql(QTERMS):
             r['relationships'] = ''.join(tid2parents.get(r['_term_key'],[]))
             r['synonyms'] = ''.join(tid2synonyms.get(r['_term_key'],[]))
             r['altids'] = ''.join(tid2altids.get(r['_term_key'],[]))
+            r['mpids'] = ''.join(tid2xrefs.get(r['_term_key'],[]))
             self.ofd.write( ITERM % r )
 
         #
