@@ -87,6 +87,8 @@ QXREFS = '''
         AND r._object_key_2 = emapa._term_key
         AND mp._term_key = a._object_key
         AND a._mgitype_key = 13
+        AND a._logicaldb_key = 34
+        AND a.preferred = 1
     '''
 # E.g.: 07:02:2014 16:28
 DATE = time.strftime("%d:%m:%Y %H:%M", time.localtime(time.time()))
