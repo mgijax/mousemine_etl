@@ -10,3 +10,7 @@ LOG
 .DS_Store
 
 nohup.out
+
+*.xml
+
+output
