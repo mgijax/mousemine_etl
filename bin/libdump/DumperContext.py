@@ -44,6 +44,7 @@ class DumperContext:
             'TERM_TYPEKEY'       : 13,
             'ORGANISM_TYPEKEY'   : 20,
             'CHROMOSOME_TYPEKEY' : 27,
+            'HTEXPT_TYPEKEY'     : 42,
 
             #######################
             # These are the Organisms we are dumping data for from MGI.
@@ -93,10 +94,14 @@ class DumperContext:
 
             # VOC_Term keys
             'HYBRID_HOMOL_KEY' : 13764519,
+            'CURATIONSTATE_DONE_KEY' : 20475421,
 
             # Annotation type keys
             'ALLELE_ATTRIBUTE_AKEY' : 1014,
             'STRAIN_ATTRIBUTE_AKEY' : 1009,
+
+            # Property Type keys
+            'HTEXPT_PROPERTYTYPE_KEY' : 1002,
 
             # MGI_Reference_Assoc, _refassoctype_keys
             'STRAIN_REFASSOCTYPE_KEYS' : [1009,1010],
@@ -131,6 +136,8 @@ class DumperContext:
 
             # MGI_Notetype keys
             'STRAIN_SPECIFIC_NOTETYPE_KEY' : 1035,
+            'HTEXPT_NOTETYPE_KEY' : 1047,
+            'HTSAMPLE_NOTETYPE_KEY' : 1048,
 
             #
             'TAXAIDS' : COMMA.join(["'%d'"%o for o in TAXAIDS]),
@@ -176,7 +183,10 @@ class DumperContext:
             'Comment'                   : 10025,
             'SyntenyBlock'              : 10026,
             'StrainAttribute'           : 10027,
-            'AllelePublication'         : 10028
+            'AllelePublication'         : 10028,
+            'HTExperiment'              : 10029,
+            'HTVariable'                : 10030,
+            'HTSample'                  : 10031,
             })
 
         # load MGI datadump timestamp from the database

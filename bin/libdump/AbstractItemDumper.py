@@ -7,13 +7,14 @@ class AbstractItemDumper:
     NA_RE = re.compile(r'<attribute\s+name=".*"\s+value="Not Applicable"\s+/>', re.M|re.I)
     BAD_XML_CHARS_RE = re.compile('[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
 
-    def __init__(self, context):
+    def __init__(self, context, parentDumper = None):
         self.context = context
         self.dumpArgs = None
         self.writeCount = 0
         self.dotEvery = 1000
         self.dotsPerLine = 50
         self.suppressNA = True
+        self.parentDumper = parentDumper
 
     def superscript(self, s):
         return self.SUPER_RE.sub(r'<sup>\1</sup>', s)

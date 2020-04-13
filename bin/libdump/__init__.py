@@ -7,6 +7,7 @@ from .ChromosomeDumper   import ChromosomeDumper
 from .CrossReferenceDumper import CrossReferenceDumper
 from .DataSourceDumper   import DataSourceDumper
 from .ExpressionDumper   import ExpressionDumper
+from .HTIndexDumper      import HTIndexDumper
 from .FeatureDumper      import FeatureDumper, MouseFeatureDumper, NonMouseFeatureDumper
 from .GenotypeDumper     import GenotypeDumper
 from .HomologyDumper     import HomologyDumper
