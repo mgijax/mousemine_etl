@@ -91,6 +91,7 @@ class DumperContext:
             'ALLELE_COLLECTION_VKEY' : 92,
             'ALLELE_ATTRIBUTE_VKEY' : 93,
             'STRAIN_ATTRIBUTE_VKEY' : 27,
+            'HT_VARIABLES_VKEY' : 122,
 
             # VOC_Term keys
             'HYBRID_HOMOL_KEY' : 13764519,

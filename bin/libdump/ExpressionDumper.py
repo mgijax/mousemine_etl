@@ -207,7 +207,16 @@ class ExpressionDumper(AbstractItemDumper):
         ak2figurelabel = self.loadAssayImageFigureLabels()
 
         q = '''
-            SELECT gl._gellane_key, gl._assay_key, gl.sex, gl.age, gl._genotype_key, gl.sequencenum as specimennum, a.accid AS emapa, gls._stage_key as stage
+            SELECT
+                gl._gellane_key,
+                gl._assay_key,
+                gl.sex,
+                gl.age,
+                gl._genotype_key,
+                gl.sequencenum as specimennum,
+                a.accid AS emapa,
+                a._object_key as _emapa_key,
+                gls._stage_key as stage
             FROM gxd_gellane gl, gxd_gellanestructure gls, acc_accession a
             WHERE gl._gellane_key = gls._gellane_key                                                            
             AND a._object_key = gls._emapa_term_key
@@ -231,7 +240,7 @@ class ExpressionDumper(AbstractItemDumper):
                 if r['_assay_key'] in ak2figurelabel:
                     r['image'] = ak2figurelabel[r['_assay_key']]
                     
-                r['structure'] = self.context.makeItemRef('EMAPATerm', int(r['emapa'][-5:]))
+                r['structure'] = self.context.makeItemRef('EMAPATerm', r['_emapa_key'])
                 r['emaps'] = r['emapa'].replace('EMAPA','EMAPS') + str(r['stage'])                
                 self.writeRecord(r)
         return
@@ -256,8 +265,27 @@ class ExpressionDumper(AbstractItemDumper):
         isImageResultKeys = self.loadImageResultKeys()
 
         q = '''
-            SELECT s._assay_key, s.sex, s.age, s._genotype_key, s.sequencenum as specimennum, s.specimenlabel AS image, isr._result_key, isr.resultNote AS note, str.strength, p.pattern, irs._stage_key as stage, a.accid AS emapa
-            FROM gxd_specimen s, gxd_insituresult isr, gxd_strength str, gxd_pattern p, gxd_isresultstructure irs, acc_accession a 
+            SELECT
+                s._assay_key,
+                s.sex,
+                s.age,
+                s._genotype_key,
+                s.sequencenum as specimennum,
+                s.specimenlabel AS image,
+                isr._result_key,
+                isr.resultNote AS note,
+                str.strength,
+                p.pattern,
+                irs._stage_key as stage,
+                a.accid AS emapa,
+                a._object_key as _emapa_key
+            FROM
+                gxd_specimen s,
+                gxd_insituresult isr,
+                gxd_strength str,
+                gxd_pattern p,
+                gxd_isresultstructure irs,
+                acc_accession a 
             WHERE s._specimen_key = isr._specimen_key
             AND isr._strength_key = str._strength_key
             AND isr._pattern_key = p._pattern_key
@@ -280,7 +308,7 @@ class ExpressionDumper(AbstractItemDumper):
             if r['_result_key'] not in isImageResultKeys:
                 r['image'] = ''
                 
-            r['structure'] = self.context.makeItemRef('EMAPATerm', int(r['emapa'][-5:]))
+            r['structure'] = self.context.makeItemRef('EMAPATerm', r['_emapa_key'])
             r['emaps'] = r['emapa'].replace('EMAPA','EMAPS') + str(r['stage'])
             self.writeRecord(r)
         return
@@ -295,7 +323,7 @@ class ExpressionDumper(AbstractItemDumper):
                 '''
 
         q = self.constructQuery('''
-            SELECT t.term, a.accid AS emapa
+            SELECT t.term, a.accid AS emapa, a._object_key as _emapa_key
             FROM voc_term t, acc_accession a
             WHERE t._vocab_key = 90
             AND t._term_key = a._object_key
@@ -311,7 +339,7 @@ class ExpressionDumper(AbstractItemDumper):
         for r in self.context.sql(q):
             if r['emapa'] not in referenced_emapaids:
                 r['identifier'] = r['emapa']
-                r['id'] = self.context.makeItemId('EMAPATerm', int(r['emapa'][-5:]))
+                r['id'] = self.context.makeItemId('EMAPATerm', r['_emapa_key'])
                 referenced_emapaids.add(r['emapa'])
 
                 self.writeItem(r, tmplt)
