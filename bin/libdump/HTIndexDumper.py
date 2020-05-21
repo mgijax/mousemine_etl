@@ -24,7 +24,7 @@ class HTIndexDumper(AbstractItemDumper):
             e.name,
             e.description,
             e.release_date,
-            e.lastupdate_date,
+            e.last_curated_date,
             e.evaluated_date,
             es.term as evaluationstate,
             cs.term as curationstate,
@@ -58,6 +58,7 @@ class HTIndexDumper(AbstractItemDumper):
           <attribute name="source" value="%(source)s" />
           <collection name="publications">%(pubrefs)s</collection>
           %(notes)s
+          <attribute name="curationDate" value="%(curationDate)s" />
           </item>
     '''
     REFTMPLT = '''
@@ -211,9 +212,6 @@ class HTIndexDumper(AbstractItemDumper):
         for vk in self.ek2vars.get(ek,[]):
             vrefs += '<reference ref_id="%s" />' % self.context.makeItemRef('HTVariable', vk)
         r['variables'] = vrefs
-        #r['variables'] = "|".join(self.ek2vars.get(ek,[]))
-
-        rids = self.ek2ids[ek]
 
         # create a Publication reference for each PMID.
         pubrefs = ''
@@ -222,7 +220,9 @@ class HTIndexDumper(AbstractItemDumper):
             ref = self.context.makeItemRef('Reference', rk)
             pubrefs += '<reference ref_id="%s" />' % ref
         r['pubrefs'] = pubrefs
-
+        #
+        r['curationDate'] = r['last_curated_date'].strftime('%Y-%m-%d')
+        #
         return r
 
     #
@@ -269,7 +269,7 @@ class HTSampleDumper (AbstractItemDumper) :
             ,hts.agemin
             ,hts.agemax
             ,r.term as relevance
-            ,o.commonname as organism
+            ,hts._organism_key
             ,s.term as sex
             ,a.term as emapaterm
             ,a._term_key as _emapa_key
@@ -278,7 +278,6 @@ class HTSampleDumper (AbstractItemDumper) :
         FROM
             gxd_htsample hts
             ,VOC_Term r
-            ,MGI_Organism o
             ,VOC_Term s
             ,VOC_Term a
             ,GXD_TheilerStage t
@@ -289,7 +288,6 @@ class HTSampleDumper (AbstractItemDumper) :
                 FROM GXD_HTExperiment
                 )
             AND hts._relevance_key = r._term_key
-            AND hts._organism_key = o._organism_key
             AND hts._sex_key = s._term_key
             AND hts._emapa_key = a._term_key
             AND hts._stage_key = t._stage_key
@@ -299,6 +297,7 @@ class HTSampleDumper (AbstractItemDumper) :
     ITMPLT = '''
         <item class="HTSample" id="%(id)s">
           <attribute name="name" value="%(name)s" />
+          <reference name="organism" ref_id="%(organism)s" />
           <attribute name="sex" value="%(sex)s" />
           <attribute name="stage" value="%(stage)s" />
           <attribute name="age" value="%(age)s" />
@@ -312,6 +311,11 @@ class HTSampleDumper (AbstractItemDumper) :
     '''
     def preDump (self) :
         self.loadNotes()
+        self.loadMusOrganisms()
+
+    def loadMusOrganisms (self) :
+        self.musOrganisms = set(self.context.QUERYPARAMS['MUS_ORGANISM_KEYS'])
+        print (self.musOrganisms )
 
     def loadNotes (self):
         self.sk2notes = {}
@@ -328,6 +332,10 @@ class HTSampleDumper (AbstractItemDumper) :
     def processRecord (self, r) :
         ek = r['_experiment_key']
         if not ek in self.parentDumper.eksWritten:
+            return None
+        if r['_organism_key'] in self.musOrganisms:
+            r['organism'] = self.context.makeItemRef('Organism', r['_organism_key'])
+        else:
             return None
         r['id'] = self.context.makeItemId('HTSample', r['_sample_key'])
         r['name'] = self.quote(r['name'])

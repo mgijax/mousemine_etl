@@ -48,17 +48,12 @@ class DumperContext:
 
             #######################
             # These are the Organisms we are dumping data for from MGI.
-            # MGI does not represent pahari, caroli, or spretus as organisms per se,
-            # so they are hard-coded here.
             'ORGANISMS' : {
-                # NB: It is important that musculus and human have keys 1 and 2 respectively
-                # to match keys in MGI.
                 10090: [1, 'Mus musculus',10090],
                 9606 : [2, 'Homo sapiens', 9606],
-                # For anything else, the keys can be whatever.
-                10093: [3, 'Mus pahari',  10093],
-                10089: [4, 'Mus caroli',  10089],
-                10096: [5, 'Mus spretus', 10096],
+                10093: [130, 'Mus pahari',  10093],
+                10089: [97, 'Mus caroli',  10089],
+                10096: [98, 'Mus spretus', 10096],
             },
             # Hard code the mapping from strain name to taxon
             # Add as many as desired. These are the ones we need for release.
@@ -67,6 +62,8 @@ class DumperContext:
                 'CAROLI/EiJ' : 10089,
                 'SPRET/EiJ'  : 10096,
             },
+            #
+            'MUS_ORGANISM_KEYS' : [1, 97, 98, 130],
             #######################
 
             # MRK_Types (marker type) keys
