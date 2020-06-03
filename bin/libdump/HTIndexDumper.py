@@ -33,11 +33,11 @@ class HTIndexDumper(AbstractItemDumper):
             s.term  as source
         FROM
             GXD_HTExperiment e,
-            VOC_Term es,
-            VOC_Term cs,
-            VOC_Term st,
-            VOC_Term et,
-            VOC_Term s
+            VOC_Term es, /* evaluation state */
+            VOC_Term cs, /* curation state */
+            VOC_Term st, /* study type */
+            VOC_Term et, /* experiment type */
+            VOC_Term s   /* data source */
         WHERE
                 e._evaluationstate_key = es._term_key
             AND e._curationstate_key = cs._term_key
@@ -284,15 +284,20 @@ class HTSampleDumper (AbstractItemDumper) :
             ,GXD_Genotype g
         WHERE
             hts._experiment_key in (
-                SELECT _experiment_key
-                FROM GXD_HTExperiment
+                SELECT
+                    e._experiment_key
+                FROM
+                    GXD_HTExperiment e,
+                    VOC_Term s
+                WHERE
+                    e._curationstate_key = s._term_key
+                    AND s.term = 'Done'
                 )
             AND hts._relevance_key = r._term_key
             AND hts._sex_key = s._term_key
             AND hts._emapa_key = a._term_key
             AND hts._stage_key = t._stage_key
             AND hts._genotype_key = g._genotype_key
-
     '''
     ITMPLT = '''
         <item class="HTSample" id="%(id)s">
@@ -315,7 +320,6 @@ class HTSampleDumper (AbstractItemDumper) :
 
     def loadMusOrganisms (self) :
         self.musOrganisms = set(self.context.QUERYPARAMS['MUS_ORGANISM_KEYS'])
-        print (self.musOrganisms )
 
     def loadNotes (self):
         self.sk2notes = {}
