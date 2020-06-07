@@ -57,7 +57,7 @@ class HTIndexDumper(AbstractItemDumper):
           <collection name="variables">%(variables)s</collection>
           <attribute name="source" value="%(source)s" />
           <collection name="publications">%(pubrefs)s</collection>
-          %(notes)s
+          <attribute name="notes" value="%(notes)s" />
           <attribute name="curationDate" value="%(curationDate)s" />
           </item>
     '''
@@ -171,7 +171,7 @@ class HTIndexDumper(AbstractItemDumper):
         ''' % self.context.QUERYPARAMS
         for r in self.context.sql(q):
             ek = r['_object_key']
-            self.ek2notes[ek] = '<attribute name="notes" value="%s" />' % self.quote(r['note'])
+            self.ek2notes[ek] = self.quote(r['note'])
 
     # Writes the HT Variable vocabulary (_vocab_key = 122)
     def writeVariableTerms (self) :
@@ -270,18 +270,20 @@ class HTSampleDumper (AbstractItemDumper) :
             ,hts.agemax
             ,r.term as relevance
             ,hts._organism_key
+            ,o.commonname
             ,s.term as sex
             ,a.term as emapaterm
             ,a._term_key as _emapa_key
             ,t.stage
             ,g._genotype_key
         FROM
-            gxd_htsample hts
+            gxd_htsample hts 
+            LEFT OUTER JOIN VOC_Term a ON hts._emapa_key = a._term_key
+            LEFT OUTER JOIN GXD_TheilerStage t ON hts._stage_key = t._stage_key
+            ,GXD_Genotype g
             ,VOC_Term r
             ,VOC_Term s
-            ,VOC_Term a
-            ,GXD_TheilerStage t
-            ,GXD_Genotype g
+            ,MGI_Organism o
         WHERE
             hts._experiment_key in (
                 SELECT
@@ -295,14 +297,15 @@ class HTSampleDumper (AbstractItemDumper) :
                 )
             AND hts._relevance_key = r._term_key
             AND hts._sex_key = s._term_key
-            AND hts._emapa_key = a._term_key
-            AND hts._stage_key = t._stage_key
             AND hts._genotype_key = g._genotype_key
+            AND hts._organism_key = o._organism_key
     '''
     ITMPLT = '''
         <item class="HTSample" id="%(id)s">
           <attribute name="name" value="%(name)s" />
+          <attribute name="curationStatus" value="%(curationStatus)s" />
           <reference name="organism" ref_id="%(organism)s" />
+          <attribute name="organismName" value="%(commonname)s" />
           <attribute name="sex" value="%(sex)s" />
           <attribute name="stage" value="%(stage)s" />
           <attribute name="age" value="%(age)s" />
@@ -311,7 +314,7 @@ class HTSampleDumper (AbstractItemDumper) :
           <reference name="experiment" ref_id="%(experiment)s" />
           <reference name="genotype" ref_id="%(genotype)s" />
           <reference name="structure" ref_id="%(emapa)s" />
-          %(notes)s
+          <attribute name="notes" value="%(notes)s" />
           </item>
     '''
     def preDump (self) :
@@ -319,7 +322,8 @@ class HTSampleDumper (AbstractItemDumper) :
         self.loadMusOrganisms()
 
     def loadMusOrganisms (self) :
-        self.musOrganisms = set(self.context.QUERYPARAMS['MUS_ORGANISM_KEYS'])
+        qps = self.context.QUERYPARAMS
+        self.okOrganisms = set(qps['MUS_ORGANISM_KEYS'] + qps['MOD_ORGANISM_KEYS'])
 
     def loadNotes (self):
         self.sk2notes = {}
@@ -331,23 +335,34 @@ class HTSampleDumper (AbstractItemDumper) :
         ''' % self.context.QUERYPARAMS
         for r in self.context.sql(q):
             sk = r['_object_key']
-            self.sk2notes[sk] = '<attribute name="notes" value="%s" />' % self.quote(r['note'])
+            self.sk2notes[sk] = self.quote(r['note'])
 
     def processRecord (self, r) :
         ek = r['_experiment_key']
         if not ek in self.parentDumper.eksWritten:
             return None
-        if r['_organism_key'] in self.musOrganisms:
-            r['organism'] = self.context.makeItemRef('Organism', r['_organism_key'])
-        else:
-            return None
         r['id'] = self.context.makeItemId('HTSample', r['_sample_key'])
         r['name'] = self.quote(r['name'])
-        r['age'] = self.quote(r['age'])
-        r['experiment'] = self.context.makeItemRef('HTExperiment', ek)
-        r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
-        r['emapa'] = self.context.makeItemRef('EMAPATerm', r['_emapa_key'])
         r['notes'] = self.sk2notes.get(r['_sample_key'], '')
+        r['experiment'] = self.context.makeItemRef('HTExperiment', ek)
+        if r['_organism_key'] in self.okOrganisms:
+            r['organism'] = self.context.makeItemRef('Organism', r['_organism_key'])
+        else:
+            r['organism'] = ''
+        #
+        if r['relevance'] == "Yes" :
+            r['curationStatus'] = 'Curated'
+            r['age'] = self.quote(r['age'])
+            r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
+            r['emapa'] = self.context.makeItemRef('EMAPATerm', r['_emapa_key'])
+        else :
+            r['curationStatus'] = 'Not curated (%s)' % r['relevance']
+            r['age'] = ''
+            r['genotype'] = ''
+            r['emapa'] = ''
+            r['agemin'] = ''
+            r['agemax'] = ''
+            r['stage'] = ''
         return r
 
     def postDump (self) :

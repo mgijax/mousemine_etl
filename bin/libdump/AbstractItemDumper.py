@@ -5,6 +5,7 @@ import re
 class AbstractItemDumper:
     SUPER_RE = re.compile(r'<([^>]+)>')
     NA_RE = re.compile(r'<attribute\s+name=".*"\s+value="Not Applicable"\s+/>', re.M|re.I)
+    NV_RE = re.compile(r'^ *<(attribute|reference).* (value|ref_id)=""\s*/> *$', re.M|re.I)
     BAD_XML_CHARS_RE = re.compile('[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
 
     def __init__(self, context, parentDumper = None):
@@ -14,6 +15,7 @@ class AbstractItemDumper:
         self.dotEvery = 1000
         self.dotsPerLine = 50
         self.suppressNA = True
+        self.suppressNV = True
         self.parentDumper = parentDumper
 
     def superscript(self, s):
@@ -77,6 +79,8 @@ class AbstractItemDumper:
         if self.filter(r, s) is not False:
             if self.suppressNA:
                 s = self.NA_RE.sub('',s)
+            if self.suppressNV:
+                s = self.NV_RE.sub('',s)
             self.context.writeOutput(r['id'],s)
             self.writeCount += 1
             if self.dotEvery > 0 and self.writeCount % self.dotEvery == 0:

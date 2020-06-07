@@ -62,8 +62,10 @@ class DumperContext:
                 'CAROLI/EiJ' : 10089,
                 'SPRET/EiJ'  : 10096,
             },
-            #
+            # lab mouse, caroli, spretus, pahari
             'MUS_ORGANISM_KEYS' : [1, 97, 98, 130],
+            # other MOD organisms human, rat, fly, fish
+            'MOD_ORGANISM_KEYS' : [2, 40, 64, 84],
             #######################
 
             # MRK_Types (marker type) keys
