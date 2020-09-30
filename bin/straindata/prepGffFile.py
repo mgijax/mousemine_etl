@@ -277,6 +277,7 @@ class GffPrep:
             if 'Parent' in attrs and attrs['Parent'] in skipped:
                 if 'ID' in attrs:
                     skipped.add(attrs['ID'])
+                continue
             #
             newattrs = {}
             if i==0 :
