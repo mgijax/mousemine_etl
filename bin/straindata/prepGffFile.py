@@ -31,7 +31,8 @@ EXCLUDE_TYPES = [
   "biological_region",
   "supercontig",
   "chromosome",
-  "scaffold"
+  "scaffold",
+  "pre_miRNA"
   ]
 
 #
@@ -252,6 +253,7 @@ class GffPrep:
     def processMGIFeatureGroup(self, grp):
         #
         newgrp = []
+        skipped = set()
         mgiid = None
         newid = None
         source = None
@@ -264,11 +266,18 @@ class GffPrep:
         eid2index = {}
         #
         for i,f in enumerate(grp):
-            # if type is in exclude list, skip it
-            if f[gff3.TYPE] in EXCLUDE_TYPES:
-                continue
             #
             attrs = f[gff3.ATTRIBUTES]
+            # if type is in exclude list, skip it
+            if f[gff3.TYPE] in EXCLUDE_TYPES:
+                if 'ID' in attrs:
+                    skipped.add(attrs['ID'])
+                continue
+            # if my parent has been omitted, omit me as well.
+            if 'Parent' in attrs and attrs['Parent'] in skipped:
+                if 'ID' in attrs:
+                    skipped.add(attrs['ID'])
+            #
             newattrs = {}
             if i==0 :
                 # Top level feature, e.g. a gene. 

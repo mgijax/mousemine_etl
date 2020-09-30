@@ -2,7 +2,7 @@
 #
 # Update data
 #
-# Main script for building/updating the data files used by the viewer.
+# Main script for building/updating strain genome data files
 #
 
 export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
