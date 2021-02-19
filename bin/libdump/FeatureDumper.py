@@ -238,8 +238,7 @@ class MouseFeatureDumper(AbstractFeatureDumper):
             AND a._mgitype_key = %(MARKER_TYPEKEY)d
             AND a._logicaldb_key = %(MGI_LDBKEY)d
             AND a.preferred = 1
-            AND a.private = 0
-            ,
+            AND a.private = 0,
         MRK_Location_Cache lc,
         MRK_MCV_Cache c, 
         MRK_Chromosome mc
