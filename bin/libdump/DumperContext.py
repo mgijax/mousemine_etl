@@ -93,7 +93,7 @@ class DumperContext:
             'HT_VARIABLES_VKEY' : 122,
 
             # VOC_Term keys
-            'HYBRID_HOMOL_KEY' : 13764519,
+            'HYBRID_HOMOL_KEY' : 75885740,
             'CURATIONSTATE_DONE_KEY' : 20475421,
 
             # Annotation type keys
@@ -145,9 +145,6 @@ class DumperContext:
 
             #
             'ORGANISMKEYS' : '1,2',
-
-            #
-            'MGI_HYBRID_HOMOLOGY_KEY' : 13764519,
 
             }
 

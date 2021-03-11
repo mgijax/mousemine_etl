@@ -22,7 +22,7 @@ class HomologyDumper(AbstractItemDumper):
         FROM mrk_cluster mc, mrk_clustermember mcm, mrk_marker mm
         WHERE mc._cluster_key = mcm._cluster_key
         AND mcm._marker_key = mm._marker_key
-        AND mc._clustersource_key = %(MGI_HYBRID_HOMOLOGY_KEY)d
+        AND mc._clustersource_key = %(HYBRID_HOMOL_KEY)d
         ORDER BY mc._cluster_key
         '''
 
