@@ -8,21 +8,28 @@
 import sys
 from urllib.parse import quote_plus
 from urllib.request import urlopen
+import mgidbconnect as db
 
-q = '''<query 
-    model="genomic"
-    view="SequenceFeature.crossReferences.identifier SequenceFeature.primaryIdentifier SequenceFeature.symbol"
-    sortOrder="SequenceFeature.primaryIdentifier ASC"
-    >
-        <constraint path="SequenceFeature.crossReferences.source.name" op="=" value="Ensembl Gene Model" code="A" />
-    </query>'''
+db.setConnectionFromPropertiesFile()
 
-url = 'http://www.mousemine.org/mousemine/service/query/results?query=' + quote_plus(q);
-fd = urlopen(url)
+q = '''
+    SELECT 
+      aa.accid as mgiid,
+      aa2.accid as modelid,
+      aa2._logicaldb_key
+    FROM
+      acc_accession aa,
+      acc_accession aa2
+    WHERE aa._logicaldb_key = 1
+      AND aa._mgitype_key = 2
+      AND aa.private = 0
+      AND aa.preferred = 1
+      AND aa._object_key = aa2._object_key
+      AND aa2._logicaldb_key = 60
+      AND aa2._mgitype_key = 2
+      AND aa2.preferred = 1
+      '''
 sys.stdout.write("ensembl\tmgi\n")
-for line in fd:
-    line = line.decode('utf-8')
-    toks = line[:-1]
-    toks = toks.split('\t')
-    toks[0] = toks[0].split('.')[0]
-    sys.stdout.write('%s\t%s\n' % (toks[0], toks[1]))
+for r in db.sql(q):
+    sys.stdout.write('%s\t%s\n' % (r['modelid'], r['mgiid']))
+
