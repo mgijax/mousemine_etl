@@ -134,7 +134,25 @@ class HTIndexDumper(AbstractItemDumper):
         FROM ACC_Accession
         WHERE _mgitype_key = 1
         AND _logicaldb_key = 29
-        '''
+        AND _object_key IN (
+          SELECT _refs_key
+          FROM BIB_Refs r
+          INNER JOIN ACC_Accession a2
+          ON r._refs_key = a2._Object_key
+          AND a2._logicaldb_key = %(MGI_LDBKEY)d
+          AND a2._mgitype_key = %(REF_TYPEKEY)d
+          AND a2.preferred = 1
+          AND a2.private = 0
+          AND a2.prefixPart='MGI:'
+          INNER JOIN ACC_Accession a3
+          ON r._refs_key = a3._Object_key
+          AND a3._logicaldb_key = %(MGI_LDBKEY)d
+          AND a3._mgitype_key = %(REF_TYPEKEY)d
+          AND a3.preferred = 1
+          AND a3.private = 0
+          AND a3.prefixPart='J:'
+        )
+        ''' % self.context.QUERYPARAMS
         for r in self.context.sql(q):
             self.pmid2rk[r['accid']] = r['_object_key']
 
