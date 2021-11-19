@@ -184,6 +184,7 @@ class DumperContext:
             'HTExperiment'              : 10029,
             'HTVariable'                : 10030,
             'HTSample'                  : 10031,
+            'CLTerm'                    : 10032,
             })
 
         # load MGI datadump timestamp from the database

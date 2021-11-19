@@ -96,6 +96,7 @@ class ExpressionDumper(AbstractItemDumper):
                   <attribute name="stage" value="TS%(stage)02d" />
                   <attribute name="emaps" value="%(emaps)s" />
                   <reference name="structure" ref_id="%(structure)s" />
+                  %(celltype)s
                   <attribute name="specimenNum" value="%(specimennum)i" />
                   %(probe_wv)s
                   %(pattern_wv)s
@@ -242,6 +243,7 @@ class ExpressionDumper(AbstractItemDumper):
                     
                 r['structure'] = self.context.makeItemRef('EMAPATerm', r['_emapa_key'])
                 r['emaps'] = r['emapa'].replace('EMAPA','EMAPS') + str(r['stage'])                
+                r['celltype'] = ''
                 self.writeRecord(r)
         return
 
@@ -278,14 +280,21 @@ class ExpressionDumper(AbstractItemDumper):
                 p.pattern,
                 irs._stage_key as stage,
                 a.accid AS emapa,
-                a._object_key as _emapa_key
+                a._object_key as _emapa_key,
+                irc._celltype_term_key,
+                a2.accid as celltype,
+                a2._object_key as _celltype_key
             FROM
                 gxd_specimen s,
-                gxd_insituresult isr,
                 gxd_strength str,
                 gxd_pattern p,
-                gxd_isresultstructure irs,
-                acc_accession a 
+                gxd_isresultstructure irs, 
+                acc_accession a,
+                gxd_insituresult isr
+                LEFT JOIN 
+                     gxd_isresultcelltype irc ON isr._result_key = irc._result_key
+                LEFT JOIN acc_accession a2 on a2._object_key = irc._celltype_term_key
+                     AND a2._mgitype_key = 13 AND a2._logicaldb_key = 173
             WHERE s._specimen_key = isr._specimen_key
             AND isr._strength_key = str._strength_key
             AND isr._pattern_key = p._pattern_key
@@ -296,7 +305,6 @@ class ExpressionDumper(AbstractItemDumper):
             AND a.preferred = 1
             AND a.private = 0
             '''
-
 
         for r in self.context.sqliter(q):
             r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
@@ -310,11 +318,17 @@ class ExpressionDumper(AbstractItemDumper):
                 
             r['structure'] = self.context.makeItemRef('EMAPATerm', r['_emapa_key'])
             r['emaps'] = r['emapa'].replace('EMAPA','EMAPS') + str(r['stage'])
+            if r['celltype']:
+                ctref = self.context.makeItemRef('CLTerm', r['_celltype_key'])
+                r['celltype'] = '<reference name="celltype" ref_id="%s" />' % ctref
+            else:
+                r['celltype'] = ''
+                
             self.writeRecord(r)
         return
 
 
-    # write out the EMAPA terms first, then GXD Expression terms can reference them
+    # write out the EMAPA terms first, then GXD Expression records can reference them
     def writeEMAPATerms(self):
         tmplt = '''
                 <item class="EMAPATerm" id="%(id)s" >
@@ -334,21 +348,38 @@ class ExpressionDumper(AbstractItemDumper):
             AND t._term_key in (select _term_key from voc_term_emapa)
             ''')
 
-        referenced_emapaids = set()
+        for r in self.context.sql(q):
+            r['identifier'] = r['emapa']
+            r['id'] = self.context.makeItemId('EMAPATerm', r['_emapa_key'])
+            self.writeItem(r, tmplt)
+
+    # write out the CL terms first, then GXD Expression records can reference them
+    def writeCLTerms(self):
+        tmplt = '''
+                <item class="CLTerm" id="%(id)s" >
+                  <attribute name="identifier" value="%(identifier)s" />
+                </item>
+                '''
+
+        q = self.constructQuery('''
+            SELECT t.term, a.accid AS celltype, a._object_key as _celltype_key
+            FROM voc_term t, acc_accession a
+            WHERE t._vocab_key = 102
+            AND t._term_key = a._object_key
+            AND a._mgitype_key = 13
+            AND a.private = 0
+            AND a.preferred = 1
+            AND a._logicaldb_key = 173
+            ''')
 
         for r in self.context.sql(q):
-            if r['emapa'] not in referenced_emapaids:
-                r['identifier'] = r['emapa']
-                r['id'] = self.context.makeItemId('EMAPATerm', r['_emapa_key'])
-                referenced_emapaids.add(r['emapa'])
-
-                self.writeItem(r, tmplt)
-        return
-
-
+            r['identifier'] = r['celltype']
+            r['id'] = self.context.makeItemId('CLTerm', r['_celltype_key'])
+            self.writeItem(r, tmplt)
 
     def preDump(self):
         self.writeEMAPATerms()
+        self.writeCLTerms()
         self.assay = defaultdict(dict)
 
         self.loadAssay()
