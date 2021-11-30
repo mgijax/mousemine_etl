@@ -98,6 +98,7 @@ class ExpressionDumper(AbstractItemDumper):
                   <reference name="structure" ref_id="%(structure)s" />
                   %(celltype)s
                   <attribute name="specimenNum" value="%(specimennum)i" />
+                  <attribute name="specimenLabel" value="%(specimenlabel)s" />
                   %(probe_wv)s
                   %(pattern_wv)s
                   %(image_wv)s
@@ -215,6 +216,7 @@ class ExpressionDumper(AbstractItemDumper):
                 gl.age,
                 gl._genotype_key,
                 gl.sequencenum as specimennum,
+                gl.lanelabel as specimenlabel,
                 a.accid AS emapa,
                 a._object_key as _emapa_key,
                 gls._stage_key as stage
@@ -273,6 +275,7 @@ class ExpressionDumper(AbstractItemDumper):
                 s.age,
                 s._genotype_key,
                 s.sequencenum as specimennum,
+                s.specimenlabel,
                 s.specimenlabel AS image,
                 isr._result_key,
                 isr.resultNote AS note,
