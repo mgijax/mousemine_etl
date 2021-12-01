@@ -246,6 +246,7 @@ class ExpressionDumper(AbstractItemDumper):
                 r['structure'] = self.context.makeItemRef('EMAPATerm', r['_emapa_key'])
                 r['emaps'] = r['emapa'].replace('EMAPA','EMAPS') + str(r['stage'])                
                 r['celltype'] = ''
+                r['specimenlabel'] = self.quote(r['specimenlabel'])
                 self.writeRecord(r)
         return
 
@@ -327,6 +328,7 @@ class ExpressionDumper(AbstractItemDumper):
             else:
                 r['celltype'] = ''
                 
+            r['specimenlabel'] = self.quote(r['specimenlabel'])
             self.writeRecord(r)
         return
 
