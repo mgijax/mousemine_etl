@@ -10,7 +10,8 @@ class AlleleDumper(AbstractItemDumper):
         a.symbol, 
         a.name, 
         m.name AS mname, 
-        a._marker_key, 
+        m._marker_status_key,
+        m._marker_key, 
         ac.accid,
         a.iswildtype, 
         a.isextinct, 
@@ -196,6 +197,8 @@ class AlleleDumper(AbstractItemDumper):
 
 
     def processRecord(self, r):
+        if r['_marker_status_key'] in [2,3]:
+            return None
         ak = r['_allele_key']
         r['id'] = self.context.makeItemId('Allele', ak)
         if r['mname'] and r['mname'] != r['name']:
@@ -294,9 +297,13 @@ class AlleleMutationDumper(AbstractItemDumper):
 class AllelePublicationDumper(AbstractItemDumper):
     QTMPLT = '''
     SELECT ra._assoc_key, ra._refs_key, ra._object_key, rat.assoctype
-    FROM MGI_Reference_Assoc ra, MGI_RefAssocType rat 
+    FROM MGI_Reference_Assoc ra, MGI_RefAssocType rat, ACC_Accession aa
     WHERE ra._mgitype_key = 11
     AND ra._refassoctype_key = rat._refassoctype_key
+    AND ra._refs_key = aa._object_key
+    AND aa._mgitype_key = 1
+    AND aa._logicaldb_key = 1
+    AND aa.prefixpart = 'J:'
     '''
     ITMPLT = '''
     <item class="AllelePublication" id="%(id)s" >
@@ -320,10 +327,22 @@ class AllelePublicationDumper(AbstractItemDumper):
 
 class AlleleSynonymDumper(AbstractItemDumper):
     QTMPLT = '''
-    SELECT l._allele_key, l.label
-    FROM ALL_Label l
-    WHERE labeltypename = 'synonym'
-    %(LIMIT_CLAUSE)s
+        SELECT l._allele_key, l.label
+        FROM ALL_Label l, ALL_Allele a, MRK_Marker m
+        WHERE l.labeltypename = 'synonym'
+        AND l._allele_key = a._allele_key
+        AND a._marker_key = m._marker_key
+        AND m._marker_status_key = 1
+
+        UNION
+
+        SELECT l._allele_key, l.label
+        FROM ALL_Label l, ALL_Allele a
+        WHERE l.labeltypename = 'synonym'
+        AND l._allele_key = a._allele_key
+        AND a._marker_key is null
+
+        %(LIMIT_CLAUSE)s
     '''
     ITMPLT = '''
     <item class="Synonym" id="%(id)s">

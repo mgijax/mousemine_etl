@@ -8,6 +8,10 @@ class ProteinDumper(AbstractItemDumper):
         WHERE mc._logicaldb_key in (%(SP_LDBKEY)d,%(TR_LDBKEY)d)
         AND mc._organism_key = %(MOUSE_ORGANISMKEY)d
         AND mc._marker_type_key = %(GENE_MRKTYPEKEY)d
+        AND mc._marker_key in (
+           SELECT _marker_key
+           FROM MRK_Marker
+           WHERE _marker_status_key = 1)
         ORDER BY mc.accid
         '''
     ITMPLT = '''

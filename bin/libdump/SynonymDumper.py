@@ -1,6 +1,7 @@
 
 from .AbstractItemDumper import *
 from .DataSourceDumper import DataSetDumper
+from .DumperContext import DumperContext
 
 class SynonymDumper(AbstractItemDumper):
     QTMPLT = ['''
@@ -55,19 +56,22 @@ class SynonymDumper(AbstractItemDumper):
         self.context.QUERYPARAMS['MGITYPEKEYS'] = ",".join(map(str,self.mgiTypeKeys))
 
     def processRecord(self, r, qindex):
-        if qindex == 0:
-            r['id'] = self.context.makeItemId('Synonym')
-            r['value'] = self.quote(r['synonym'])
-            r['subject'] = self.context.makeItemRef( r['_mgitype_key'], r['_object_key'])
-            return r
-        elif qindex == 1:
-            r['id'] = self.context.makeItemId('Synonym')
-            r['value'] = self.quote(r['label'])
-            r['subject'] = self.context.makeItemRef( 'Marker', r['_marker_key'])
-            return r
-        elif qindex == 2 or qindex == 3:
-            # load secondary ids for markers and alleles
-            r['id'] = self.context.makeItemId('Synonym')
-            r['value'] = self.quote(r['accid'])
-            r['subject'] = self.context.makeItemRef( r['_mgitype_key'], r['_object_key'])
-            return r
+        try:
+            if qindex == 0:
+                r['id'] = self.context.makeItemId('Synonym')
+                r['value'] = self.quote(r['synonym'])
+                r['subject'] = self.context.makeItemRef( r['_mgitype_key'], r['_object_key'])
+                return r
+            elif qindex == 1:
+                r['id'] = self.context.makeItemId('Synonym')
+                r['value'] = self.quote(r['label'])
+                r['subject'] = self.context.makeItemRef( 'Marker', r['_marker_key'])
+                return r
+            elif qindex == 2 or qindex == 3:
+                # load secondary ids for markers and alleles
+                r['id'] = self.context.makeItemId('Synonym')
+                r['value'] = self.quote(r['accid'])
+                r['subject'] = self.context.makeItemRef( r['_mgitype_key'], r['_object_key'])
+                return r
+        except DumperContext.DanglingReferenceError as e:
+            return None

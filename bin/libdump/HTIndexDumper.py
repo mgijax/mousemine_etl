@@ -337,11 +337,6 @@ class HTSampleDumper (AbstractItemDumper) :
     '''
     def preDump (self) :
         self.loadNotes()
-        self.loadMusOrganisms()
-
-    def loadMusOrganisms (self) :
-        qps = self.context.QUERYPARAMS
-        self.okOrganisms = set(qps['MUS_ORGANISM_KEYS'] + qps['MOD_ORGANISM_KEYS'])
 
     def loadNotes (self):
         self.sk2notes = {}
@@ -363,9 +358,9 @@ class HTSampleDumper (AbstractItemDumper) :
         r['name'] = self.quote(r['name'])
         r['notes'] = self.sk2notes.get(r['_sample_key'], '')
         r['experiment'] = self.context.makeItemRef('HTExperiment', ek)
-        if r['_organism_key'] in self.okOrganisms:
+        try:
             r['organism'] = self.context.makeItemRef('Organism', r['_organism_key'])
-        else:
+        except:
             r['organism'] = ''
         #
         if r['relevance'] == "Yes" :
