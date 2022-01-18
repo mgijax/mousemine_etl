@@ -41,6 +41,7 @@ class HTIndexDumper(AbstractItemDumper):
         WHERE
                 e._evaluationstate_key = es._term_key
             AND e._curationstate_key = cs._term_key
+            AND e.last_curated_date is not null
             AND e._studytype_key = st._term_key
             AND e._experimenttype_key = et._term_key
             AND e._source_key = s._term_key
