@@ -20,30 +20,34 @@ VERSION = "0.1"
 # The order of dumpers is important. The objects dumped later
 # in the process may refer to objects dumped earlier.
 # It is assumed that all ontologies have already been loaded.
+# The following lists all dumper classes and their dependencies.
+# To run any dumper, you have to first run the dumpers in
+# its dependency list. This is recursive.
 allDumpers = [
-    (PublicationDumper,         ()),
-    (DataSourceDumper,          ()),
-    (OrganismDumper,            ()),
-    (ChromosomeDumper,          ()),
-    (StrainDumper,              ()),
-    (FeatureDumper,             ()),
-    (ProteinDumper,             ()),
-    (LocationDumper,            ()),
-    (HomologyDumper,            ()),
-    (SyntenyDumper,             ()),
-    (AlleleDumper,              ()),
-    (CellLineDumper,            ()),
-    (GenotypeDumper,            ()),
-    (ExpressionDumper,          ()),
-    (HTIndexDumper,             ()),
-    (AnnotationCommentDumper,   ()),
-    (AnnotationDumper,          ()),
-    (RelationshipDumper,        ()),
-    (SynonymDumper,             ()),
-    (CrossReferenceDumper,      ()),
+    (PublicationDumper,         []),
+    (DataSourceDumper,          []),
+    (OrganismDumper,            []),
+    (ChromosomeDumper,          [OrganismDumper]),
+    (StrainDumper,              [OrganismDumper,PublicationDumper]),
+    (FeatureDumper,             [ChromosomeDumper,DataSourceDumper,PublicationDumper]),
+    (ProteinDumper,             [FeatureDumper]),
+    (LocationDumper,            [FeatureDumper]),
+    (HomologyDumper,            [FeatureDumper]),
+    (SyntenyDumper,             [FeatureDumper]),
+    (AlleleDumper,              [FeatureDumper,StrainDumper]),
+    (CellLineDumper,            [AlleleDumper]),
+    (GenotypeDumper,            [CellLineDumper]),
+    (ExpressionDumper,          [GenotypeDumper,FeatureDumper]),
+    (HTIndexDumper,             [GenotypeDumper,FeatureDumper]),
+    (AnnotationCommentDumper,   []),
+    (AnnotationDumper,          [GenotypeDumper,AlleleDumper,FeatureDumper]),
+    (RelationshipDumper,        [AlleleDumper,FeatureDumper]),
+    (SynonymDumper,             [AlleleDumper]),
+    (CrossReferenceDumper,      [AlleleDumper]),
     ]
 
-defaultParams = dict(allDumpers)
+# create map from each class to its dependencies
+dependencies = dict(allDumpers)
 
 ##########################################
 ##########################################
@@ -85,19 +89,24 @@ def main(argv):
             m = __import__(v)
             installMethods(m)
         elif o in ('-c', '--class'):
-            i=v.find("(")
-            if i == -1:
-                cls=eval(v+"Dumper")
-                args=defaultParams[cls]
-            else:
-                cls=eval(v[0:i]+"Dumper")
-                args=eval(v[i:])
-                if type(args) is not tuple:
-                    args= (args,)
-            clcs.append( (cls,args) )
+            cls=eval(v+"Dumper")
+            clcs.append( cls )
     if len(clcs) == 0:
-        clcs = allDumpers[:]
-                
+        clcs = map(lambda t: t[0], allDumpers)
+
+    if checkRefs:
+        # Expand class list to include dependencies.
+        # Depth-first order
+        final = []
+        def _add(c):
+            if c in final:
+                return
+            for dc in dependencies[c]:
+                _add(dc)
+            final.append(c)
+        for c in clcs:
+            _add(c)
+        clcs = final
 
     dcx = DumperContext(
         debug=debug, 
@@ -109,12 +118,13 @@ def main(argv):
     dcx.log("\n============================================================")
     dcx.log("Starting MGI item dump...")
     dcx.log("Command line parameters = %s" % str(argv))
-
     db.setConnectionFromPropertiesFile()
     dcx.log("Database connection:" + str(db.getConnection()))
+    #
     total = 0
-    for cls,args in clcs:
-        total += cls(dcx, *args).dump(fname=cls.__name__[:-6]+".xml")
+    for cls in clcs:
+        total += cls(dcx).dump(fname=cls.__name__[:-6]+".xml")
+    #
     dcx.closeOutputs()
     dcx.log("Finished MGI item dump.")
     dcx.log("Grand total: %d items written."%total)
