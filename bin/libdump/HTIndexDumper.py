@@ -182,10 +182,9 @@ class HTIndexDumper(AbstractItemDumper):
     def loadNotes (self):
         self.ek2notes = {}
         q = '''
-        SELECT n._object_key, c.note
-        FROM MGI_Note n, MGI_NoteChunk c
-        WHERE c._note_key = n._note_key
-        AND n._notetype_key = %(HTEXPT_NOTETYPE_KEY)d
+        SELECT n._object_key, n.note
+        FROM MGI_Note n
+        WHERE n._notetype_key = %(HTEXPT_NOTETYPE_KEY)d
         ''' % self.context.QUERYPARAMS
         for r in self.context.sql(q):
             ek = r['_object_key']
@@ -341,10 +340,9 @@ class HTSampleDumper (AbstractItemDumper) :
     def loadNotes (self):
         self.sk2notes = {}
         q = '''
-        SELECT n._object_key, c.note
-        FROM MGI_Note n, MGI_NoteChunk c
-        WHERE c._note_key = n._note_key
-        AND n._notetype_key = %(HTSAMPLE_NOTETYPE_KEY)d
+        SELECT n._object_key, n.note
+        FROM MGI_Note n
+        WHERE n._notetype_key = %(HTSAMPLE_NOTETYPE_KEY)d
         ''' % self.context.QUERYPARAMS
         for r in self.context.sql(q):
             sk = r['_object_key']

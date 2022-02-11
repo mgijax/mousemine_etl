@@ -51,13 +51,12 @@ class AbstractFeatureDumper(AbstractItemDumper):
         #
         # First, the gene function overview note
         q = self.constructQuery('''
-            select n._object_key as _marker_key, c.note
-            from MGI_Note n, MGI_Notechunk c, MRK_Marker m
+            select n._object_key as _marker_key, n.note
+            from MGI_Note n, MRK_Marker m
             where n._object_key = m._marker_key
             and n._notetype_key = 1014
-            and n._note_key = c._note_key
             and m._organism_key = 1
-            order by n._object_key, c.sequenceNum
+            order by n._object_key
             ''')
         for r in self.context.sql(q):
             mk = r['_marker_key']
@@ -105,10 +104,9 @@ class AbstractFeatureDumper(AbstractItemDumper):
     def preloadStrainSpecificityNotes(self):
         self.mk2specificityNote = {}
         q = self.constructQuery('''
-            SELECT m._marker_key, nc.note
-            FROM MGI_Note n, MRK_Marker m, MGI_Notechunk nc
+            SELECT m._marker_key, n.note
+            FROM MGI_Note n, MRK_Marker m
             WHERE n._object_key = m._marker_key
-            AND n._note_key = nc._note_key
             AND n._notetype_key = %(STRAIN_SPECIFIC_NOTETYPE_KEY)d
             AND m._marker_status_key = %(OFFICIAL_STATUS)d 
             ''')

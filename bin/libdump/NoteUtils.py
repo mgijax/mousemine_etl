@@ -24,29 +24,18 @@ def iterNotes( **kwargs ):
         note = None# current note to yield
         qry = buildQuery( ** kwargs )
         db.setConnectionFromPropertiesFile()
-        notechunks = db.sql( qry )
-        for nc in notechunks:
-            if nc['sequencenum'] == 1:
-                if note:
-                    note['note'] = note['note'].strip()
-                    yield note
-                note = nc
-            else:
-                note['note'] += nc['note']
-                note['sequencenum'] = nc['sequencenum']
-        if note:
-            note['note'] = note['note'].strip()
-            yield note
+        notes = db.sql( qry )
+        for n in notes:
+            yield n
 
 def buildQuery( _object_key = None, _notetype_key = None, _mgitype_key=None ):
         QTMPLT = '''
-        SELECT n._note_key, n._notetype_key, n._object_key, n._mgitype_key, nc.sequencenum, nc.note
-        FROM MGI_Note n, MGI_NoteChunk nc
+        SELECT n._note_key, n._notetype_key, n._object_key, n._mgitype_key, n.note
+        FROM MGI_Note n
         WHERE %s
-        ORDER BY n._object_key, n._notetype_key, n._note_key, nc.sequenceNum
+        ORDER BY n._object_key, n._notetype_key, n._note_key
         '''
         whereParts = [ 
-            "n._note_key = nc._note_key"
         ]
         if _notetype_key:
             whereParts.append("n._notetype_key = %s" % _notetype_key)
