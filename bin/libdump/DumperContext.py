@@ -111,7 +111,13 @@ class DumperContext:
             'ALL_FR_NAME_MAP' : {
                 1001 : { # interacts_with
                     'subjectAttrName' : 'interactor',
-                    'objectAttrName'  : 'target'
+                    'objectAttrName'  : 'target',
+                    # By default, relationship properties are stored as a list of property objects.
+                    # Unfortunately "interacts_with" blows this up because there are 4.5M relationships, each
+                    # with 9 properties. The following option causes dumper to 
+                    # add properties as separately named fields. Note that these fields must be also 
+                    # declared in the model. (see mgi_bio_sources/datamodel/datamodel_additions)
+                    'storePropertiesAsAttributes' : True 
                     },
                 1002 : { # cluster_has_member
                     'subjectAttrName' : 'cluster',

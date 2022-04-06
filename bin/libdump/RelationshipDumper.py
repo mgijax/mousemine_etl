@@ -73,10 +73,34 @@ class RelationshipDumper(AbstractItemDumper):
         for (r1,(k2,r2)) in zip(i1, i2):
             yield r1, [p for p in list(r2) if p['property']]
 
+    def writeProperties(self, props, asAttributes):
+        if asAttributes :
+            tmplt = '<attribute name="%(property)s" value="%(value)s" />'
+            attrs = []
+            for p in props:
+                p['value'] = self.quote(p['value'])
+                attrs.append(tmplt % p)
+            return "".join(attrs)
+        else:
+            tmplt = '''<item class="MGIDirectedRelationshipProperty" id="%(id)s">
+            <attribute name="name" value="%(property)s" />
+            <attribute name="value" value="%(value)s" />
+            </item>
+            '''
+            rvals = []
+            for p in props:
+                p['id'] = self.context.makeItemId('DirectedRelationshipProperty')
+                p['value'] = self.quote(p['value'])
+                self.writeItem(p, tmplt)
+                rvals.append('<reference ref_id="%s"/>' % p['id'])
+            #
+            return '<collection name="properties">%s</collection>\n' % "".join(rvals)
+
     def dumpCategory(self, _category_key):
         nmap = self.context.QUERYPARAMS['ALL_FR_NAME_MAP'][_category_key]
         cname = self.categories[_category_key]['name']
         dsid = DataSetDumper(self.context).dataSet(name="%s relationships from MGI"%cname)
+        asAttributes = nmap.get('storePropertiesAsAttributes', False)
         for rel, props in self.iterData(_category_key):
             rel['id'] = self.context.makeItemId('DirectedRelationship', rel['_relationship_key'])
             c = self.categories[rel['_category_key']]
@@ -96,13 +120,8 @@ class RelationshipDumper(AbstractItemDumper):
             else:
                 rel['qualifier'] = '<attribute name="qualifier" value="%s" />\n'%rel['qualifier']
             rel['dataset'] = dsid
-            rel['propertystring'] = ''
 
-            ps = []
-            for p in props:
-                pn = self.normalizeName(p['property'], capitalizeFirst=False)
-                ps.append('<attribute name="%s" value="%s" />\n' % (pn, self.quote(p['value'])))
-            rel['propertystring'] = ''.join(ps)
+            rel['propertystring'] = self.writeProperties(props, asAttributes)
 
             self.writeItem(rel, self.rTmplt)
             # end for loop
