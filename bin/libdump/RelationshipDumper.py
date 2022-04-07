@@ -78,6 +78,7 @@ class RelationshipDumper(AbstractItemDumper):
             tmplt = '<attribute name="%(property)s" value="%(value)s" />'
             attrs = []
             for p in props:
+                p['property'] = self.normalizeName(p['property'], capitalizeFirst=False)
                 p['value'] = self.quote(p['value'])
                 attrs.append(tmplt % p)
             return "".join(attrs)
