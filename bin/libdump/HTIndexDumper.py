@@ -292,6 +292,7 @@ class HTSampleDumper (AbstractItemDumper) :
             ,a.term as emapaterm
             ,a._term_key as _emapa_key
             ,t.stage
+            ,hts._celltype_term_key
             ,g._genotype_key
         FROM
             gxd_htsample hts 
@@ -331,6 +332,7 @@ class HTSampleDumper (AbstractItemDumper) :
           <reference name="experiment" ref_id="%(experiment)s" />
           <reference name="genotype" ref_id="%(genotype)s" />
           <reference name="structure" ref_id="%(emapa)s" />
+          %(celltyperef)s
           <attribute name="notes" value="%(notes)s" />
           </item>
     '''
@@ -372,11 +374,17 @@ class HTSampleDumper (AbstractItemDumper) :
             else:
                 r['agemin'] = '<attribute name="ageMin" value="%1.2f" />' % r['agemin']
                 r['agemax'] = '<attribute name="ageMax" value="%1.2f" />' % r['agemax']
+            if r['_celltype_term_key'] is None:
+                r['celltyperef'] = ''
+            else:
+                ctKey = self.context.makeItemRef('CLTerm', r['_celltype_term_key'])
+                r['celltyperef'] = '<reference name="celltype" ref_id="%s" />' % ctKey
         else :
             r['curationStatus'] = 'Not curated (%s)' % r['relevance']
             r['age'] = ''
             r['genotype'] = ''
             r['emapa'] = ''
+            r['celltyperef'] = ''
             r['agemin'] = ''
             r['agemax'] = ''
             r['stage'] = ''

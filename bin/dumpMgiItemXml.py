@@ -38,7 +38,7 @@ allDumpers = [
     (CellLineDumper,            [AlleleDumper]),
     (GenotypeDumper,            [CellLineDumper]),
     (ExpressionDumper,          [GenotypeDumper,FeatureDumper]),
-    (HTIndexDumper,             [GenotypeDumper,FeatureDumper]),
+    (HTIndexDumper,             [ExpressionDumper]),
     (AnnotationCommentDumper,   []),
     (AnnotationDumper,          [GenotypeDumper,AlleleDumper,FeatureDumper]),
     (RelationshipDumper,        [AlleleDumper,FeatureDumper]),
