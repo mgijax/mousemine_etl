@@ -393,7 +393,7 @@ MCV2ClassName = {
     'transcription factor binding site' : ('RegulatoryRegion',          'SO:0000235'),
     'transgene'                 : ('Transgene',                         'SO:0000902'),
     'tRNA gene'                 : ('NcRNAGene',                         'SO:0001272'),
-    'TSS region'                : ('OtherGenomeFeature',                'SO:0001240'),
+    'TSS region'                : ('OtherGenomeFeature',                'SO:0000315'),
     'unclassified cytogenetic marker'   : \
                                   ('ChromosomeStructureVariation',      'SO:1000183'),
     'unclassified gene'         : ('Gene',                              'SO:0000704'),
