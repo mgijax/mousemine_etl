@@ -3,7 +3,6 @@ from collections import defaultdict
 from .OboParser import OboParser
 
 class ExpressionDumper(AbstractItemDumper):
-
     # Pre-loads assay information.
     # The assay structure is a dict of dict.
     def loadAssay(self):
@@ -12,17 +11,20 @@ class ExpressionDumper(AbstractItemDumper):
             FROM gxd_assay a
               JOIN acc_accession acc 
                 ON a._assay_key = acc._object_key 
-              JOIN gxd_assaytype at 
+              JOIN gxd_assaytype at
                 ON a._assaytype_key = at._assaytype_key
             WHERE acc._logicaldb_key = 1
             AND acc._mgitype_key = %(ASSAY_TYPEKEY)d
             AND acc.preferred = 1
             AND acc.private = 0
-            AND NOT a._assaytype_key IN (10, 11)
+            AND NOT a._assaytype_key IN (%(INSITU_REPORTER_TG)d,%(RECOMBINASE_REPORTER)d)
             ''')
 
         for r in self.context.sql(q):
             ak = r['_assay_key']
+            if ak in self.assay:
+                raise RuntimeError("Duplicate assay key detected.\n%s\n%s\n" % (str(r), str(self.assay[ak])))
+            self.assay[ak] = {}
             self.assay[ak]['feature'] = self.context.makeItemRef('Marker', r['_marker_key'])
             self.assay[ak]['publication'] = self.context.makeItemRef('Reference', r['_refs_key'])
             self.assay[ak]['assayid'] = r['accid']
@@ -35,7 +37,7 @@ class ExpressionDumper(AbstractItemDumper):
     # Assay's can only have one probe / antibody
     def loadProbe(self, assay_key, accid):
         if 'probe' in self.assay[assay_key]:
-            print(("Error - Expression Dumper: AssayKey: ", assay_key, " has two probes: ", 
+            self.context.log(("Error - Expression Dumper: AssayKey: ", assay_key, " has two probes: ", 
                   self.assay[assay_key]['probe'], " and " , accid))
         else:
             self.assay[assay_key]['probe'] = accid
@@ -52,7 +54,7 @@ class ExpressionDumper(AbstractItemDumper):
             AND acc._logicaldb_key = 1
             AND acc.preferred = 1
             AND acc.private = 0
-            AND NOT a._assaytype_key IN (10, 11)
+            AND NOT a._assaytype_key IN (%(INSITU_REPORTER_TG)d,%(RECOMBINASE_REPORTER)d)
             ''')
 
         for r in self.context.sql(q):
@@ -70,7 +72,7 @@ class ExpressionDumper(AbstractItemDumper):
             AND acc._logicaldb_key = 1
             AND acc.preferred = 1
             AND acc.private = 0
-            AND NOT a._assaytype_key IN (10, 11)
+            AND NOT a._assaytype_key IN (%(INSITU_REPORTER_TG)d,%(RECOMBINASE_REPORTER)d)
             ''')
 
         for r in self.context.sql(q):
@@ -172,17 +174,27 @@ class ExpressionDumper(AbstractItemDumper):
         lane2strength = {}
         for (lane, strengths) in list(gelbandsInLane.items()):
             agg = None
-            if (max(strengths) > 3) or (2 in strengths):
-                agg = 'Present'
-            elif (-1 in strengths) or (3 in strengths):
-                agg = 'Not Specified'
-            elif (1 in strengths):
-                agg = 'Absent'
-
+            sawAbsent = False
+            sawNS = False
+            for strength in strengths:
+                if strength in ['present','trace','weak','moderate','strong','very strong']:
+                    agg = 'Present'
+                    break
+                elif strength in ['not specified','ambiguous']:
+                    sawNS = True
+                elif strength == 'absent':
+                    sawAbsent = True
+            #
+            if agg is None:
+                if sawNS:
+                    agg = 'Not Specified'
+                elif sawAbsent:
+                    agg = 'Absent'
+            #
             if agg is not None:
                 lane2strength[lane] = agg
             else:
-                print(("ERROR: aggregateGelBands - Lane: ", lane, " has no gel bands.")) 
+                self.context.log(("ERROR: aggregateGelBands - Lane: ", lane, " has no gel bands.")) 
 
         return lane2strength
 
@@ -191,13 +203,14 @@ class ExpressionDumper(AbstractItemDumper):
     def loadGelBandStrengthAggregate(self):
         gelbandsInLane = defaultdict(set)
         q = '''
-            SELECT _gellane_key, _strength_key
-            FROM gxd_gelband
-            WHERE _strength_key > -2
+            SELECT gb._gellane_key, vt.term as strength
+            FROM gxd_gelband gb, voc_term vt
+            WHERE gb._strength_key = vt._term_key
+            AND vt.term != 'Not Applicable'
             '''
 
         for r in self.context.sql(q):
-            gelbandsInLane[r['_gellane_key']].add(r['_strength_key'])
+            gelbandsInLane[r['_gellane_key']].add(r['strength'].lower())
         
         return self.aggregateGelBands(gelbandsInLane)
 
@@ -208,7 +221,7 @@ class ExpressionDumper(AbstractItemDumper):
         gl2strength = self.loadGelBandStrengthAggregate()
         ak2figurelabel = self.loadAssayImageFigureLabels()
 
-        q = '''
+        q = self.constructQuery('''
             SELECT
                 gl._gellane_key,
                 gl._assay_key,
@@ -227,8 +240,8 @@ class ExpressionDumper(AbstractItemDumper):
             AND a._logicaldb_key = 169
             AND a.preferred = 1
             AND a.private = 0
-            AND gl._gelcontrol_key = 1
-            '''
+            AND gl._gelcontrol_key = %(GELLANE_CONTROL_NO)d
+            ''')
 
         for r in self.context.sqliter(q):
             if r['_gellane_key'] in gl2strength:
@@ -280,8 +293,8 @@ class ExpressionDumper(AbstractItemDumper):
                 s.specimenlabel AS image,
                 isr._result_key,
                 isr.resultNote AS note,
-                str.strength,
-                p.pattern,
+                str.term as strength,
+                p.term as pattern,
                 irs._stage_key as stage,
                 a.accid AS emapa,
                 a._object_key as _emapa_key,
@@ -290,8 +303,8 @@ class ExpressionDumper(AbstractItemDumper):
                 a2._object_key as _celltype_key
             FROM
                 gxd_specimen s,
-                gxd_strength str,
-                gxd_pattern p,
+                voc_term str,
+                voc_term p,
                 gxd_isresultstructure irs, 
                 acc_accession a,
                 gxd_insituresult isr
@@ -300,8 +313,8 @@ class ExpressionDumper(AbstractItemDumper):
                 LEFT JOIN acc_accession a2 on a2._object_key = irc._celltype_term_key
                      AND a2._mgitype_key = 13 AND a2._logicaldb_key = 173
             WHERE s._specimen_key = isr._specimen_key
-            AND isr._strength_key = str._strength_key
-            AND isr._pattern_key = p._pattern_key
+            AND isr._strength_key = str._term_key
+            AND isr._pattern_key = p._term_key
             AND isr._result_key = irs._result_key
             AND a._object_key = irs._emapa_term_key
             AND a._mgitype_key = 13
@@ -385,7 +398,7 @@ class ExpressionDumper(AbstractItemDumper):
     def preDump(self):
         self.writeEMAPATerms()
         self.writeCLTerms()
-        self.assay = defaultdict(dict)
+        self.assay = {} # defaultdict(dict)
 
         self.loadAssay()
         self.loadProbePrep()

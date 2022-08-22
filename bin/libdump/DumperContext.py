@@ -96,6 +96,13 @@ class DumperContext:
             'HYBRID_HOMOL_KEY' : 75885740,
             'CURATIONSTATE_DONE_KEY' : 20475421,
 
+            # (some) GXD assay type keys
+            'INSITU_REPORTER_TG' : 10,
+            'RECOMBINASE_REPORTER' : 11,
+
+            # Gel lane control = No (voc_term key)
+            'GELLANE_CONTROL_NO' : 107080580,
+
             # Annotation type keys
             'ALLELE_ATTRIBUTE_AKEY' : 1014,
             'STRAIN_ATTRIBUTE_AKEY' : 1009,
