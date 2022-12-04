@@ -308,7 +308,7 @@ class DumperContext:
             self.NEXT_ID[n] += 1
         elif self.checkRefs and exists is True:
             # Generating a reference.
-            # Enforce key mapping already exists, and that the object has was actually writtem
+            # Enforce key mapping already exists, and that the object has was actually written
             # and use the mapped key
             m = kmap.get(localkey, None)
             if not m or ('%d_%d' % (n,m)) not in self.idsWritten:

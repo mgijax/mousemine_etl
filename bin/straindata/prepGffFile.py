@@ -121,6 +121,10 @@ class GffPrep:
         if f[gff3.TYPE] == 'gene_segment':
             f[gff3.TYPE] = 'transcript'
             log("Converted: gene_segment: " + ident)
+        # bidirectional_promoter_lncRNA -> bidirectional_promoter_lncRNA_gene
+        if f[gff3.TYPE] == 'bidirectional_promoter_lncRNA':
+            f[gff3.TYPE] = 'bidirectional_promoter_lncRNA_gene'
+            log("Converted: bidirectional_promoter_lncRNA: " + ident)
         # NMD_transcript_variant -> NMD_transcript
         if f[gff3.TYPE] == 'NMD_transcript_variant':
             f[gff3.TYPE] = 'NMD_transcript'
