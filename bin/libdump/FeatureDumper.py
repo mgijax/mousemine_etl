@@ -350,6 +350,7 @@ MCV2ClassName = {
     'histone modification'      : ('RegulatoryRegion',                  'SO:0001700'),
     'imprinting control region' : ('RegulatoryRegion',                  'SO:0002191'),
     'insertion'                 : ('Insertion',                         'SO:0000667'),
+    'insulator'                 : ('RegulatoryRegion',                  'SO:0000627'),
     'insulator binding site'    : ('RegulatoryRegion',                  'SO:0001460'),
     'intronic regulatory region': ('RegulatoryRegion',                  'SO:0001492'),
     'lincRNA gene'              : ('NcRNAGene',                         'SO:0001641'),
