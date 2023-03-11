@@ -8,7 +8,7 @@ from .CrossReferenceDumper import CrossReferenceDumper
 from .DataSourceDumper   import DataSourceDumper
 from .ExpressionDumper   import ExpressionDumper
 from .HTIndexDumper      import HTIndexDumper
-from .FeatureDumper      import FeatureDumper, MouseFeatureDumper, NonMouseFeatureDumper
+from .FeatureDumper      import FeatureDumper, MouseFeatureDumper, HumanFeatureDumper, OtherSpeciesFeatureDumper
 from .GenotypeDumper     import GenotypeDumper
 from .HomologyDumper     import HomologyDumper
 from .LocationDumper     import LocationDumper

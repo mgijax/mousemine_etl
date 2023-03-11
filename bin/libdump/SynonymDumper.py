@@ -16,7 +16,7 @@ class SynonymDumper(AbstractItemDumper):
     SELECT distinct ml.label, ml._marker_key
     FROM MRK_Label ml, MRK_Marker mm
     WHERE ml._orthologorganism_key is null
-    AND ml._organism_key in (%(ORGANISMKEYS)s)
+    AND ml._organism_key in (1,2)
     AND ml.labeltype in ('MS','MN','MY')
     AND ml._marker_key = mm._marker_key
     AND mm._marker_status_key != %(WITHDRAWN_STATUS)d

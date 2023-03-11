@@ -154,7 +154,6 @@ SELECT distinct
         self.mchr2count = {}
         self.CNAME2CID = {}
         self.CID2N = {}
-        self.ORGANISMS = {}
         self.smap = { 'f':'+', 'r':'-', '+':'+', '-':'-'}
         self.allPairs = []
         self.mkey = 1 + self.context.sql('select max(_marker_key) as k from mrk_marker')[0]['k']

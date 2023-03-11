@@ -10,10 +10,12 @@ class FeatureDumper(AbstractItemDumper):
     '''
     def mainDump(self):
         md=MouseFeatureDumper(self.context)
-        nd=NonMouseFeatureDumper(self.context)
+        nd=HumanFeatureDumper(self.context)
+        od=OtherSpeciesFeatureDumper(self.context)
         self.context.soIds = set(["SO:0000340","SO:0005858"]) # need Chromosome and SyntenicRegion as well
         self.writeCount += md.dump(**self.dumpArgs)
-        self.writeCount +=nd.dump(**self.dumpArgs)
+        self.writeCount += nd.dump(**self.dumpArgs)
+        self.writeCount += od.dump(**self.dumpArgs)
 
     def postDump(self):
         soids = list(self.context.soIds)
@@ -273,7 +275,7 @@ class MouseFeatureDumper(AbstractFeatureDumper):
         dsid = DataSetDumper(self.context).dataSet(name="Mouse Gene Catalog from MGI")
         return '<reference ref_id="%s"/>'%dsid
 
-class NonMouseFeatureDumper(AbstractFeatureDumper):
+class HumanFeatureDumper(AbstractFeatureDumper):
     QTMPLT = '''
     SELECT m._organism_key, m._marker_key, m.symbol, m.name, mc._chromosome_key,
         t.name AS mgitype, a.accid AS primaryidentifier, lc.startCoordinate
@@ -283,8 +285,7 @@ class NonMouseFeatureDumper(AbstractFeatureDumper):
         MRK_Types t, 
         MRK_Chromosome mc, 
         ACC_Accession a
-    WHERE m._organism_key in (%(ORGANISMKEYS)s)
-    AND m._organism_key != 1
+    WHERE m._organism_key = 2
     AND m._marker_key = lc._marker_key
     AND m.chromosome = mc.chromosome
     AND m._organism_key = mc._organism_key
@@ -304,6 +305,64 @@ class NonMouseFeatureDumper(AbstractFeatureDumper):
                 name="Human Genes from EntrezGene",
                 dataSource=self.context.dataSourceByName["Entrez Gene"] )
         return '<reference ref_id="%s"/>'%dsid
+
+class OtherSpeciesFeatureDumper(AbstractFeatureDumper):
+    QTMPLT = '''
+    SELECT m._organism_key, m._marker_key, m.symbol, m.name, 
+        t.name AS mgitype, a.accid AS primaryidentifier
+    FROM 
+        MRK_Types t, 
+        MRK_Marker m LEFT OUTER JOIN 
+            ACC_Accession a ON m._marker_key = a._object_key
+            AND a._mgitype_key = %(MARKER_TYPEKEY)d
+            AND a._logicaldb_key = %(ENTREZ_LDBKEY)d
+            AND a.preferred = 1
+            AND a.private = 0
+    WHERE m._organism_key not in (1,2)
+    AND m._marker_status_key = 1
+    AND m._marker_type_key = t._marker_type_key
+    %(LIMIT_CLAUSE)s
+    '''
+    ITMPLT = '''
+    <item class="%(featureClass)s" id="%(id)s" >
+      <attribute name="primaryIdentifier" value="%(primaryidentifier)s" />
+      <attribute name="mgiType" value="%(mcvType)s" />
+      %(soterm)s
+      <attribute name="symbol" value="%(symbol)s" />
+      <attribute name="name" value="%(name)s" />
+      %(ncbiGeneNumber)s
+      <reference name="organism" ref_id="%(organismid)s" />
+      <collection name="dataSets">%(dataSets)s</collection>
+      </item>
+    '''
+    def getMcvType(self, r):
+        return MGIType2MCVType[r['mgitype']]
+
+    def getDataSetRef(self):
+        dsid = DataSetDumper(self.context).dataSet(name="Non-mouse/non-human genes from MGI")
+        return '<reference ref_id="%s"/>'%dsid
+
+    def processRecord(self, r):
+        fclass, soId = self.getClass(r)
+        if fclass is None:
+            return None
+        r['id'] = self.context.makeItemId('Marker', r['_marker_key'])
+        if not r['primaryidentifier']:
+            r['primaryidentifier'] = "key_" + str(r['_marker_key'])
+        r['featureClass'] = fclass
+        r['mcvType'] = self.getMcvType(r)
+        r['ncbiGeneNumber'] = self.getNcbiGeneNumberAttribute(r)
+        r['organismid'] = self.context.makeItemRef('Organism', r['_organism_key']) 
+        if soId:
+            self.context.soIds.add(soId)
+            r['soterm'] = '<reference name="sequenceOntologyTerm" ref_id="%s"/>' % \
+                self.context.makeGlobalKey('SOTerm',int(soId.split(":")[1]))
+        else:
+            r['soterm'] = ''
+        r['dataSets'] = self.getDataSetRef()
+        r['symbol'] = self.quote(r['symbol'])
+        r['name'] = self.quote(r['name'])
+        return r
 
 # Map from MGI type names to equivalent MCV terms
 # (used only for non-mouse features)

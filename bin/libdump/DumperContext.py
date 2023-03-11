@@ -47,34 +47,32 @@ class DumperContext:
             'HTEXPT_TYPEKEY'     : 42,
 
             #######################
-            # These are the Organisms we are dumping data for from MGI.
-            'ORGANISMS' : {
-                10090: [1, 'Mus musculus',10090],
-                9606 : [2, 'Homo sapiens', 9606],
-                10093: [130, 'Mus pahari',  10093],
-                10089: [97, 'Mus caroli',  10089],
-                10096: [98, 'Mus spretus', 10096],
+            # 
+            'ORGANISMKEY2TAXON' : {
+                1: 10090,       # mouse
+                2: 9606,        # human
+                40: 10116,      # rat
+                84: 7955,       # zebrafish
+                64: 7227,       # fly
+                88: 6239,       # worm
+                144: 4932,      # yeast
+                95: 8364,       # frog (tropicalis)
+                86: 8355,       # frog (laevis)
+                97: 10089,      # M. caroli
+                98: 10096,      # M. spretus
+                130: 10093,     # M.pahari
             },
-            # Hard code the mapping from strain name to taxon
-            # Add as many as desired. These are the ones we need for release.
+            # Hard code the mapping from strain name to organism key
+            # Any other strain should map to organsim key = 1
             'STRAIN_ORGANISM' : {
-                'PAHARI/EiJ' : 10093,
-                'CAROLI/EiJ' : 10089,
-                'SPRET/EiJ'  : 10096,
+                'CAROLI/EiJ' : 97,
+                'PAHARI/EiJ' : 130,
+                'SPRET/EiJ'  : 98,
             },
-            # lab mouse, caroli, spretus, pahari
-            'MUS_ORGANISM_KEYS' : [1, 97, 98, 130],
-            # other MOD organisms human, rat, fly, fish
-            'MOD_ORGANISM_KEYS' : [2, 40, 64, 84],
             #######################
 
             # MRK_Types (marker type) keys
             'GENE_MRKTYPEKEY'   : 1,
-
-            # Organism keys
-            'MOUSE_ORGANISMKEY' : 1,
-            'HUMAN_ORGANISMKEY' : 2,
-            'RAT_ORGANISMKEY'   : 40,
 
             # Logical database keys
             'MGI_LDBKEY'      : 1,
@@ -155,9 +153,6 @@ class DumperContext:
             #
             'TAXAIDS' : COMMA.join(["'%d'"%o for o in TAXAIDS]),
             'LIMIT_CLAUSE' : limit and (' LIMIT %d '%limit) or '',
-
-            #
-            'ORGANISMKEYS' : '1,2',
 
             }
 

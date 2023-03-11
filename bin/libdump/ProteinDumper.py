@@ -6,7 +6,7 @@ class ProteinDumper(AbstractItemDumper):
         SELECT distinct mc._organism_key, mc.accid, mc._marker_key
         FROM SEQ_Marker_Cache mc
         WHERE mc._logicaldb_key in (%(SP_LDBKEY)d,%(TR_LDBKEY)d)
-        AND mc._organism_key = %(MOUSE_ORGANISMKEY)d
+        AND mc._organism_key = 1
         AND mc._marker_type_key = %(GENE_MRKTYPEKEY)d
         AND mc._marker_key in (
            SELECT _marker_key
