@@ -61,7 +61,7 @@ class AlleleDumper(AbstractItemDumper):
       <collection name="mutations">%(mutations)s</collection>
       <collection name="carriedBy">%(carriedBy)s</collection>
       <attribute name="isRecombinase" value="%(isRecombinase)s" />
-      %(attributeString)s %(projectcollection)s %(description)s %(molecularNote)s %(drivenBy)s %(inducedWith)s 
+      %(attributeString)s %(projectcollection)s %(description)s %(molecularNote)s %(inducedWith)s 
       %(featureRef)s
       </item>
     '''
@@ -114,25 +114,12 @@ class AlleleDumper(AbstractItemDumper):
                 ak2notes[k] = n['note']
         return ak2notes
 
-    def _loadDrivers(self):
-        q = '''
-        select r._object_key_1, m.symbol
-        from mgi_relationship r, mrk_marker m
-        where r._category_key = 1006
-        and r._object_key_2 = m._marker_key
-        '''
-        ix = {}
-        for r in self.context.sql(q):
-            ix[r['_object_key_1']] = r['symbol']
-        return ix
-
     def loadNotes(self):
         i_re = re.compile(r'([Ii]nduc(ed|ibl[ey]) +(by|with) +|-induc(ed|ible)|\. *$)')
         def parseInducibleNote(n):
             return self.quote(i_re.sub('',n))
         self.ak2generalnotes = self._loadNotes( 1020, self.quote )
         self.ak2molecularnotes = self._loadNotes( 1021, self.quote )
-        self.ak2drivernotes = self._loadDrivers()
         self.ak2induciblenotes = self._loadNotes( 1032, parseInducibleNote )
 
     def loadAllelePublications(self):
@@ -225,7 +212,6 @@ class AlleleDumper(AbstractItemDumper):
         else:
             r['earliestPublication'] = '<reference name="earliestPublication" ref_id="%s" />' % ep
 
-        r['isRecombinase'] = "true" if ak in self.ak2drivernotes else "false"
 
         def setNote(r, ak, dct, aname):
             n = dct.get(ak,None)
@@ -233,7 +219,6 @@ class AlleleDumper(AbstractItemDumper):
 
         setNote(r, ak, self.ak2generalnotes, 'description')
         setNote(r, ak, self.ak2molecularnotes, 'molecularNote')
-        setNote(r, ak, self.ak2drivernotes, 'drivenBy')
         setNote(r, ak, self.ak2induciblenotes, 'inducedWith')
 
         r['symbol'] = self.quote(r['symbol'])
@@ -243,6 +228,7 @@ class AlleleDumper(AbstractItemDumper):
         atrs = self.ak2atrss.get(ak,None)
         r['attributeString'] = '' if atrs is None else \
           '<attribute name="attributeString" value="%s" />\n' % ', '.join(self.ak2atrss.get(ak,[])) 
+        r['isRecombinase'] = "true" if "Recombinase" in r['attributeString'] else "false"
 
         if r['projectcollection'] == "Not Specified":
             r['projectcollection'] = ''
