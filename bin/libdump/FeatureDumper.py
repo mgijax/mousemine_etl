@@ -36,6 +36,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
       %(description)s
       %(specificityNote)s
       %(ncbiGeneNumber)s
+      %(partnerRef)s
       <reference name="organism" ref_id="%(organismid)s" />
       <reference name="chromosome" ref_id="%(chromosomeid)s" />
       %(locationRef)s
@@ -141,12 +142,24 @@ class AbstractFeatureDumper(AbstractItemDumper):
             current_marker_key = r['_marker_key']         
 
 
+    def preloadPARtners(self):
+        self.mk2PARtner = {}
+        self.partnerForwardReferers = []
+        q = '''
+            SELECT _object_key_1, _object_key_2
+            FROM MGI_Relationship
+            WHERE _category_key = 1012
+        '''
+        for r in self.context.sql(q):
+            self.mk2PARtner[r['_object_key_1']] = r['_object_key_2']
+
     def preDump(self):
         self.preloadEntrezIds()
         self.preloadMarkerReferenceAssociations()
         self.preloadDescriptions()
         self.preloadStrainSpecificityNotes()
         self.preloadEarliestPubs()
+        self.preloadPARtners()
 
 
     def getDescription(self, r):
@@ -193,11 +206,20 @@ class AbstractFeatureDumper(AbstractItemDumper):
             return ''
         return self.mk2entrez.get(r['_marker_key'], '')
 
+    def getPARtnerRef(self, r):
+        if r['_marker_key'] in self.mk2PARtner:
+            pk = self.mk2PARtner[r['_marker_key']]
+            pref = self.context.makeGlobalKey('Marker', pk, None) 
+            return '<reference name="PARtner" ref_id="%s" />' % pref
+        else:
+            return ''
+
     def processRecord(self, r):
         fclass, soId = self.getClass(r)
         if fclass is None:
             return None
-        r['id'] = self.context.makeItemId('Marker', r['_marker_key'])
+        #r['id'] = self.context.makeItemId('Marker', r['_marker_key'])
+        r['id'] = self.context.makeGlobalKey('Marker', r['_marker_key'], None)
         r['featureClass'] = fclass
         r['mcvType'] = self.getMcvType(r)
         r['description'] = self.getDescription(r)
@@ -221,6 +243,9 @@ class AbstractFeatureDumper(AbstractItemDumper):
         r['dataSets'] = self.getDataSetRef()
         r['symbol'] = self.quote(r['symbol'])
         r['name'] = self.quote(r['name'])
+        #
+        r['partnerRef'] = self.getPARtnerRef(r)
+        #
         return r
 
 class MouseFeatureDumper(AbstractFeatureDumper):
@@ -247,26 +272,13 @@ class MouseFeatureDumper(AbstractFeatureDumper):
     AND m._marker_status_key = (%(OFFICIAL_STATUS)d)
     AND m._marker_key = c._marker_key
     AND c.qualifier = 'D'
+    -- temporary hack until MGI fixes data issue
+    AND NOT (c._marker_key = 1442907 AND c.term = 'insertion')
+    -- end hack
     AND m.chromosome = mc.chromosome
     AND m._organism_key = mc._organism_key
     %(LIMIT_CLAUSE)s
     '''
-
-    def processRecord(self, r):
-        if r['primaryidentifier'] is None:
-            self.context.log("Detected mouse feature with no MGI id. Please report this to MGI!")
-            self.context.log("_marker_key=%(_marker_key)d symbol=%(symbol)s" % r)
-            r['primaryidentifier'] = "MGI:0"
-        try:
-            return AbstractFeatureDumper.processRecord(self, r)
-        except DumperContext.DuplicateIdError:
-            # FIXME: MGD has a handful of markers with multiple MCV types. This causes the query
-            # to return multiple records for those markers. Here we skip over the dups. 
-            # The feature in mousemine gets only the first type; the rest are dropped.
-            # Need to handle this better, but it won't be easy.
-            self.context.log("Ignoring duplicate id error. ASSUMING this is because marker has multiple types!!")
-            self.context.log("Skipping: " + str(r))
-            return None
 
     def getMcvType(self, r):
         return r['mcvtype']

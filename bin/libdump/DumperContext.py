@@ -112,7 +112,7 @@ class DumperContext:
             'STRAIN_REFASSOCTYPE_KEYS' : [1009,1010],
 
             # Feature relationship category keys 
-            'ALL_FR_CATEGORY_KEYS' : [1002,1003,1004,1006,1001],
+            'ALL_FR_CATEGORY_KEYS' : [1012,1002,1003,1004,1006,1001],
             'ALL_FR_NAME_MAP' : {
                 1001 : { # interacts_with
                     'subjectAttrName' : 'interactor',
@@ -138,6 +138,10 @@ class DumperContext:
                     },
                 1006 : { # has_driver
                     'subjectAttrName' : 'allele',
+                    'objectAttrName'  : 'feature'
+                    },
+                1012 : { # PARtner_of
+                    'subjectAttrName' : 'feature',
                     'objectAttrName'  : 'feature'
                     }
                 },
