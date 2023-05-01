@@ -210,7 +210,7 @@ class AbstractFeatureDumper(AbstractItemDumper):
         if r['_marker_key'] in self.mk2PARtner:
             pk = self.mk2PARtner[r['_marker_key']]
             pref = self.context.makeGlobalKey('Marker', pk, None) 
-            return '<reference name="PARtner" ref_id="%s" />' % pref
+            return '<reference name="partner" ref_id="%s" />' % pref
         else:
             return ''
 
