@@ -272,9 +272,6 @@ class MouseFeatureDumper(AbstractFeatureDumper):
     AND m._marker_status_key = (%(OFFICIAL_STATUS)d)
     AND m._marker_key = c._marker_key
     AND c.qualifier = 'D'
-    -- temporary hack until MGI fixes data issue
-    AND NOT (c._marker_key = 1442907 AND c.term = 'insertion')
-    -- end hack
     AND m.chromosome = mc.chromosome
     AND m._organism_key = mc._organism_key
     %(LIMIT_CLAUSE)s

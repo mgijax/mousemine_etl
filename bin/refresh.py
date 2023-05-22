@@ -147,7 +147,7 @@ def main():
 
     if opts.listSources:
         snames = cp.sections()
-        snames.sort()
+        #snames.sort()
         for n in snames:
             print(n)
         sys.exit(0)

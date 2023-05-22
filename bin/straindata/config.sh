@@ -9,7 +9,7 @@ export ENS_DNA_OBJ="toplevel"
 export ENS_GFF3="ftp://ftp.ensembl.org/pub/release-${ENS_VER}/gff3"
 export ENS_FASTA="ftp://ftp.ensembl.org/pub/release-${ENS_VER}/fasta"
 
-#export MGI_GFF3=https://mgitest.jax.org/downloads/mgigff3/MGI.gff3.gz
+#export MGI_GFF3=https://test.informatics.jax.org/downloads/mgigff3/MGI.gff3.gz
 export MGI_GFF3=http://www.informatics.jax.org/downloads/mgigff3/MGI.gff3.gz
 
 export BDIR="${DIR}"
