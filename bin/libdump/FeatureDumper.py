@@ -388,12 +388,10 @@ MGIType2MCVType = {
     }
 
 #
-# July 17,2012 - jer. Change the destination class to Gene for every kind of gene. Until Intermine can
-# handle the subclass issue correctly, mapping genes to subclasses will cause more problems than good.
-#
 # This table maps an MCV type name (from the MGI type ontology) to a pair consisting of (1) the
-# name of the class of object to create and (2) the SO term id to assign to it. Note: if an MCV class
-# has no corresponding SO term, we use the generic term sequence_feature (SO:0000110).
+# name of the class of object to create and (2) the SO term id to assign to it. 
+# When a feature from MGI is mapped to a feature in MouseMine, it will have the named class
+# and will have a sequenceOntologyTerm reference to the term with the given SO term.
 #
 MCV2ClassName = {
     'antisense lncRNA gene'     : ('NcRNAGene',                         'SO:0002182'),
@@ -429,6 +427,7 @@ MCV2ClassName = {
     'mutation defined region'   : ('OtherGenomeFeature',                'SO:0000110'),
     'non-coding RNA gene'       : ('NcRNAGene',                         'SO:0001263'),
     'open chromatin region'     : ('OpenChromatinRegion',               'SO:0001747'),
+    'origin of replication'     : ('OriginOfReplication',               'SO:0000296'),
     'other feature type'        : ('OtherGenomeFeature',                'SO:0000110'),
     'other genome feature'      : ('OtherGenomeFeature',                'SO:0000110'),
     'PAC end'                   : ('Read',                              'SO:0001480'),
@@ -460,6 +459,7 @@ MCV2ClassName = {
     'telomerase RNA gene'       : ('NcRNAGene',                         'SO:0001643'),
     'telomere'                  : ('OtherGenomeFeature',                'SO:0000624'),
     'transcription factor binding site' : ('RegulatoryRegion',          'SO:0000235'),
+    'transcriptional cis regulatory region' : ('TranscriptionalCisRegulatoryRegion', 'SO:0001055'),
     'transgene'                 : ('Transgene',                         'SO:0000902'),
     'tRNA gene'                 : ('NcRNAGene',                         'SO:0001272'),
     'TSS cluster'                : ('OtherGenomeFeature',               'SO:0001915'),
