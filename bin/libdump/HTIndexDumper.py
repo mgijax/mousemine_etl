@@ -331,7 +331,7 @@ class HTSampleDumper (AbstractItemDumper) :
           %(agemax)s
           <reference name="experiment" ref_id="%(experiment)s" />
           <reference name="genotype" ref_id="%(genotype)s" />
-          <reference name="structure" ref_id="%(emapa)s" />
+          %(emapa)s
           %(celltyperef)s
           <attribute name="notes" value="%(notes)s" />
           </item>
@@ -367,7 +367,10 @@ class HTSampleDumper (AbstractItemDumper) :
             r['curationStatus'] = 'Curated'
             r['age'] = self.quote(r['age'])
             r['genotype'] = self.context.makeItemRef('Genotype', r['_genotype_key'])
-            r['emapa'] = self.context.makeItemRef('EMAPATerm', r['_emapa_key'])
+            r['emapa'] = ''
+            if r['_emapa_key']:
+                emapa_ref = self.context.makeItemRef('EMAPATerm', r['_emapa_key'])
+                r['emapa'] = '<reference name="structure" ref_id="%s" />' % emapa_ref
             if r['agemin'] is None:
                 r['agemin'] = ''
                 r['agemax'] = ''
