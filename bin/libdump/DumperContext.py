@@ -108,9 +108,6 @@ class DumperContext:
             # Property Type keys
             'HTEXPT_PROPERTYTYPE_KEY' : 1002,
 
-            # MGI_Reference_Assoc, _refassoctype_keys
-            'STRAIN_REFASSOCTYPE_KEYS' : [1009,1010,1031],
-
             # Feature relationship category keys 
             'ALL_FR_CATEGORY_KEYS' : [1002,1003,1004,1006,1001],
             'ALL_FR_NAME_MAP' : {

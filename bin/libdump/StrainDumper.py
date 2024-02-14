@@ -26,10 +26,13 @@ class StrainDumper(AbstractItemDumper):
     def loadStrainPubs(self):
         self.sk2pk = {}
         q='''
-        SELECT ra._refs_key, ra._object_key as "_strain_key"
-        FROM MGI_Reference_Assoc ra
-        WHERE ra._refassoctype_key in (%s)
-        ''' % ','.join([ str(x) for x in self.context.QUERYPARAMS['STRAIN_REFASSOCTYPE_KEYS']])
+        SELECT _strain_key, _refs_key
+        FROM PRB_Strain_Reference_View
+            UNION
+        SELECT mra._Object_key, mra._Refs_key
+        FROM mgi_reference_assoc mra
+        WHERE mra._RefAssocType_key IN (1009, 1010, 1031)
+        '''
         for r in self.context.sql(q):
             self.sk2pk.setdefault( r['_strain_key'], []).append(self.context.makeItemRef('Reference', r['_refs_key']))
 
