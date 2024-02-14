@@ -73,7 +73,7 @@ def checkRefs( ):
     errors = len(refidx) > 0
     # Sort the items by filename and line number for printing.
     items = list(refidx.items())
-    items.sort(None, lambda i:(i[1][0],i[1][1]))
+    items.sort(key=lambda i:(i[1][0],i[1][1]))
     for (refid, val) in items:
         print("Dangling reference: id=%s file=%s line=%d" %(refid, val[0], val[1]))
 
