@@ -45,9 +45,11 @@ class FilterDiseaseOntology:
                     if tag == "id" and val.startswith("DOID:"):
                         isDoidStanza = True
                     elif isDoidStanza and not isObsolete:
-                        if val.startswith("OMIM:"):
                         # save all OMIM id numbers
+                        if val.startswith("OMIM:"):
                             omimIds.append(val.replace("OMIM:", ""))
+                        elif val.startswith("MIM:"):
+                            omimIds.append(val.replace("MIM:", ""))
                         if tag == "xref":
                         #replace all "xref" tags with "alt_id"
                             slines[i] = (tag.replace("xref", "alt_id"),val)
