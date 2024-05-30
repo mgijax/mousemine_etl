@@ -172,8 +172,25 @@ class AnnotationDumper(AbstractItemDumper):
         #
         self.termsToWrite = set() # the terms we need to create stubs for
         self.assignedkeys = {}  # identifier -> key (eg: 'GO:123456' -> '10013_1001')
+        self.loadAnnotsToExclude()
         self.loadEvidenceProperties()
         self.writeDataSets()
+
+    # Hack because there are cases of GO annotations to withdrawn markers. We need to excluded these
+    # annots because otherwise, we get a DanglingReferenceError when we try to create the marker object ref.
+    def loadAnnotsToExclude(self):
+        self.annotsToExclude = set()
+        q = '''
+            SELECT va._annot_key 
+            FROM voc_annot va, mrk_marker mm
+            WHERE va._object_key = mm._marker_key
+            AND va._annottype_key = 1000
+            AND mm._marker_status_key = 2
+            '''
+        for r in self.context.sql(q):
+            self.annotsToExclude.add(r['_annot_key'])
+
+        self.context.log("Excluding %d annotations." % len(self.annotsToExclude) )
 
     def writeDataSets(self):
         self.dsd = DataSetDumper(self.context)
@@ -227,6 +244,9 @@ class AnnotationDumper(AbstractItemDumper):
         dsname, tname, oclass, aclass, aeclass, aecclass, aspecies, ahasprops = self.atk2classes[atk]
         if iQuery == 0:
             # OntologyAnnotation
+            if r['_annot_key'] in self.annotsToExclude:
+                self.context.log("Excluding annotation: " + str(r))
+                return None
             r['id'] = self.context.makeItemId('OntologyAnnotation', r['_annot_key'])
             r['subject'] = self.context.makeItemRef(tname, r['_object_key'])
             r['qualifier'] = r['qualifier'] and ('<attribute name="qualifier" value="%(qualifier)s"/>' % r) or ''
@@ -254,6 +274,8 @@ class AnnotationDumper(AbstractItemDumper):
                 return r
         else:
             # OntologyAnnotationEvidence
+            if r['_annot_key'] in self.annotsToExclude:
+                return None
             r['id'] = self.context.makeItemId('OntologyAnnotationEvidence', r['_annotevidence_key'])
             r['class'] = aeclass
             r['code'] = self.context.makeItemRef('OntologyAnnotationEvidenceCode', r['_evidenceterm_key'])
