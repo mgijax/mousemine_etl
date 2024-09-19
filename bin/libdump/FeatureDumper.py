@@ -422,6 +422,7 @@ MCV2ClassName = {
     'lincRNA gene'              : ('NcRNAGene',                         'SO:0001641'),
     'locus control region'      : ('RegulatoryRegion',                  'SO:0000037'),
     'lncRNA gene'               : ('NcRNAGene',                         'SO:0002127'),
+    'matrix attachment site'    : ('OtherGenomeFeature',                'SO:0000643'),
     'minisatellite'             : ('OtherGenomeFeature',                'SO:0000643'),
     'miRNA gene'                : ('NcRNAGene',                         'SO:0001265'),
     'mutation defined region'   : ('OtherGenomeFeature',                'SO:0000110'),
