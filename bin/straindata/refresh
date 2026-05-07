@@ -59,7 +59,7 @@ function main {
     logit "Starting strain genomes GFF3 file preparation script."
     #
     logit "Generating ENSEMBL to MGI id mapping file..."
-    ${PYTHON} ${BDIR}/getEnsemblMgiMapping.py > ${MAPPINGFILE} 2>>${LOGFILE}; checkExit
+    curl "$MGI_GENE_MODEL_IDS" | cut -d "	" -f 1,11 | grep -v null > ${MAPPINGFILE} 2>>${LOGFILE}; checkExit
     # loop through the strains config table
     logit "Reading strains from ${STRAINS}..."
     while read -u 10 p; do

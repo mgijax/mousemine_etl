@@ -1,7 +1,7 @@
 #
 # prepGffFile.py
 #
-#    python prepMgpGffFile.py -s STRAIN -v VALID_ID_FILE -m ID_MAP_FILE < INPUT > OUPUT
+#    python prepMgpGffFile.py -s STRAIN -m ID_MAP_FILE < INPUT > OUPUT
 #
 # Performs specific file preprocessing for loading the strain-specific GFF files.
 # - appends strain to the chromosome id in col 1. E.g. "5" becomes "5|C3H/HeJ"
@@ -83,7 +83,6 @@ class GffPrep:
             '--strain',
             metavar='strain',
             help='Strain name')
-        #self.parser.add_argument('-x', '--exclude', metavar='sotype', default=[], action='append', help='Col 3 types to exclude.')
         self.parser.add_argument(
             '-m',
             '--mappingFile',
@@ -186,6 +185,7 @@ class GffPrep:
     def loadIdFiles (self) :
         if self.args.mappingfile:
             idpairs = [line.strip().split(TAB) for line in self.getFileLines(self.args.mappingfile)]
+            idpairs = [(p[1],p[0]) for p in idpairs]
             self.idMapping = dict(idpairs) 
             log("Loaded %d id mappings" % len(self.idMapping))
 
