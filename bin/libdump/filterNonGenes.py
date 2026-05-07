@@ -6,7 +6,7 @@
 # Extended to also filter BioGrid and IntAct files.
 #
 # USAGE:
-#       $ python filterNonGenes.py -t [homologene|panther|biogrid|intact] < INPUT > OUTPUT
+#       $ python filterNonGenes.py -t [panther|biogrid|intact] < INPUT > OUTPUT
 #
 # Why:
 # 
@@ -20,7 +20,6 @@
 
 import os
 import sys
-import logging
 import xml.etree.ElementTree as et
 import mgidbconnect as db
 
@@ -29,6 +28,9 @@ TAB = '\t'
 PIPE = '|'
 NL = '\n'
 suppressed = set()
+
+def log (s) :
+    sys.stderr.write(s + NL)
 
 def cacheGeneIds():
     geneIds = set()
@@ -39,7 +41,7 @@ def cacheGeneIds():
         AND aa.private = 0
         AND aa._object_key = mm._marker_key
         AND mm.term = 'gene'
-        AND aa._logicaldb_key in (1,13,59,60,85,131,132,133,134)
+        AND aa._logicaldb_key in (1,13,59,60,133,134)
         ''' 
     db.sql(query, lambda r: geneIds.add(r['accid']))
     return geneIds
@@ -64,18 +66,6 @@ class LineByLineFilter(Filter):
         for line in self.ifd:
             if self.test(line):
                 self.ofd.write(line)
-
-# Homologene: tab delimited file, one line per gene, 
-class HomologeneFilter(LineByLineFilter):
-    def test(self, line):
-        fields = line.split(TAB)
-        if fields[1] == '10090':
-            # write mouse line only if it has a valid id
-            id = fields[2]
-            return id in self.validIds
-        else:
-            # Write out non mouse lines
-            return True
 
 # Panther: tab delimited file of pairs. Two genes per line, in columns 1 and 2.
 class PantherFilter(LineByLineFilter):
@@ -265,9 +255,7 @@ class BioGridFilter(Filter):
 
 
 def getFilterClass(ftype):
-    if ftype == "homologene":
-        return HomologeneFilter
-    elif ftype == "panther":
+    if ftype == "panther":
         return PantherFilter
     elif ftype == "biogrid" or ftype == "intact":
         return BioGridFilter
@@ -307,6 +295,7 @@ def main():
         if ifile == "-":
             ifd = sys.stdin
         else:
+            log('filterNonGenes.py: filtering ' + ifile)
             ifd = open(ifile, 'r')
             if opts.inplace:
                 ofile = ifile + ".tmp"
