@@ -6,22 +6,21 @@
 # Extended to also filter BioGrid and IntAct files.
 #
 # USAGE:
-#       $ python filterNonGenes.py -t [panther|biogrid|intact] < INPUT > OUTPUT
+#       $ python filterNonGenes.py -t [panther|biogrid|intact] -g GENEIDS < INPUT > OUTPUT
 #
 # Why:
 # 
-# Homologene, Panther, et. al. contain entries for non-gene mouse
+# Panther, et. al. contain entries for non-gene mouse
 # features such as gene segments and pseudogenes. Often this is legitimate data,
 # however, the current load software does not handle them well. Since it
 # only looks at Genes, it doesn't find them in the db. So it goes ahead
-# and creates new Gene objects with duplicate ids.
-#
+# and creates new Gene objects with duplicate ids. Try to avoid that by filtering 
+# out data associated with non-genes.
 #
 
 import os
 import sys
 import xml.etree.ElementTree as et
-import mgidbconnect as db
 
 
 TAB = '\t'
@@ -32,19 +31,14 @@ suppressed = set()
 def log (s) :
     sys.stderr.write(s + NL)
 
-def cacheGeneIds():
-    geneIds = set()
-    query = '''
-        SELECT aa.accid
-        FROM ACC_Accession aa, MRK_MCV_Cache mm
-        WHERE  aa._mgitype_key = 2
-        AND aa.private = 0
-        AND aa._object_key = mm._marker_key
-        AND mm.term = 'gene'
-        AND aa._logicaldb_key in (1,13,59,60,133,134)
-        ''' 
-    db.sql(query, lambda r: geneIds.add(r['accid']))
-    return geneIds
+# Returns the set of all IDs for genes (MGI, SWISS-PROT, ENSEMBL, etc...)
+def cacheGeneIds(opts):
+    gfd =  open(opts.genes, 'r')
+    ids = [ x[:-1] for x in gfd.readlines() ]
+    log("filterNonGenes.py: Cached %d gene ids." % len(ids))
+    return set(ids)
+
+
 
 #
 # A filter reads an input, filters out certain data, and writes the rest to output.
@@ -265,8 +259,9 @@ def getFilterClass(ftype):
 def getCmdLine():
     from optparse import OptionParser
     op = OptionParser()
-    op.add_option("-t", "--type", dest="filetype", choices=["homologene","panther","biogrid","intact"],
-                  help='File type. One of: "homologene","panther","biogrid","intact"')
+    op.add_option("-g", "--genes", help="File containing 'all' gene ids.")
+    op.add_option("-t", "--type", dest="filetype", choices=["panther","biogrid","intact"],
+                  help='File type. One of: "panther","biogrid","intact"')
     op.add_option("-o", "--output", dest="output", default=None,
                   help="Where to send the output. If not specified, or is '-', sends to stdout.")
     op.add_option("-u", "--updateInPlace", dest="inplace", default=False, action="store_true",
@@ -286,7 +281,7 @@ def getCmdLine():
 
 def main():
     opts, ifiles = getCmdLine()
-    geneIds = cacheGeneIds()
+    geneIds = cacheGeneIds(opts)
     if opts.output == "-":
         ofd = sys.stdout
     elif opts.output:
@@ -306,5 +301,4 @@ def main():
             ofd.close()
             os.system("mv %s %s" % (ofile,ifile))
 
-db.setConnectionFromPropertiesFile()
 main()
