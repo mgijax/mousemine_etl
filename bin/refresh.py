@@ -26,7 +26,7 @@
 #
 
 import os
-from subprocess import run
+import subprocess
 import sys
 import time
 import re
@@ -35,6 +35,14 @@ import logging
 from optparse import OptionParser
 
 STRF = "%Y.%m.%d.%H.%M.%S"
+
+# want to be sure subprocess.run uses bash. If it uses sh, then "set -o pipefail" (see config.cfg) will throw an error.
+res = subprocess.run(['which', 'bash'], capture_output=True)
+if res.returncode == 0:
+    BASH = res.stdout.decode().strip()
+else:
+    print("Error: cannot find bash")
+    sys.exit(1)
 
 class SourceRefresher:
     """
@@ -64,7 +72,7 @@ class SourceRefresher:
             ffn = os.path.join(self.pdir,fn)
             cmd = "rm -fr %s"%ffn
             logging.info("Removing directory: " + cmd)
-            os.system(cmd)
+            subprocess.run(cmd, shell=True)
 
     def refresh(self):
         logging.info("%s: starting ..."%self.name)
@@ -72,14 +80,14 @@ class SourceRefresher:
         os.makedirs(self.odir)
 
         # OK, here we go...
-        status = os.system(self.cmd)
+        result = subprocess.run(self.cmd, shell=True, executable=BASH)
 
-        if status == 0:
+        if result.returncode == 0:
             # re-link 'latest' to point to new directory
             c2 = "cd %s; rm -f latest; ln -s %s latest" % (self.pdir,self.dname)
             logging.info("%s: running command: %s"%(self.name,c2))
             try:
-                os.system(c2)
+                subprocess.run(c2, shell=True, executable=BASH)
             except:
                 # failed at the last minute. dang!
                 self.success = False
